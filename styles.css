@@ -138,3 +138,47 @@ footer p{color:#cbd5e1;}
     width:125px !important;
   }
 }
+
+/* Exact visual crop for square official logo file in header */
+.site-header{
+  min-height:112px !important;
+  padding:7px clamp(22px,4vw,56px) !important;
+}
+.site-header .brand{
+  position:relative !important;
+  display:block !important;
+  width:170px !important;
+  height:98px !important;
+  flex:0 0 170px !important;
+  overflow:hidden !important;
+  line-height:0 !important;
+}
+.site-header .brand .site-logo{
+  position:absolute !important;
+  width:236px !important;
+  height:236px !important;
+  max-width:none !important;
+  max-height:none !important;
+  left:-11px !important;
+  top:-44px !important;
+  transform:none !important;
+  object-fit:fill !important;
+}
+
+@media(max-width:620px){
+  .site-header{
+    min-height:90px !important;
+    padding:6px 16px !important;
+  }
+  .site-header .brand{
+    width:130px !important;
+    height:75px !important;
+    flex-basis:130px !important;
+  }
+  .site-header .brand .site-logo{
+    width:181px !important;
+    height:181px !important;
+    left:-9px !important;
+    top:-34px !important;
+  }
+}
