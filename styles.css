@@ -36,3 +36,66 @@
   .logo-panel img{width:92%;}
   .footer-logo{width:48px;}
 }
+
+/* Final brand sizing refinements */
+.site-header{
+  padding:8px clamp(22px,4vw,56px);
+  min-height:86px;
+}
+.site-header .brand{
+  width:190px;
+  height:70px;
+  overflow:hidden;
+  flex:0 0 190px;
+}
+.site-header .site-logo{
+  width:190px;
+  max-width:none;
+  max-height:none;
+  height:auto;
+  display:block;
+  transform:translateY(-38px);
+}
+
+footer{
+  background:linear-gradient(135deg,#050f23,#071b3d);
+  border-top:3px solid var(--gold);
+  color:#e8edf6;
+}
+.footer-brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-weight:700;
+}
+.footer-logo{
+  width:62px;
+  height:62px;
+  object-fit:cover;
+  object-position:center;
+  background:#fff;
+  border:2px solid rgba(213,154,32,.75);
+  border-radius:12px;
+  padding:3px;
+}
+footer p{color:#cbd5e1;}
+
+@media(max-width:620px){
+  .site-header{
+    padding:8px 16px;
+    min-height:76px;
+  }
+  .site-header .brand{
+    width:150px;
+    height:58px;
+    flex-basis:150px;
+  }
+  .site-header .site-logo{
+    width:150px;
+    transform:translateY(-30px);
+  }
+  .footer-logo{
+    width:54px;
+    height:54px;
+  }
+}
