@@ -114,3 +114,27 @@ footer p{color:#cbd5e1;}
   height:auto;
   display:block;
 }
+
+/* Show full official logo in compact header */
+.site-header .brand{
+  width:150px !important;
+  height:auto !important;
+  overflow:visible !important;
+  flex:0 0 150px !important;
+}
+.site-header .site-logo{
+  width:150px !important;
+  height:auto !important;
+  max-height:none !important;
+  transform:none !important;
+  object-fit:contain !important;
+}
+@media(max-width:620px){
+  .site-header .brand{
+    width:125px !important;
+    flex-basis:125px !important;
+  }
+  .site-header .site-logo{
+    width:125px !important;
+  }
+}
