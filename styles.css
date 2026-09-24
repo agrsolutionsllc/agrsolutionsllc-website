@@ -13,3 +13,26 @@
     max-height:72px;
   }
 }
+.logo-panel{
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:34px;
+}
+.logo-panel img{
+  width:88%;
+  height:auto;
+  object-fit:contain;
+}
+.footer-logo{
+  width:56px;
+  height:auto;
+  display:block;
+  border-radius:8px;
+}
+@media(max-width:620px){
+  .logo-panel{padding:20px;}
+  .logo-panel img{width:92%;}
+  .footer-logo{width:48px;}
+}
