@@ -182,3 +182,47 @@ footer p{color:#cbd5e1;}
     top:-34px !important;
   }
 }
+
+/* FINAL HEADER LOGO OVERRIDE - show complete logo without cropping */
+.site-header{
+  min-height:82px !important;
+  padding:8px clamp(20px,3vw,40px) !important;
+}
+.site-header .brand{
+  position:static !important;
+  display:flex !important;
+  align-items:center !important;
+  width:175px !important;
+  height:66px !important;
+  flex:0 0 175px !important;
+  overflow:visible !important;
+  line-height:0 !important;
+}
+.site-header .brand .site-logo{
+  position:static !important;
+  width:175px !important;
+  height:66px !important;
+  max-width:175px !important;
+  max-height:66px !important;
+  object-fit:contain !important;
+  object-position:left center !important;
+  transform:none !important;
+  margin:0 !important;
+}
+@media(max-width:620px){
+  .site-header{
+    min-height:72px !important;
+    padding:7px 14px !important;
+  }
+  .site-header .brand{
+    width:140px !important;
+    height:54px !important;
+    flex-basis:140px !important;
+  }
+  .site-header .brand .site-logo{
+    width:140px !important;
+    height:54px !important;
+    max-width:140px !important;
+    max-height:54px !important;
+  }
+}
