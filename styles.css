@@ -118,3 +118,31 @@ footer p{
     height:50px;
   }
 }
+
+/* Cache-busted final compact header logo */
+.site-header .brand{
+  width:130px !important;
+  height:52px !important;
+  flex:0 0 130px !important;
+}
+.site-header .brand .site-logo{
+  width:130px !important;
+  height:52px !important;
+  max-width:130px !important;
+  max-height:52px !important;
+  object-fit:contain !important;
+  object-position:left center !important;
+}
+@media(max-width:620px){
+  .site-header .brand{
+    width:112px !important;
+    height:46px !important;
+    flex-basis:112px !important;
+  }
+  .site-header .brand .site-logo{
+    width:112px !important;
+    height:46px !important;
+    max-width:112px !important;
+    max-height:46px !important;
+  }
+}
