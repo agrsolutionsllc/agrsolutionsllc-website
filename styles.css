@@ -204,3 +204,25 @@ footer p{
     padding:16px 18px !important;
   }
 }
+
+
+/* Ariana portrait: show slightly more torso without empty borders */
+.hero-visual .hero-photo{
+  aspect-ratio:3/4 !important;
+  width:min(100%,520px) !important;
+}
+
+.hero-visual .hero-photo img{
+  object-fit:cover !important;
+  object-position:center 42% !important;
+}
+
+@media(max-width:620px){
+  .hero-visual .hero-photo{
+    aspect-ratio:3/4 !important;
+    width:100% !important;
+  }
+  .hero-visual .hero-photo img{
+    object-position:center 38% !important;
+  }
+}
