@@ -248,3 +248,27 @@ footer p{
     object-position:center 42% !important;
   }
 }
+
+
+/* Ariana portrait: farther back, no empty borders */
+.hero-visual .hero-photo{
+  aspect-ratio:2/3 !important;
+  width:min(100%,500px) !important;
+}
+
+.hero-visual .hero-photo img{
+  object-fit:cover !important;
+  object-position:center 45% !important;
+  transform:none !important;
+}
+
+@media(max-width:620px){
+  .hero-visual .hero-photo{
+    aspect-ratio:2/3 !important;
+    width:100% !important;
+  }
+  .hero-visual .hero-photo img{
+    object-position:center 42% !important;
+    transform:none !important;
+  }
+}
