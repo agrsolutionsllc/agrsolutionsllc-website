@@ -146,3 +146,21 @@ footer p{
     max-height:46px !important;
   }
 }
+
+/* Hero portrait: Ariana */
+.hero-photo{
+  background:#f8f5ee;
+  padding:0 !important;
+}
+.hero-photo img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center 28% !important;
+  display:block !important;
+}
+@media(max-width:620px){
+  .hero-photo img{
+    object-position:center 22% !important;
+  }
+}
