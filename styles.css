@@ -161,8 +161,11 @@ footer p{
   width:100% !important;
   height:100% !important;
   display:block !important;
-  object-fit:contain !important;
+  object-fit:cover !important;
   object-position:center center !important;
+
+  transform:scale(0.88) !important;
+  transform-origin:center center !important;
 }
 
 /* Founder card - final */
