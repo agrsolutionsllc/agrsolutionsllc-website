@@ -4,11 +4,45 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="AGR Solutions LLC ofrece preparación administrativa de documentos migratorios, impuestos, notaría, DMV, formación de negocios, traducciones y apostillas en East Haven, Connecticut." />
+  <meta name="theme-color" content="#071b3d" />
+  <link rel="canonical" href="https://agrsolutionsllc.com/" />
+  <link rel="icon" type="image/jpeg" href="logo-header.jpeg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_US" />
+  <meta property="og:site_name" content="AGR Solutions LLC" />
+  <meta property="og:title" content="AGR Solutions LLC | East Haven, Connecticut" />
+  <meta property="og:description" content="Organizamos tu presente, construimos tu futuro. Servicios administrativos, impuestos, notaría, DMV, negocios, traducciones y más." />
+  <meta property="og:url" content="https://agrsolutionsllc.com/" />
+  <meta property="og:image" content="https://agrsolutionsllc.com/logo-agr.jpeg.jpeg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AGR Solutions LLC | East Haven, Connecticut" />
+  <meta name="twitter:description" content="Servicios administrativos personalizados en East Haven, Connecticut." />
+  <meta name="twitter:image" content="https://agrsolutionsllc.com/logo-agr.jpeg.jpeg" />
   <title>AGR Solutions LLC | East Haven, Connecticut</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260925-life-insurance" />
+  <link rel="stylesheet" href="styles.css?v=20260925-launch" />
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"LocalBusiness",
+    "name":"AGR Solutions LLC",
+    "url":"https://agrsolutionsllc.com/",
+    "telephone":"+1-203-824-0351",
+    "email":"agrsolutions.us@gmail.com",
+    "address":{
+      "@type":"PostalAddress",
+      "streetAddress":"294 Tyler Street",
+      "addressLocality":"East Haven",
+      "addressRegion":"CT",
+      "postalCode":"06512",
+      "addressCountry":"US"
+    },
+    "areaServed":"Connecticut",
+    "description":"Servicios administrativos y preparación de documentos, impuestos, notaría, DMV, formación de negocios, traducciones y apostillas."
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -103,14 +137,14 @@
           <div><span>Oficina</span><strong>294 Tyler Street<br>East Haven, CT 06512</strong></div>
         </div>
       </div>
-      <form class="contact-form" action="mailto:agrsolutions.us@gmail.com" method="post" enctype="text/plain">
+      <form class="contact-form" id="contactForm">
         <h3>Solicita información</h3>
         <label>Nombre<input type="text" name="Nombre" required></label>
         <label>Teléfono<input type="tel" name="Telefono" required></label>
-        <label>Servicio de interés<select name="Servicio"><option>Documentos migratorios</option><option>Impuestos / ITIN</option><option>Notaría</option><option>DMV</option><option>Negocios / LLC</option><option>Traducciones / Apostillas</option><option>Documentos de divorcio</option><option>Otro</option></select></label>
+        <label>Servicio de interés<select name="Servicio"><option>Documentos migratorios</option><option>Impuestos / ITIN</option><option>Notaría</option><option>DMV</option><option>Negocios / LLC</option><option>Traducciones / Apostillas</option><option>Documentos de divorcio</option><option disabled>Seguros de vida — Próximamente</option><option>Otro</option></select></label>
         <label>Mensaje<textarea name="Mensaje" rows="4"></textarea></label>
         <button class="button button-primary" type="submit">Enviar solicitud</button>
-        <small>Al enviar, se abrirá tu aplicación de correo para completar el mensaje.</small>
+        <small>Al enviar, se abrirá WhatsApp con tu solicitud lista para enviar.</small>
       </form>
     </section>
 
@@ -119,6 +153,11 @@
     </section>
   </main>
 
+  <a class="whatsapp-float" href="https://wa.me/12038240351" target="_blank" rel="noopener noreferrer" aria-label="Escribir a AGR Solutions LLC por WhatsApp">
+    <span aria-hidden="true">✆</span>
+    <strong>WhatsApp</strong>
+  </a>
+
   <footer>
     <div class="footer-brand">
       <img src="logo-agr.jpeg.jpeg" alt="AGR Solutions LLC" class="footer-logo">
@@ -126,6 +165,6 @@
     </div>
     <p>© <span id="year"></span> AGR Solutions LLC. Todos los derechos reservados.</p>
   </footer>
-  <script src="script.js"></script>
+  <script src="script.js?v=20260925-launch"></script>
 </body>
 </html>
