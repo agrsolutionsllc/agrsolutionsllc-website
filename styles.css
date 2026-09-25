@@ -177,3 +177,9 @@ footer p{
   object-fit:cover !important;
   object-position:center top !important;
 }
+.portrait-wrap{
+  border-radius: 220px 220px 28px 28px;
+  overflow: hidden;
+  background: #fff;
+  min-height: 620px;
+}
