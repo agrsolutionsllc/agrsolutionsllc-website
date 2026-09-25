@@ -183,3 +183,34 @@ footer p{
   background: #fff;
   min-height: 620px;
 }
+
+/* Final centered founder card */
+.hero-visual .floating-card{
+  left:50% !important;
+  bottom:-30px !important;
+  transform:translateX(-50%) !important;
+  min-width:340px !important;
+  max-width:90% !important;
+  text-align:left !important;
+  padding:20px 26px !important;
+  border-left:5px solid var(--gold) !important;
+  border-radius:18px !important;
+  box-shadow:0 18px 40px rgba(7,27,61,.16) !important;
+}
+.hero-visual .floating-card strong{
+  font-size:1rem !important;
+  color:var(--navy) !important;
+}
+.hero-visual .floating-card span{
+  margin-top:4px !important;
+  font-size:.84rem !important;
+  color:var(--muted) !important;
+}
+@media(max-width:620px){
+  .hero-visual .floating-card{
+    min-width:0 !important;
+    width:88% !important;
+    bottom:-24px !important;
+    padding:16px 18px !important;
+  }
+}
