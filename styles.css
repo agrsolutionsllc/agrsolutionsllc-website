@@ -226,3 +226,25 @@ footer p{
     object-position:center 38% !important;
   }
 }
+
+
+/* Ariana portrait: one step farther back */
+.hero-visual .hero-photo{
+  aspect-ratio:11/15 !important;
+  width:min(100%,510px) !important;
+}
+
+.hero-visual .hero-photo img{
+  object-fit:cover !important;
+  object-position:center 46% !important;
+}
+
+@media(max-width:620px){
+  .hero-visual .hero-photo{
+    aspect-ratio:11/15 !important;
+    width:100% !important;
+  }
+  .hero-visual .hero-photo img{
+    object-position:center 42% !important;
+  }
+}
