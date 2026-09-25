@@ -164,3 +164,16 @@ footer p{
     object-position:center 22% !important;
   }
 }
+.hero-photo{
+  background:#f8f5ee;
+  padding:0 !important;
+  overflow:hidden;
+}
+
+.hero-photo img{
+  width:100% !important;
+  height:100% !important;
+  display:block !important;
+  object-fit:cover !important;
+  object-position:center top !important;
+}
