@@ -376,3 +376,32 @@ footer p{
     max-width:135px !important;
   }
 }
+
+
+/* FINAL header logo override: visibly larger */
+.site-header .brand{
+  width:220px !important;
+  height:82px !important;
+  flex:0 0 220px !important;
+}
+.site-header .brand .site-logo{
+  width:195px !important;
+  max-width:195px !important;
+  height:76px !important;
+  max-height:76px !important;
+  object-fit:contain !important;
+  object-position:left center !important;
+}
+@media(max-width:620px){
+  .site-header .brand{
+    width:165px !important;
+    height:62px !important;
+    flex:0 0 165px !important;
+  }
+  .site-header .brand .site-logo{
+    width:150px !important;
+    max-width:150px !important;
+    height:58px !important;
+    max-height:58px !important;
+  }
+}
