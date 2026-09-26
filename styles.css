@@ -570,3 +570,37 @@ footer p{
     gap:6px;
   }
 }
+
+
+/* Keep founder credential card fully visible and visually closed */
+.hero{
+  overflow:visible !important;
+  padding-bottom:155px !important;
+}
+
+.hero-visual .founder-hero-card{
+  bottom:-72px !important;
+  border-radius:24px !important;
+  overflow:visible !important;
+}
+
+@media(max-width:1000px){
+  .hero{
+    padding-bottom:145px !important;
+  }
+}
+
+@media(max-width:620px){
+  .hero{
+    padding-bottom:70px !important;
+  }
+  .hero-visual .founder-hero-card{
+    position:relative !important;
+    left:auto !important;
+    bottom:auto !important;
+    transform:none !important;
+    margin:-26px auto 0 !important;
+    width:92% !important;
+    max-width:92% !important;
+  }
+}
