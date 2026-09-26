@@ -405,3 +405,111 @@ footer p{
     max-height:58px !important;
   }
 }
+
+
+/* Founder professional profile */
+.founder-section{
+  background:#f8f5ef;
+}
+.founder-profile{
+  max-width:1200px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(280px,.75fr);
+  gap:70px;
+  align-items:start;
+}
+.founder-copy h2{
+  margin:0 0 8px;
+  color:var(--navy);
+  font-family:'Playfair Display',serif;
+  font-size:clamp(3rem,6vw,6.2rem);
+  line-height:.98;
+  letter-spacing:-.04em;
+}
+.founder-copy h3{
+  margin:0 0 38px;
+  color:var(--gold);
+  font-size:clamp(1.35rem,2.3vw,2.25rem);
+  line-height:1.25;
+}
+.founder-copy p{
+  max-width:850px;
+  color:#5d6678;
+  font-size:clamp(1.05rem,1.5vw,1.28rem);
+  line-height:1.9;
+  margin:0 0 16px;
+}
+.founder-copy p strong{
+  color:var(--navy);
+  font-weight:700;
+}
+.founder-link{
+  display:inline-flex;
+  align-items:center;
+  gap:24px;
+  margin-top:22px;
+  color:var(--navy);
+  font-size:1.12rem;
+  font-weight:800;
+  text-decoration:none;
+}
+.founder-link span{
+  color:var(--gold);
+  font-size:1.7rem;
+  transition:transform .2s ease;
+}
+.founder-link:hover span{
+  transform:translateX(5px);
+}
+.founder-credentials{
+  display:grid;
+  gap:14px;
+  margin-top:32px;
+}
+.founder-credentials div{
+  padding:20px 22px;
+  background:#fff;
+  border:1px solid rgba(7,27,61,.08);
+  border-radius:16px;
+  box-shadow:0 12px 34px rgba(7,27,61,.06);
+}
+.founder-credentials span{
+  display:block;
+  margin-bottom:5px;
+  color:var(--gold);
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.13em;
+}
+.founder-credentials strong{
+  color:var(--navy);
+  font-size:.98rem;
+  line-height:1.35;
+}
+@media(max-width:900px){
+  .founder-profile{
+    grid-template-columns:1fr;
+    gap:28px;
+  }
+  .founder-credentials{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    margin-top:0;
+  }
+}
+@media(max-width:620px){
+  .founder-copy h2{
+    font-size:3.1rem;
+  }
+  .founder-copy h3{
+    font-size:1.35rem;
+    margin-bottom:28px;
+  }
+  .founder-copy p{
+    font-size:1rem;
+    line-height:1.75;
+  }
+  .founder-credentials{
+    grid-template-columns:1fr;
+  }
+}
