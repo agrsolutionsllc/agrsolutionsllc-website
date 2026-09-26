@@ -363,3 +363,16 @@ footer p{
     display:none;
   }
 }
+
+
+/* Header logo size refinement */
+@media(max-width:620px){
+  .site-header .brand{
+    width:170px !important;
+    flex:0 0 170px !important;
+  }
+  .site-header .site-logo{
+    width:135px !important;
+    max-width:135px !important;
+  }
+}
