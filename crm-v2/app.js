@@ -216,7 +216,6 @@ function bindCasePaymentOpeners(){
 }
 
 $('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
-$('#quickAdd').addEventListener('click',()=>openModal('client'));
 $('#closeDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;editingPaymentId=null;});
 $('#cancelDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;editingPaymentId=null;});
 
