@@ -84,7 +84,8 @@ if(data.payments.some(p=>p.amount===undefined)){
 const save=()=>localStorage.setItem(storeKey,JSON.stringify(data));
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
-const clientName=id=>data.clients.find(c=>c.id===Number(id))?.name||'Cliente';
+const clientById=id=>data.clients.find(c=>c.id===Number(id));
+const clientName=id=>clientById(id)?.name||'Cliente';
 const caseById=id=>data.cases.find(c=>c.id===Number(id));
 const casePaid=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
 const caseBalance=c=>Math.max(Number(c.serviceTotal||0)-casePaid(c.id),0);
@@ -222,6 +223,82 @@ function fieldHTML([name,label,type,cls],values={}){
   return `<label class="${cls}">${label}${input}</label>`;
 }
 
+function buildClientUpdate(caseValues){
+  const client=clientById(caseValues.clientId);
+  const name=client?.name||'cliente';
+  const service=caseValues.service||'su trámite';
+  const status=statusLabel(caseValues.status||'inicial');
+  const next=caseValues.next?.trim();
+  return `Hola ${name}, le compartimos una actualización de su caso con AGR Solutions LLC.
+
+Servicio / trámite: ${service}
+Estado actual: ${status}${next?`\nPróximo paso: ${next}`:''}
+
+Si necesita comunicarse con nosotros, puede responder a este mensaje.
+
+AGR Solutions LLC
+294 Tyler Street, East Haven, CT 06512
+203-824-0351
+https://agrsolutionsllc.com`;
+}
+
+function getCaseValuesFromForm(){
+  const fd=Object.fromEntries(new FormData(form));
+  return {
+    clientId:Number(fd.clientId||0),
+    service:fd.service||'',
+    status:fd.status||'inicial',
+    next:fd.next||''
+  };
+}
+
+function refreshClientNotification(){
+  const box=document.querySelector('#clientNotificationBox');
+  if(!box) return;
+  const values=getCaseValuesFromForm();
+  const client=clientById(values.clientId);
+  const message=buildClientUpdate(values);
+  const phone=(client?.phone||'').replace(/\D/g,'');
+  const email=(client?.email||'').trim();
+
+  const preview=box.querySelector('.notification-preview');
+  const wa=box.querySelector('.notify-whatsapp');
+  const mail=box.querySelector('.notify-email');
+
+  if(preview) preview.textContent=message;
+
+  if(wa){
+    if(phone){
+      const normalized=phone.length===10?'1'+phone:phone;
+      wa.href='https://wa.me/'+normalized+'?text='+encodeURIComponent(message);
+      wa.classList.remove('disabled');
+      wa.removeAttribute('aria-disabled');
+    }else{
+      wa.href='#';
+      wa.classList.add('disabled');
+      wa.setAttribute('aria-disabled','true');
+    }
+  }
+
+  if(mail){
+    if(email){
+      const subject='Actualización de su caso - AGR Solutions LLC';
+      mail.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
+      mail.classList.remove('disabled');
+      mail.removeAttribute('aria-disabled');
+    }else{
+      mail.href='#';
+      mail.classList.add('disabled');
+      mail.setAttribute('aria-disabled','true');
+    }
+  }
+
+  const contact=box.querySelector('.notification-contact');
+  if(contact){
+    contact.textContent=`WhatsApp: ${client?.phone||'No registrado'} · Email: ${client?.email||'No registrado'}`;
+  }
+}
+
 function openModal(kind,values={}){
   mode=kind;
   editingCaseId=kind==='case-edit'?values.id:null;
@@ -231,6 +308,27 @@ function openModal(kind,values={}){
   const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',service:'Nuevo servicio',payment:'Agregar pago al caso',appointment:'Nueva cita'};
   modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
+
+  if(kind==='case-edit'){
+    fields.insertAdjacentHTML('beforeend', `
+      <section id="clientNotificationBox" class="client-notification full">
+        <div class="notification-head">
+          <div>
+            <span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span>
+            <strong>Notificar sobre este caso</strong>
+            <small class="notification-contact"></small>
+          </div>
+        </div>
+        <div class="notification-preview"></div>
+        <div class="notification-actions">
+          <a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+          <a class="notify-btn notify-email">Enviar por correo</a>
+        </div>
+        <small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small>
+      </section>
+    `);
+  }
+
   dialog.showModal();
   if(actualKind==='case'){
     const serviceSelect=form.querySelector('[name="service"]');
@@ -242,6 +340,12 @@ function openModal(kind,values={}){
         if(suggested>0 && (!totalInput.value || Number(totalInput.value)===0)) totalInput.value=suggested;
       });
     }
+    ['clientId','service','status','next'].forEach(name=>{
+      const el=form.querySelector('[name="'+name+'"]');
+      if(el) el.addEventListener('input',refreshClientNotification);
+      if(el) el.addEventListener('change',refreshClientNotification);
+    });
+    if(kind==='case-edit') refreshClientNotification();
   }
 }
 
@@ -331,7 +435,8 @@ form.addEventListener('submit',e=>{
         status:f.status,
         next:f.next,
         serviceTotal:Number(f.serviceTotal||0),
-        invoiceNumber:f.invoiceNumber||''
+        invoiceNumber:f.invoiceNumber||'',
+        updatedAt:new Date().toISOString()
       };
     }
   }
