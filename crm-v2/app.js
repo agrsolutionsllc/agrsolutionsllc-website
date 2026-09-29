@@ -140,7 +140,7 @@ let editingCaseId=null;
 
 const templates={
   client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
-  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full']],
+  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['paid','Pagado','number',''],['invoiceNumber','Número de factura','text','']]
   payment:()=>[['clientId','Cliente','client',''],['service','Servicio','text',''],['total','Total','number',''],['paid','Pagado','number','']],
   appointment:()=>[['clientId','Cliente','client',''],['date','Fecha','date',''],['time','Hora','text',''],['service','Motivo / servicio','text','full']]
 };
@@ -194,7 +194,10 @@ form.addEventListener('submit',e=>{
       clientId:Number(f.clientId),
       service:f.service,
       status:f.status||'inicial',
-      next:f.next
+      next:f.next,
+      serviceTotal:Number(f.serviceTotal||0),
+      paid:Number(f.paid||0),
+      invoiceNumber:f.invoiceNumber||''
     });
   }
 
@@ -206,7 +209,10 @@ form.addEventListener('submit',e=>{
         clientId:Number(f.clientId),
         service:f.service,
         status:f.status,
-        next:f.next
+        next:f.next,
+        serviceTotal:Number(f.serviceTotal||0),
+        paid:Number(f.paid||0),
+        invoiceNumber:f.invoiceNumber||''
       };
     }
   }
