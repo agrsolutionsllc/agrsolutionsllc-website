@@ -123,3 +123,6 @@ dialog form{padding:24px}
 dialog{max-height:92vh;overflow:auto}
 dialog form{max-height:88vh;overflow:auto}
 .client-notification{margin-bottom:18px}
+
+#clientNotificationBox[hidden]{display:none!important}
+#clientNotificationBox{display:block!important;margin-top:18px;margin-bottom:18px}
