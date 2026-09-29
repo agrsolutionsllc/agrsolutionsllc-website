@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>AGR CRM · Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260929-10" />
+</head>
+<body>
+  <div class="demo-banner">DEMO DE PRUEBA · No ingresar información real o sensible de clientes</div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">AGR</div>
+        <div>
+          <strong>AGR CRM</strong>
+          <span>Solutions LLC</span>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <button class="nav-item active" data-view="dashboard">⌂ <span>Dashboard</span></button>
+        <button class="nav-item" data-view="clients">◉ <span>Clientes</span></button>
+        <button class="nav-item" data-view="cases">▣ <span>Casos & trámites</span></button>
+        <button class="nav-item" data-view="payments">$ <span>Pagos</span></button>
+        <button class="nav-item" data-view="appointments">◫ <span>Citas</span></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>Modo prototipo</span>
+        <small>Solo datos de prueba</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AGR SOLUTIONS LLC</p>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="top-actions">
+          <div class="user-chip">AR</div>
+        </div>
+      </header>
+
+      <section class="view active" id="view-dashboard">
+        <div class="stats-grid">
+          <article class="stat-card"><span>Clientes activos</span><strong id="statClients">0</strong><small>Base de prueba</small></article>
+          <article class="stat-card"><span>Casos abiertos</span><strong id="statCases">0</strong><small>En seguimiento</small></article>
+          <article class="stat-card"><span>Saldo pendiente</span><strong id="statBalance">$0</strong><small>Por cobrar</small></article>
+          <article class="stat-card"><span>Próximas citas</span><strong id="statAppointments">0</strong><small>Agenda de prueba</small></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">CASOS</p><h2>Seguimiento reciente</h2></div>
+              <button class="text-btn" data-jump="cases">Ver todos →</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Próximo paso</th></tr></thead>
+                <tbody id="recentCases"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">AGENDA</p><h2>Próximas citas</h2></div>
+            </div>
+            <div id="appointmentList" class="appointment-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-clients">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">CLIENTES</p>
+            <h2>Directorio de clientes</h2>
+          </div>
+          <button class="primary" data-open="client">+ Nuevo cliente</button>
+        </div>
+        <div class="panel">
+          <div class="search-row"><input id="clientSearch" type="search" placeholder="Buscar por nombre, teléfono o email"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th></tr></thead>
+              <tbody id="clientsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-cases">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">CASOS & TRÁMITES</p>
+            <h2>Pipeline de trabajo</h2>
+          </div>
+          <button class="primary" data-open="case">+ Nuevo caso</button>
+        </div>
+        <div class="kanban" id="caseBoard"></div>
+      </section>
+
+      <section class="view" id="view-payments">
+        <div class="section-toolbar">
+          <div><p class="eyebrow">PAGOS</p><h2>Facturación y saldos</h2></div>
+          <button class="primary" data-open="payment">+ Registrar pago</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Servicio</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
+              <tbody id="paymentsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-appointments">
+        <div class="section-toolbar">
+          <div><p class="eyebrow">CITAS</p><h2>Agenda</h2></div>
+          <button class="primary" data-open="appointment">+ Nueva cita</button>
+        </div>
+        <div class="panel"><div id="appointmentsTable" class="appointment-list large"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="recordDialog">
+    <form method="dialog" id="recordForm">
+      <div class="modal-head">
+        <div><p class="eyebrow">NUEVO REGISTRO</p><h2 id="modalTitle">Nuevo cliente</h2></div>
+        <button type="button" class="close-btn" id="closeDialog" aria-label="Cerrar">×</button>
+      </div>
+      <div id="formFields" class="form-grid"></div>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="cancelDialog">Cancelar</button>
+        <button type="submit" value="default" class="primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js?v=20260929-10"></script>
+</body>
+</html>
