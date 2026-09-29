@@ -92,6 +92,17 @@ const casePaid=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce
 const caseBalance=c=>Math.max(Number(c.serviceTotal||0)-casePaid(c.id),0);
 
 function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0)}
+function nextInvoiceNumber(){
+  const year=new Date().getFullYear();
+  const nums=data.cases
+    .map(c=>String(c.invoiceNumber||''))
+    .map(v=>v.match(/^AGR-(\d{4})-(\d+)$/))
+    .filter(Boolean)
+    .filter(m=>Number(m[1])===year)
+    .map(m=>Number(m[2]));
+  const next=(nums.length?Math.max(...nums):0)+1;
+  return `AGR-${year}-${String(next).padStart(4,'0')}`;
+}
 function statusLabel(s){return statusLabels[s]||s}
 function badgeClass(s){
   if(['aprobado','completado'].includes(s)) return 'completado';
@@ -325,6 +336,11 @@ function openModal(kind,values={}){
   modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   if(actualKind==='case'){
+    const invoiceInput=fields.querySelector('[name="invoiceNumber"]');
+    if(invoiceInput){
+      invoiceInput.readOnly=true;
+      if(kind==='case' && !invoiceInput.value) invoiceInput.value=nextInvoiceNumber();
+    }
     const stripeInput=fields.querySelector('[name="stripePaymentLink"]');
     if(stripeInput){
       stripeInput.readOnly=true;
@@ -469,7 +485,7 @@ form.addEventListener('submit',e=>{
       next:f.next,
       serviceTotal:Number(f.serviceTotal||0),
       initialPayment:Number(f.initialPayment||0),
-      invoiceNumber:f.invoiceNumber||'',
+      invoiceNumber:f.invoiceNumber||nextInvoiceNumber(),
       stripePaymentLink:f.stripePaymentLink||''
     });
   }
