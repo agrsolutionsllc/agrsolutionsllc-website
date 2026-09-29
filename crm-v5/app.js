@@ -256,9 +256,16 @@ function buildClientUpdate(caseValues){
   return `Hola ${name}, le compartimos una actualización de su caso con AGR Solutions LLC.
 
 Servicio / trámite: ${service}${invoiceNumber?`\nReferencia: ${invoiceNumber}`:''}
-Estado actual: ${status}${next?`\nPróximo paso: ${next}`:''}${paymentLink?`\n\nPago inicial${initialPayment?': '+money(initialPayment):''}:\n${paymentLink}`:''}
+Estado actual: ${status}${next?`\nPróximo paso: ${next}`:''}${initialPayment?`\n\nPara iniciar con su proceso, se requiere un pago inicial de ${money(initialPayment)}.
 
-Si USCIS ha emitido documentos o notificaciones relacionados con su caso y se encuentran disponibles, los encontrará adjuntos a este correo.\n\nSi necesita comunicarse con nosotros, puede responder a este mensaje.
+Opciones de pago:
+• Cash
+• Zelle
+• Credit / Debit Card${paymentLink?`\n\nPara pagar con tarjeta de crédito o débito, utilice el siguiente enlace seguro de Stripe:\n${paymentLink}`:''}`:''}
+
+Si USCIS ha emitido documentos o notificaciones relacionados con su caso y se encuentran disponibles, los encontrará adjuntos a este correo.
+
+Si necesita comunicarse con nosotros, puede responder a este mensaje.
 
 AGR Solutions LLC
 294 Tyler Street, East Haven, CT 06512
