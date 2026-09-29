@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260929-10" />
+  <link rel="stylesheet" href="./styles.css?v=20260929-13" />
 </head>
 <body>
   <div class="demo-banner">DEMO DE PRUEBA · No ingresar información real o sensible de clientes</div>
@@ -29,6 +29,7 @@
         <button class="nav-item active" data-view="dashboard">⌂ <span>Dashboard</span></button>
         <button class="nav-item" data-view="clients">◉ <span>Clientes</span></button>
         <button class="nav-item" data-view="cases">▣ <span>Casos & trámites</span></button>
+        <button class="nav-item" data-view="services">≡ <span>Servicios</span></button>
         <button class="nav-item" data-view="payments">$ <span>Pagos</span></button>
         <button class="nav-item" data-view="appointments">◫ <span>Citas</span></button>
       </nav>
@@ -111,6 +112,24 @@
         <div class="kanban" id="caseBoard"></div>
       </section>
 
+      <section class="view" id="view-services">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">SERVICIOS</p>
+            <h2>Catálogo interno de servicios</h2>
+          </div>
+          <button class="primary" data-open="service">+ Nuevo servicio</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Servicio</th><th>Categoría</th><th>Precio sugerido</th><th>Activo</th></tr></thead>
+              <tbody id="servicesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="view" id="view-payments">
         <div class="section-toolbar">
           <div><p class="eyebrow">PAGOS</p><h2>Facturación y saldos</h2></div>
@@ -150,6 +169,6 @@
     </form>
   </dialog>
 
-  <script src="./app.js?v=20260929-12"></script>
+  <script src="./app.js?v=20260929-13"></script>
 </body>
 </html>
