@@ -75,3 +75,45 @@ dialog form{padding:24px}
 .large .appointment{grid-template-columns:70px 1fr}
 @media(max-width:1050px){.stats-grid{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}.app-shell{grid-template-columns:82px 1fr}.sidebar{padding-inline:12px}.brand>div:not(.brand-mark),.nav-item span,.sidebar-footer{display:none}.brand{justify-content:center}.nav-item{justify-content:center;font-size:1.1rem}}
 @media(max-width:700px){body{padding-top:48px}.demo-banner{height:48px;text-align:center;padding:0 10px}.app-shell{display:block}.sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:20;display:block;padding:8px 10px}.brand,.sidebar-footer{display:none}.side-nav{margin:0;grid-template-columns:repeat(5,1fr);gap:4px}.nav-item{padding:10px 6px;justify-content:center}.main{padding:22px 16px 90px}.topbar{align-items:flex-start}.top-actions .ghost{display:none}.stats-grid{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(4,270px)}}
+.client-notification{
+  grid-column:1/-1;
+  margin-top:8px;
+  padding:18px;
+  border:1px solid #e4d6ad;
+  border-radius:16px;
+  background:#fbf8f1;
+}
+.notification-head{display:flex;justify-content:space-between;gap:14px;margin-bottom:12px}
+.notification-head strong,.notification-head small{display:block}
+.notification-head strong{font-size:1.05rem;color:var(--navy)}
+.notification-head small{margin-top:4px;color:var(--muted);font-size:.78rem}
+.notification-kicker{display:block;color:var(--gold);font-weight:800;letter-spacing:.12em;font-size:.68rem;margin-bottom:4px}
+.notification-preview{
+  white-space:pre-wrap;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  color:#445064;
+  font-size:.86rem;
+  line-height:1.5;
+  max-height:210px;
+  overflow:auto;
+}
+.notification-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.notify-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  border-radius:11px;
+  padding:10px 14px;
+  font-weight:800;
+  font-size:.84rem;
+  border:1px solid var(--navy);
+}
+.notify-whatsapp{background:#fff;color:var(--navy)}
+.notify-email{background:var(--navy);color:#fff}
+.notify-btn.disabled{opacity:.45;pointer-events:none}
+.notification-note{display:block;margin-top:9px;color:#7d8696;font-size:.74rem}
+@media(max-width:700px){.notification-actions{display:grid;grid-template-columns:1fr}.notify-btn{width:100%}}
