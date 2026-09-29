@@ -63,6 +63,7 @@ const statusLabels={
 };
 
 const storeKey='agr-crm-demo-v1';
+const STRIPE_BACKEND_URL='https://agr-crm-payments.vercel.app/api/create-payment-link';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 
@@ -323,6 +324,14 @@ function openModal(kind,values={}){
   const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',service:'Nuevo servicio',payment:'Agregar pago al caso',appointment:'Nueva cita'};
   modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
+  if(actualKind==='case'){
+    const stripeInput=fields.querySelector('[name="stripePaymentLink"]');
+    if(stripeInput){
+      stripeInput.readOnly=true;
+      stripeInput.placeholder='Se genera automáticamente';
+      stripeInput.insertAdjacentHTML('afterend','<button type="button" class="primary stripe-create-btn" id="createStripeLink">Crear enlace Stripe</button><small class="stripe-help">Usa el monto de “Pago inicial requerido”.</small>');
+    }
+  }
 
   const notificationBox=document.querySelector('#clientNotificationBox');
   if(notificationBox) notificationBox.hidden = kind!=='case-edit';
@@ -344,6 +353,46 @@ function openModal(kind,values={}){
       if(el) el.addEventListener('change',refreshClientNotification);
     });
     if(kind==='case-edit') refreshClientNotification();
+
+    const stripeBtn=document.querySelector('#createStripeLink');
+    if(stripeBtn){
+      stripeBtn.addEventListener('click', async ()=>{
+        const fd=Object.fromEntries(new FormData(form));
+        const amount=Number(fd.initialPayment||0);
+        const client=clientById(fd.clientId);
+        if(!amount || amount<=0){
+          alert('Primero ingresa el pago inicial requerido.');
+          return;
+        }
+        stripeBtn.disabled=true;
+        const original=stripeBtn.textContent;
+        stripeBtn.textContent='Creando enlace...';
+        try{
+          const response=await fetch(STRIPE_BACKEND_URL,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              amount,
+              caseId: editingCaseId || 'new',
+              clientName: client?.name||'',
+              clientEmail: client?.email||'',
+              service: fd.service||'AGR Solutions LLC'
+            })
+          });
+          const result=await response.json();
+          if(!response.ok || !result.url) throw new Error(result.error||'No se pudo crear el enlace.');
+          const input=form.querySelector('[name="stripePaymentLink"]');
+          if(input) input.value=result.url;
+          refreshClientNotification();
+          alert('Enlace de Stripe creado correctamente.');
+        }catch(err){
+          alert('No se pudo crear el enlace Stripe: '+err.message);
+        }finally{
+          stripeBtn.disabled=false;
+          stripeBtn.textContent=original;
+        }
+      });
+    }
   }
 }
 
