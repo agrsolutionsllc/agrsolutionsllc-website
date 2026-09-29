@@ -141,11 +141,11 @@
     <form method="dialog" id="recordForm">
       <div class="modal-head">
         <div><p class="eyebrow">NUEVO REGISTRO</p><h2 id="modalTitle">Nuevo cliente</h2></div>
-        <button value="cancel" class="close-btn" aria-label="Cerrar">×</button>
+        <button type="button" class="close-btn" id="closeDialog" aria-label="Cerrar">×</button>
       </div>
       <div id="formFields" class="form-grid"></div>
       <div class="modal-actions">
-        <button value="cancel" class="ghost">Cancelar</button>
+        <button type="button" class="ghost" id="cancelDialog">Cancelar</button>
         <button type="submit" value="default" class="primary">Guardar</button>
       </div>
     </form>
