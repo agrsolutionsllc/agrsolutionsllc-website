@@ -364,7 +364,7 @@ function openModal(kind,values={}){
     const invoiceInput=fields.querySelector('[name="invoiceNumber"]');
     if(invoiceInput){
       invoiceInput.readOnly=true;
-      if(kind==='case' && !invoiceInput.value) invoiceInput.value=nextInvoiceNumber();
+      if(!invoiceInput.value) invoiceInput.value=nextInvoiceNumber();
     }
     const stripeInput=fields.querySelector('[name="stripePaymentLink"]');
     if(stripeInput){
@@ -393,7 +393,57 @@ function openModal(kind,values={}){
       if(el) el.addEventListener('input',refreshClientNotification);
       if(el) el.addEventListener('change',refreshClientNotification);
     });
-    if(kind==='case-edit') refreshClientNotification();
+    if(kind==='case-edit'){
+      refreshClientNotification();
+
+      const stripeInput=form.querySelector('[name="stripePaymentLink"]');
+      const initialInput=form.querySelector('[name="initialPayment"]');
+      const invoiceInput=form.querySelector('[name="invoiceNumber"]');
+
+      if(editingCaseId && invoiceInput?.value){
+        const idx=data.cases.findIndex(x=>x.id===editingCaseId);
+        if(idx>=0 && !data.cases[idx].invoiceNumber){
+          data.cases[idx].invoiceNumber=invoiceInput.value;
+          save();
+        }
+      }
+
+      if(editingCaseId && Number(initialInput?.value||0)>0 && !stripeInput?.value){
+        setTimeout(async ()=>{
+          const btn=document.querySelector('#createStripeLink');
+          if(btn){
+            btn.disabled=true;
+            const old=btn.textContent;
+            btn.textContent='Creando enlace...';
+            try{
+              const fd=Object.fromEntries(new FormData(form));
+              const url=await createStripePaymentLinkForCase({
+                id:editingCaseId,
+                clientId:Number(fd.clientId||0),
+                service:fd.service||'',
+                initialPayment:Number(fd.initialPayment||0),
+                invoiceNumber:fd.invoiceNumber||'',
+                stripePaymentLink:''
+              });
+              if(stripeInput) stripeInput.value=url;
+              const idx=data.cases.findIndex(x=>x.id===editingCaseId);
+              if(idx>=0){
+                data.cases[idx].invoiceNumber=fd.invoiceNumber||data.cases[idx].invoiceNumber||nextInvoiceNumber();
+                data.cases[idx].stripePaymentLink=url;
+                data.cases[idx].initialPayment=Number(fd.initialPayment||0);
+                save();
+              }
+              refreshClientNotification();
+            }catch(err){
+              console.error('Stripe auto-link:',err);
+            }finally{
+              btn.disabled=false;
+              btn.textContent=old;
+            }
+          }
+        },150);
+      }
+    }
 
     const stripeBtn=document.querySelector('#createStripeLink');
     if(stripeBtn){
