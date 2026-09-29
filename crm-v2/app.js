@@ -162,7 +162,7 @@ let editingPaymentId=null;
 
 const templates={
   client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
-  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['paid','Pagado','number',''],['invoiceNumber','Número de factura','text','']],
+  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['invoiceNumber','Número de factura','text','']],
   payment:()=>[['caseId','Caso / trámite','caseSelect','full'],['amount','Monto del pago','number',''],['method','Forma de pago','paymentMethod',''],['date','Fecha del pago','date',''],['note','Nota / referencia','text','full']],
   appointment:()=>[['clientId','Cliente','client',''],['date','Fecha','date',''],['time','Hora','text',''],['service','Motivo / servicio','text','full']]
 };
@@ -175,7 +175,7 @@ function fieldHTML([name,label,type,cls],values={}){
   } else if(type==='status') {
     input=`<select name="${name}" required>${statusOrder.map(s=>`<option value="${s}" ${val===s?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
   } else if(type==='caseSelect') {
-    input=`<select name="${name}" required><option value="">Selecciona un caso</option>${data.cases.map(k=>`<option value="${k.id}" ${Number(val)===k.id?'selected':''}>${clientName(k.clientId)} — ${k.service}</option>`).join('')}</select>`;
+    input=`<select name="${name}" required><option value="">Selecciona un caso</option>${data.cases.filter(k=>caseBalance(k)>0 || Number(val)===k.id).map(k=>`<option value="${k.id}" ${Number(val)===k.id?'selected':''}>${clientName(k.clientId)} — ${k.service} — saldo ${money(caseBalance(k))}</option>`).join('')}</select>`;
   } else if(type==='paymentMethod') {
     const methods=['Cash','Debit Card','Credit Card','Zelle','Check','ACH / Bank Transfer','Other'];
     input=`<select name="${name}" required><option value="">Selecciona</option>${methods.map(m=>`<option value="${m}" ${val===m?'selected':''}>${m}</option>`).join('')}</select>`;
@@ -237,7 +237,6 @@ form.addEventListener('submit',e=>{
       status:f.status||'inicial',
       next:f.next,
       serviceTotal:Number(f.serviceTotal||0),
-      paid:Number(f.paid||0),
       invoiceNumber:f.invoiceNumber||''
     });
   }
@@ -252,7 +251,6 @@ form.addEventListener('submit',e=>{
         status:f.status,
         next:f.next,
         serviceTotal:Number(f.serviceTotal||0),
-        paid:Number(f.paid||0),
         invoiceNumber:f.invoiceNumber||''
       };
     }
