@@ -5,14 +5,14 @@ const seed={
     {id:3,name:'Cliente de prueba 3',phone:'203-555-0103',email:'cliente3@example.com'}
   ],
   cases:[
-    {id:1,clientId:1,service:'Ajuste de estatus',status:'espera_uscis',next:'Monitorear recibo y notificaciones'},
-    {id:2,clientId:2,service:'Declaración de impuestos',status:'evidencia',next:'Esperar W-2'},
-    {id:3,clientId:3,service:'LLC Connecticut',status:'inicial',next:'Enviar intake'}
+    {id:1,clientId:1,service:'Ajuste de estatus',status:'espera_uscis',next:'Monitorear recibo y notificaciones',serviceTotal:1200},
+    {id:2,clientId:2,service:'Declaración de impuestos',status:'evidencia',next:'Esperar W-2',serviceTotal:350},
+    {id:3,clientId:3,service:'LLC Connecticut',status:'inicial',next:'Enviar intake',serviceTotal:850}
   ],
   payments:[
-    {id:1,clientId:1,service:'Ajuste de estatus',total:1200,paid:600},
-    {id:2,clientId:2,service:'Taxes 2025',total:350,paid:350},
-    {id:3,clientId:3,service:'LLC Connecticut',total:850,paid:300}
+    {id:101,caseId:1,clientId:1,amount:600,method:'Cash',date:'2026-09-15',note:'Pago de prueba'},
+    {id:102,caseId:2,clientId:2,amount:350,method:'Debit Card',date:'2026-09-20',note:'Pago de prueba'},
+    {id:103,caseId:3,clientId:3,amount:300,method:'Zelle',date:'2026-09-22',note:'Pago de prueba'}
   ],
   appointments:[
     {id:1,date:'2026-09-30',time:'10:30 AM',clientId:1,service:'Seguimiento migratorio'},
@@ -50,11 +50,25 @@ let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(see
 // migrate old prototype statuses if they exist in this browser
 const migration={nuevo:'inicial',pendiente:'evidencia',proceso:'preparacion',completado:'completado'};
 data.cases=data.cases.map(c=>({...c,status:migration[c.status]||c.status||'inicial'}));
+if(data.payments.some(p=>p.amount===undefined)){
+  const legacy=data.payments;
+  data.payments=[];
+  legacy.forEach((p,i)=>{
+    const k=data.cases.find(c=>c.clientId===p.clientId && (c.service===p.service || (p.service==='Taxes 2025' && c.service==='Declaración de impuestos')));
+    if(k && Number(p.paid||0)>0){
+      if(!k.serviceTotal && p.total) k.serviceTotal=Number(p.total);
+      data.payments.push({id:9000+i,caseId:k.id,clientId:k.clientId,amount:Number(p.paid||0),method:'Other',date:'',note:'Migrado desde prototipo'});
+    }
+  });
+}
 
 const save=()=>localStorage.setItem(storeKey,JSON.stringify(data));
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const clientName=id=>data.clients.find(c=>c.id===Number(id))?.name||'Cliente';
+const caseById=id=>data.cases.find(c=>c.id===Number(id));
+const casePaid=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
+const caseBalance=c=>Math.max(Number(c.serviceTotal||0)-casePaid(c.id),0);
 
 function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0)}
 function statusLabel(s){return statusLabels[s]||s}
@@ -77,7 +91,7 @@ $$('[data-jump]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset
 function render(){
   $('#statClients').textContent=data.clients.length;
   $('#statCases').textContent=data.cases.filter(c=>!['completado','aprobado'].includes(c.status)).length;
-  const bal=data.payments.reduce((s,p)=>s+(p.total-p.paid),0);
+  const bal=data.cases.reduce((s,c)=>s+caseBalance(c),0);
   $('#statBalance').textContent=money(bal);
   $('#statAppointments').textContent=data.appointments.length;
 
@@ -108,7 +122,7 @@ function renderClients(filter=''){
   const q=filter.toLowerCase();
   $('#clientsTable').innerHTML=data.clients.filter(c=>[c.name,c.phone,c.email].join(' ').toLowerCase().includes(q)).map(c=>{
     const cases=data.cases.filter(x=>x.clientId===c.id).length;
-    const bal=data.payments.filter(x=>x.clientId===c.id).reduce((s,p)=>s+(p.total-p.paid),0);
+    const bal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
     return `<tr><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td>${money(bal)}</td></tr>`
   }).join('');
 }
@@ -130,8 +144,14 @@ function renderCases(){
 }
 
 function renderPayments(){
-  $('#paymentsTable').innerHTML=data.payments.map(p=>`<tr class="clickable-row" data-payment-id="${p.id}"><td><strong>${clientName(p.clientId)}</strong></td><td>${p.service}</td><td>${money(p.total)}</td><td>${money(p.paid)}</td><td><strong>${money(p.total-p.paid)}</strong></td></tr>`).join('');
-  bindPaymentOpeners();
+  $('#paymentsTable').innerHTML=data.cases.map(c=>`<tr class="clickable-row" data-case-payment-id="${c.id}">
+    <td><strong>${clientName(c.clientId)}</strong></td>
+    <td>${c.service}</td>
+    <td>${money(c.serviceTotal||0)}</td>
+    <td>${money(casePaid(c.id))}</td>
+    <td><strong>${money(caseBalance(c))}</strong></td>
+  </tr>`).join('');
+  bindCasePaymentOpeners();
 }
 $('#clientSearch').addEventListener('input',e=>renderClients(e.target.value));
 
@@ -143,7 +163,7 @@ let editingPaymentId=null;
 const templates={
   client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
   case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['paid','Pagado','number',''],['invoiceNumber','Número de factura','text','']],
-  payment:()=>[['clientId','Cliente','client',''],['service','Servicio','text',''],['total','Total','number',''],['paid','Pagado','number','']],
+  payment:()=>[['caseId','Caso / trámite','caseSelect','full'],['amount','Monto del pago','number',''],['method','Forma de pago','paymentMethod',''],['date','Fecha del pago','date',''],['note','Nota','text','full']],
   appointment:()=>[['clientId','Cliente','client',''],['date','Fecha','date',''],['time','Hora','text',''],['service','Motivo / servicio','text','full']]
 };
 
@@ -154,6 +174,11 @@ function fieldHTML([name,label,type,cls],values={}){
     input=`<select name="${name}" required><option value="">Selecciona</option>${data.clients.map(c=>`<option value="${c.id}" ${Number(val)===c.id?'selected':''}>${c.name}</option>`).join('')}</select>`;
   } else if(type==='status') {
     input=`<select name="${name}" required>${statusOrder.map(s=>`<option value="${s}" ${val===s?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
+  } else if(type==='caseSelect') {
+    input=`<select name="${name}" required><option value="">Selecciona un caso</option>${data.cases.map(k=>`<option value="${k.id}" ${Number(val)===k.id?'selected':''}>${clientName(k.clientId)} — ${k.service}</option>`).join('')}</select>`;
+  } else if(type==='paymentMethod') {
+    const methods=['Cash','Debit Card','Credit Card','Zelle','Check','ACH / Bank Transfer','Other'];
+    input=`<select name="${name}" required><option value="">Selecciona</option>${methods.map(m=>`<option value="${m}" ${val===m?'selected':''}>${m}</option>`).join('')}</select>`;
   } else {
     input=`<input name="${name}" type="${type}" value="${String(val).replace(/"/g,'&quot;')}" ${['name','phone','service','date'].includes(name)?'required':''}>`;
   }
@@ -163,10 +188,10 @@ function fieldHTML([name,label,type,cls],values={}){
 function openModal(kind,values={}){
   mode=kind;
   editingCaseId=kind==='case-edit'?values.id:null;
-  editingPaymentId=kind==='payment-edit'?values.id:null;
-  const actualKind=kind==='case-edit'?'case':(kind==='payment-edit'?'payment':kind);
+  editingPaymentId=null;
+  const actualKind=kind==='case-edit'?'case':kind;
   const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',payment:'Registrar pago',appointment:'Nueva cita'};
-  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='payment-edit'?'Editar pago':titles[actualKind]);
+  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':titles[actualKind];
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   dialog.showModal();
 }
@@ -180,11 +205,12 @@ function bindCaseOpeners(){
   });
 }
 
-function bindPaymentOpeners(){
-  $('[data-payment-id]').forEach(el=>{
+function bindCasePaymentOpeners(){
+  $('[data-case-payment-id]').forEach(el=>{
     el.onclick=()=>{
-      const p=data.payments.find(x=>x.id===Number(el.dataset.paymentId));
-      if(p) openModal('payment-edit',p);
+      const caseId=Number(el.dataset.casePaymentId);
+      const k=caseById(caseId);
+      if(k) openModal('payment',{caseId:k.id,date:new Date().toISOString().slice(0,10)});
     };
   });
 }
@@ -232,20 +258,21 @@ form.addEventListener('submit',e=>{
     }
   }
 
-  if(mode==='payment') data.payments.push({id,clientId:Number(f.clientId),service:f.service,total:Number(f.total||0),paid:Number(f.paid||0)});
-
-  if(mode==='payment-edit'){
-    const index=data.payments.findIndex(p=>p.id===editingPaymentId);
-    if(index>=0){
-      data.payments[index]={
-        ...data.payments[index],
-        clientId:Number(f.clientId),
-        service:f.service,
-        total:Number(f.total||0),
-        paid:Number(f.paid||0)
-      };
+  if(mode==='payment'){
+    const k=caseById(f.caseId);
+    if(k){
+      data.payments.push({
+        id,
+        caseId:Number(f.caseId),
+        clientId:k.clientId,
+        amount:Number(f.amount||0),
+        method:f.method,
+        date:f.date||new Date().toISOString().slice(0,10),
+        note:f.note||''
+      });
     }
   }
+
   if(mode==='appointment') data.appointments.push({id,clientId:Number(f.clientId),date:f.date,time:f.time,service:f.service});
 
   save();
