@@ -255,7 +255,7 @@ function bindCaseOpeners(){
 }
 
 function bindServiceOpeners(){
-  $('[data-service-id]').forEach(el=>{
+  $$('[data-service-id]').forEach(el=>{
     el.onclick=()=>{
       const s=data.services.find(x=>x.id===Number(el.dataset.serviceId));
       if(s) openModal('service-edit',s);
