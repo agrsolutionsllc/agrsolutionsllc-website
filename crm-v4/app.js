@@ -252,9 +252,10 @@ function buildClientUpdate(caseValues){
   const next=caseValues.next?.trim();
   const paymentLink=caseValues.stripePaymentLink?.trim();
   const initialPayment=Number(caseValues.initialPayment||0);
+  const invoiceNumber=caseValues.invoiceNumber?.trim();
   return `Hola ${name}, le compartimos una actualización de su caso con AGR Solutions LLC.
 
-Servicio / trámite: ${service}
+Servicio / trámite: ${service}${invoiceNumber?`\nReferencia: ${invoiceNumber}`:''}
 Estado actual: ${status}${next?`\nPróximo paso: ${next}`:''}${paymentLink?`\n\nPago inicial${initialPayment?': '+money(initialPayment):''}:\n${paymentLink}`:''}
 
 Si USCIS ha emitido documentos o notificaciones relacionados con su caso y se encuentran disponibles, los encontrará adjuntos a este correo.\n\nSi necesita comunicarse con nosotros, puede responder a este mensaje.
@@ -273,8 +274,32 @@ function getCaseValuesFromForm(){
     status:fd.status||'inicial',
     next:fd.next||'',
     initialPayment:fd.initialPayment||'',
+    invoiceNumber:fd.invoiceNumber||'',
     stripePaymentLink:fd.stripePaymentLink||''
   };
+}
+
+async function createStripePaymentLinkForCase(values){
+  const amount=Number(values.initialPayment||0);
+  if(!amount || amount<=0) return '';
+  if(values.stripePaymentLink) return values.stripePaymentLink;
+
+  const client=clientById(values.clientId);
+  const response=await fetch(STRIPE_BACKEND_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      amount,
+      caseId: values.id || editingCaseId || 'new',
+      clientName: client?.name||'',
+      clientEmail: client?.email||'',
+      service: values.service||'AGR Solutions LLC',
+      invoiceNumber: values.invoiceNumber||''
+    })
+  });
+  const result=await response.json();
+  if(!response.ok || !result.url) throw new Error(result.error||'No se pudo crear el enlace.');
+  return result.url;
 }
 
 function refreshClientNotification(){
@@ -384,21 +409,16 @@ function openModal(kind,values={}){
         const original=stripeBtn.textContent;
         stripeBtn.textContent='Creando enlace...';
         try{
-          const response=await fetch(STRIPE_BACKEND_URL,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-              amount,
-              caseId: editingCaseId || 'new',
-              clientName: client?.name||'',
-              clientEmail: client?.email||'',
-              service: fd.service||'AGR Solutions LLC'
-            })
+          const url=await createStripePaymentLinkForCase({
+            id:editingCaseId,
+            clientId:Number(fd.clientId||0),
+            service:fd.service||'',
+            initialPayment:amount,
+            invoiceNumber:fd.invoiceNumber||'',
+            stripePaymentLink:fd.stripePaymentLink||''
           });
-          const result=await response.json();
-          if(!response.ok || !result.url) throw new Error(result.error||'No se pudo crear el enlace.');
           const input=form.querySelector('[name="stripePaymentLink"]');
-          if(input) input.value=result.url;
+          if(input) input.value=url;
           refreshClientNotification();
           alert('Enlace de Stripe creado correctamente.');
         }catch(err){
@@ -445,7 +465,7 @@ $('#closeDialog').addEventListener('click',()=>{dialog.close();form.reset();edit
 $('#cancelDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;editingPaymentId=null;});
 
 
-form.addEventListener('submit',e=>{
+form.addEventListener('submit',async e=>{
   if(e.submitter?.value==='cancel') return;
   e.preventDefault();
   const f=Object.fromEntries(new FormData(form));
@@ -477,7 +497,7 @@ form.addEventListener('submit',e=>{
   }
 
   if(mode==='case') {
-    data.cases.push({
+    const newCase={
       id,
       clientId:Number(f.clientId),
       service:f.service,
@@ -487,13 +507,21 @@ form.addEventListener('submit',e=>{
       initialPayment:Number(f.initialPayment||0),
       invoiceNumber:f.invoiceNumber||nextInvoiceNumber(),
       stripePaymentLink:f.stripePaymentLink||''
-    });
+    };
+    if(newCase.initialPayment>0 && !newCase.stripePaymentLink){
+      try{
+        newCase.stripePaymentLink=await createStripePaymentLinkForCase(newCase);
+      }catch(err){
+        alert('El caso se guardará, pero no se pudo crear el enlace Stripe automáticamente: '+err.message);
+      }
+    }
+    data.cases.push(newCase);
   }
 
   if(mode==='case-edit'){
     const index=data.cases.findIndex(c=>c.id===editingCaseId);
     if(index>=0){
-      data.cases[index]={
+      const updatedCase={
         ...data.cases[index],
         clientId:Number(f.clientId),
         service:f.service,
@@ -501,10 +529,18 @@ form.addEventListener('submit',e=>{
         next:f.next,
         serviceTotal:Number(f.serviceTotal||0),
         initialPayment:Number(f.initialPayment||0),
-        invoiceNumber:f.invoiceNumber||'',
-        stripePaymentLink:f.stripePaymentLink||'',
+        invoiceNumber:f.invoiceNumber||data.cases[index].invoiceNumber||nextInvoiceNumber(),
+        stripePaymentLink:f.stripePaymentLink||data.cases[index].stripePaymentLink||'',
         updatedAt:new Date().toISOString()
       };
+      if(updatedCase.initialPayment>0 && !updatedCase.stripePaymentLink){
+        try{
+          updatedCase.stripePaymentLink=await createStripePaymentLinkForCase(updatedCase);
+        }catch(err){
+          alert('El caso se guardará, pero no se pudo crear el enlace Stripe automáticamente: '+err.message);
+        }
+      }
+      data.cases[index]=updatedCase;
     }
   }
 
