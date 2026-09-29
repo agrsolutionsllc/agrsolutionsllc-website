@@ -1,4 +1,22 @@
 const seed={
+  services:[
+    {id:1,name:'I-130 Petición familiar',category:'Inmigración',price:1200,active:true},
+    {id:2,name:'I-485 Ajuste de estatus',category:'Inmigración',price:1400,active:true},
+    {id:3,name:'I-765 Permiso de trabajo',category:'Inmigración',price:250,active:true},
+    {id:4,name:'N-400 Naturalización',category:'Inmigración',price:375,active:true},
+    {id:5,name:'DACA Renovación',category:'Inmigración',price:350,active:true},
+    {id:6,name:'FOIA USCIS / EOIR',category:'Inmigración',price:120,active:true},
+    {id:7,name:'Declaración de impuestos',category:'Impuestos',price:0,active:true},
+    {id:8,name:'ITIN / CAA',category:'Impuestos',price:0,active:true},
+    {id:9,name:'Notary Public',category:'Notaría',price:25,active:true},
+    {id:10,name:'Trámite DMV',category:'DMV',price:0,active:true},
+    {id:11,name:'Formación de LLC Connecticut',category:'Negocios',price:850,active:true},
+    {id:12,name:'Traducción certificada',category:'Traducciones',price:35,active:true},
+    {id:13,name:'Apostilla',category:'Traducciones',price:40,active:true},
+    {id:14,name:'Divorcio CT sin hijos/bienes',category:'Documentos',price:500,active:true},
+    {id:15,name:'Divorcio CT con hijos',category:'Documentos',price:600,active:true},
+    {id:16,name:'Carta / Affidavit',category:'Documentos',price:0,active:true}
+  ],
   clients:[
     {id:1,name:'Cliente de prueba 1',phone:'203-555-0101',email:'cliente1@example.com'},
     {id:2,name:'Cliente de prueba 2',phone:'203-555-0102',email:'cliente2@example.com'},
@@ -46,6 +64,7 @@ const statusLabels={
 
 const storeKey='agr-crm-demo-v1';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
+if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 
 // migrate old prototype statuses if they exist in this browser
 const migration={nuevo:'inicial',pendiente:'evidencia',proceso:'preparacion',completado:'completado'};
@@ -82,7 +101,7 @@ function badgeClass(s){
 function switchView(view){
   $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  const labels={dashboard:'Dashboard',clients:'Clientes',cases:'Casos & trámites',payments:'Pagos',appointments:'Citas'};
+  const labels={dashboard:'Dashboard',clients:'Clientes',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',appointments:'Citas'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
 }
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
@@ -114,6 +133,7 @@ function render(){
 
   renderClients();
   renderCases();
+  renderServices();
   renderPayments();
   bindCaseOpeners();
 }
@@ -143,6 +163,17 @@ function renderCases(){
   bindCaseOpeners();
 }
 
+function renderServices(){
+  $('#servicesTable').innerHTML=data.services.map(s=>`
+    <tr class="clickable-row" data-service-id="${s.id}">
+      <td><strong>${s.name}</strong></td>
+      <td>${s.category||'—'}</td>
+      <td>${s.price?money(s.price):'Variable'}</td>
+      <td>${s.active===false?'No':'Sí'}</td>
+    </tr>`).join('');
+  bindServiceOpeners();
+}
+
 function renderPayments(){
   $('#paymentsTable').innerHTML=data.cases.map(c=>`<tr class="clickable-row" data-case-payment-id="${c.id}">
     <td><strong>${clientName(c.clientId)}</strong></td>
@@ -159,10 +190,12 @@ const dialog=$('#recordDialog'), form=$('#recordForm'), fields=$('#formFields'),
 let mode='client';
 let editingCaseId=null;
 let editingPaymentId=null;
+let editingServiceId=null;
 
 const templates={
   client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
-  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['invoiceNumber','Número de factura','text','']],
+  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','serviceSelect','full'],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['invoiceNumber','Número de factura','text','']],
+  service:()=>[['name','Nombre del servicio','text','full'],['category','Categoría','text',''],['price','Precio sugerido','number',''],['active','Activo','activeSelect','']],
   payment:()=>[['caseId','Caso / trámite','caseSelect','full'],['amount','Monto del pago','number',''],['method','Forma de pago','paymentMethod',''],['date','Fecha del pago','date',''],['note','Nota / referencia','text','full']],
   appointment:()=>[['clientId','Cliente','client',''],['date','Fecha','date',''],['time','Hora','text',''],['service','Motivo / servicio','text','full']]
 };
@@ -174,6 +207,10 @@ function fieldHTML([name,label,type,cls],values={}){
     input=`<select name="${name}" required><option value="">Selecciona</option>${data.clients.map(c=>`<option value="${c.id}" ${Number(val)===c.id?'selected':''}>${c.name}</option>`).join('')}</select>`;
   } else if(type==='status') {
     input=`<select name="${name}" required>${statusOrder.map(s=>`<option value="${s}" ${val===s?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
+  } else if(type==='serviceSelect') {
+    input=`<select name="${name}" required><option value="">Selecciona un servicio</option>${data.services.filter(s=>s.active!==false || s.name===val).map(s=>`<option value="${s.name}" data-price="${s.price||0}" ${val===s.name?'selected':''}>${s.name}</option>`).join('')}</select>`;
+  } else if(type==='activeSelect') {
+    input=`<select name="${name}"><option value="true" ${val!==false?'selected':''}>Sí</option><option value="false" ${val===false?'selected':''}>No</option></select>`;
   } else if(type==='caseSelect') {
     input=`<select name="${name}" required><option value="">Selecciona un caso</option>${data.cases.filter(k=>caseBalance(k)>0 || Number(val)===k.id).map(k=>`<option value="${k.id}" ${Number(val)===k.id?'selected':''}>${clientName(k.clientId)} — ${k.service} — saldo ${money(caseBalance(k))}</option>`).join('')}</select>`;
   } else if(type==='paymentMethod') {
@@ -189,11 +226,23 @@ function openModal(kind,values={}){
   mode=kind;
   editingCaseId=kind==='case-edit'?values.id:null;
   editingPaymentId=null;
-  const actualKind=kind==='case-edit'?'case':kind;
-  const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',payment:'Agregar pago al caso',appointment:'Nueva cita'};
-  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':titles[actualKind];
+  editingServiceId=kind==='service-edit'?values.id:null;
+  const actualKind=kind==='case-edit'?'case':(kind==='service-edit'?'service':kind);
+  const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',service:'Nuevo servicio',payment:'Agregar pago al caso',appointment:'Nueva cita'};
+  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   dialog.showModal();
+  if(actualKind==='case'){
+    const serviceSelect=form.querySelector('[name="service"]');
+    const totalInput=form.querySelector('[name="serviceTotal"]');
+    if(serviceSelect && totalInput){
+      serviceSelect.addEventListener('change',()=>{
+        const opt=serviceSelect.options[serviceSelect.selectedIndex];
+        const suggested=Number(opt?.dataset?.price||0);
+        if(suggested>0 && (!totalInput.value || Number(totalInput.value)===0)) totalInput.value=suggested;
+      });
+    }
+  }
 }
 
 function bindCaseOpeners(){
@@ -201,6 +250,15 @@ function bindCaseOpeners(){
     el.onclick=()=>{
       const c=data.cases.find(x=>x.id===Number(el.dataset.caseId));
       if(c) openModal('case-edit',c);
+    };
+  });
+}
+
+function bindServiceOpeners(){
+  $('[data-service-id]').forEach(el=>{
+    el.onclick=()=>{
+      const s=data.services.find(x=>x.id===Number(el.dataset.serviceId));
+      if(s) openModal('service-edit',s);
     };
   });
 }
@@ -227,6 +285,29 @@ form.addEventListener('submit',e=>{
   const id=Date.now();
 
   if(mode==='client') data.clients.push({id,name:f.name,phone:f.phone,email:f.email});
+
+  if(mode==='service') {
+    data.services.push({
+      id,
+      name:f.name,
+      category:f.category||'',
+      price:Number(f.price||0),
+      active:f.active!=='false'
+    });
+  }
+
+  if(mode==='service-edit'){
+    const index=data.services.findIndex(s=>s.id===editingServiceId);
+    if(index>=0){
+      data.services[index]={
+        ...data.services[index],
+        name:f.name,
+        category:f.category||'',
+        price:Number(f.price||0),
+        active:f.active!=='false'
+      };
+    }
+  }
 
   if(mode==='case') {
     data.cases.push({
