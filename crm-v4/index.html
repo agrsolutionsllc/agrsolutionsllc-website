@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260929-23" />
+  <link rel="stylesheet" href="./styles.css?v=20260929-24" />
 </head>
 <body>
   <div class="demo-banner">DEMO DE PRUEBA · No ingresar información real o sensible de clientes</div>
@@ -162,7 +162,21 @@
         <button type="button" class="close-btn" id="closeDialog" aria-label="Cerrar">×</button>
       </div>
       <div id="formFields" class="form-grid"></div>
-      <div id="caseNotificationMount"></div>
+      <section id="clientNotificationBox" class="client-notification" hidden>
+        <div class="notification-head">
+          <div>
+            <span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span>
+            <strong>Notificar sobre este caso</strong>
+            <small class="notification-contact"></small>
+          </div>
+        </div>
+        <div class="notification-preview"></div>
+        <div class="notification-actions">
+          <a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+          <a class="notify-btn notify-email">Enviar por correo</a>
+        </div>
+        <small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small>
+      </section>
       <div class="modal-actions">
         <button type="button" class="ghost" id="cancelDialog">Cancelar</button>
         <button type="submit" value="default" class="primary">Guardar</button>
@@ -170,6 +184,6 @@
     </form>
   </dialog>
 
-  <script src="./app.js?v=20260929-23"></script>
+  <script src="./app.js?v=20260929-24"></script>
 </body>
 </html>
