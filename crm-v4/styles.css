@@ -126,3 +126,6 @@ dialog form{max-height:88vh;overflow:auto}
 
 #clientNotificationBox[hidden]{display:none!important}
 #clientNotificationBox{display:block!important;margin-top:18px;margin-bottom:18px}
+
+.stripe-create-btn{margin-top:10px;width:max-content}
+.stripe-help{display:block;margin-top:6px;color:var(--muted);font-size:.75rem}
