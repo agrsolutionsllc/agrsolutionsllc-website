@@ -179,6 +179,9 @@ function bindCaseOpeners(){
 
 $$('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
 $('#quickAdd').addEventListener('click',()=>openModal('client'));
+$('#closeDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;});
+$('#cancelDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;});
+
 
 form.addEventListener('submit',e=>{
   if(e.submitter?.value==='cancel') return;
