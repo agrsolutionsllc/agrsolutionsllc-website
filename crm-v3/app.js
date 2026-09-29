@@ -206,7 +206,7 @@ function bindCaseOpeners(){
 }
 
 function bindCasePaymentOpeners(){
-  $('[data-case-payment-id]').forEach(el=>{
+  $$('[data-case-payment-id]').forEach(el=>{
     el.onclick=()=>{
       const caseId=Number(el.dataset.casePaymentId);
       const k=caseById(caseId);
@@ -215,7 +215,7 @@ function bindCasePaymentOpeners(){
   });
 }
 
-$('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
+$$('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
 $('#closeDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;editingPaymentId=null;});
 $('#cancelDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;editingPaymentId=null;});
 
