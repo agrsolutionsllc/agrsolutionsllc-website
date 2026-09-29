@@ -117,3 +117,9 @@ dialog form{padding:24px}
 .notify-btn.disabled{opacity:.45;pointer-events:none}
 .notification-note{display:block;margin-top:9px;color:#7d8696;font-size:.74rem}
 @media(max-width:700px){.notification-actions{display:grid;grid-template-columns:1fr}.notify-btn{width:100%}}
+
+#caseNotificationMount{margin-top:16px}
+#caseNotificationMount:empty{display:none}
+dialog{max-height:92vh;overflow:auto}
+dialog form{max-height:88vh;overflow:auto}
+.client-notification{margin-bottom:18px}
