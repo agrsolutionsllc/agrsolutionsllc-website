@@ -195,7 +195,16 @@ let editingServiceId=null;
 
 const templates={
   client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
-  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','serviceSelect','full'],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['invoiceNumber','Número de factura','text','']],
+  case:()=>[
+    ['clientId','Cliente','client',''],
+    ['service','Servicio / trámite','serviceSelect','full'],
+    ['status','Estado','status',''],
+    ['next','Próximo paso','text','full'],
+    ['serviceTotal','Total del servicio','number',''],
+    ['initialPayment','Pago inicial requerido','number',''],
+    ['invoiceNumber','Número de factura','text',''],
+    ['stripePaymentLink','Enlace Stripe','url','full']
+  ],
   service:()=>[['name','Nombre del servicio','text','full'],['category','Categoría','text',''],['price','Precio sugerido','number',''],['active','Activo','activeSelect','']],
   payment:()=>[['caseId','Caso / trámite','caseSelect','full'],['amount','Monto del pago','number',''],['method','Forma de pago','paymentMethod',''],['date','Fecha del pago','date',''],['note','Nota / referencia','text','full']],
   appointment:()=>[['clientId','Cliente','client',''],['date','Fecha','date',''],['time','Hora','text',''],['service','Motivo / servicio','text','full']]
@@ -229,10 +238,12 @@ function buildClientUpdate(caseValues){
   const service=caseValues.service||'su trámite';
   const status=statusLabel(caseValues.status||'inicial');
   const next=caseValues.next?.trim();
+  const paymentLink=caseValues.stripePaymentLink?.trim();
+  const initialPayment=Number(caseValues.initialPayment||0);
   return `Hola ${name}, le compartimos una actualización de su caso con AGR Solutions LLC.
 
 Servicio / trámite: ${service}
-Estado actual: ${status}${next?`\nPróximo paso: ${next}`:''}
+Estado actual: ${status}${next?`\nPróximo paso: ${next}`:''}${paymentLink?`\n\nPago inicial${initialPayment?': '+money(initialPayment):''}:\n${paymentLink}`:''}
 
 Si necesita comunicarse con nosotros, puede responder a este mensaje.
 
@@ -248,7 +259,9 @@ function getCaseValuesFromForm(){
     clientId:Number(fd.clientId||0),
     service:fd.service||'',
     status:fd.status||'inicial',
-    next:fd.next||''
+    next:fd.next||'',
+    initialPayment:fd.initialPayment||'',
+    stripePaymentLink:fd.stripePaymentLink||''
   };
 }
 
@@ -325,7 +338,7 @@ function openModal(kind,values={}){
         if(suggested>0 && (!totalInput.value || Number(totalInput.value)===0)) totalInput.value=suggested;
       });
     }
-    ['clientId','service','status','next'].forEach(name=>{
+    ['clientId','service','status','next','initialPayment','stripePaymentLink'].forEach(name=>{
       const el=form.querySelector('[name="'+name+'"]');
       if(el) el.addEventListener('input',refreshClientNotification);
       if(el) el.addEventListener('change',refreshClientNotification);
@@ -406,7 +419,9 @@ form.addEventListener('submit',e=>{
       status:f.status||'inicial',
       next:f.next,
       serviceTotal:Number(f.serviceTotal||0),
-      invoiceNumber:f.invoiceNumber||''
+      initialPayment:Number(f.initialPayment||0),
+      invoiceNumber:f.invoiceNumber||'',
+      stripePaymentLink:f.stripePaymentLink||''
     });
   }
 
@@ -420,7 +435,9 @@ form.addEventListener('submit',e=>{
         status:f.status,
         next:f.next,
         serviceTotal:Number(f.serviceTotal||0),
+        initialPayment:Number(f.initialPayment||0),
         invoiceNumber:f.invoiceNumber||'',
+        stripePaymentLink:f.stripePaymentLink||'',
         updatedAt:new Date().toISOString()
       };
     }
