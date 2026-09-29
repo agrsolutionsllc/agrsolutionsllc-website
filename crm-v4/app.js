@@ -283,7 +283,9 @@ function refreshClientNotification(){
   if(mail){
     if(email){
       const subject='Actualización de su caso - AGR Solutions LLC';
-      mail.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
+      mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
+      mail.target='_blank';
+      mail.rel='noopener';
       mail.classList.remove('disabled');
       mail.removeAttribute('aria-disabled');
     }else{
