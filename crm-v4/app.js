@@ -245,7 +245,7 @@ function buildClientUpdate(caseValues){
 Servicio / trámite: ${service}
 Estado actual: ${status}${next?`\nPróximo paso: ${next}`:''}${paymentLink?`\n\nPago inicial${initialPayment?': '+money(initialPayment):''}:\n${paymentLink}`:''}
 
-Si necesita comunicarse con nosotros, puede responder a este mensaje.
+Si USCIS ha emitido documentos o notificaciones relacionados con su caso y se encuentran disponibles, los encontrará adjuntos a este correo.\n\nSi necesita comunicarse con nosotros, puede responder a este mensaje.
 
 AGR Solutions LLC
 294 Tyler Street, East Haven, CT 06512
