@@ -309,27 +309,8 @@ function openModal(kind,values={}){
   modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
 
-  const notificationMount=document.querySelector('#caseNotificationMount');
-  if(notificationMount) notificationMount.innerHTML='';
-  if(kind==='case-edit' && notificationMount){
-    notificationMount.innerHTML=`
-      <section id="clientNotificationBox" class="client-notification">
-        <div class="notification-head">
-          <div>
-            <span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span>
-            <strong>Notificar sobre este caso</strong>
-            <small class="notification-contact"></small>
-          </div>
-        </div>
-        <div class="notification-preview"></div>
-        <div class="notification-actions">
-          <a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-          <a class="notify-btn notify-email">Enviar por correo</a>
-        </div>
-        <small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small>
-      </section>
-    `;
-  }
+  const notificationBox=document.querySelector('#clientNotificationBox');
+  if(notificationBox) notificationBox.hidden = kind!=='case-edit';
 
   dialog.showModal();
   if(actualKind==='case'){
