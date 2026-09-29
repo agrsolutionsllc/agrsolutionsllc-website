@@ -130,17 +130,19 @@ function renderCases(){
 }
 
 function renderPayments(){
-  $('#paymentsTable').innerHTML=data.payments.map(p=>`<tr><td><strong>${clientName(p.clientId)}</strong></td><td>${p.service}</td><td>${money(p.total)}</td><td>${money(p.paid)}</td><td><strong>${money(p.total-p.paid)}</strong></td></tr>`).join('');
+  $('#paymentsTable').innerHTML=data.payments.map(p=>`<tr class="clickable-row" data-payment-id="${p.id}"><td><strong>${clientName(p.clientId)}</strong></td><td>${p.service}</td><td>${money(p.total)}</td><td>${money(p.paid)}</td><td><strong>${money(p.total-p.paid)}</strong></td></tr>`).join('');
+  bindPaymentOpeners();
 }
 $('#clientSearch').addEventListener('input',e=>renderClients(e.target.value));
 
 const dialog=$('#recordDialog'), form=$('#recordForm'), fields=$('#formFields'), modalTitle=$('#modalTitle');
 let mode='client';
 let editingCaseId=null;
+let editingPaymentId=null;
 
 const templates={
   client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
-  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['paid','Pagado','number',''],['invoiceNumber','Número de factura','text','']]
+  case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['paid','Pagado','number',''],['invoiceNumber','Número de factura','text','']],
   payment:()=>[['clientId','Cliente','client',''],['service','Servicio','text',''],['total','Total','number',''],['paid','Pagado','number','']],
   appointment:()=>[['clientId','Cliente','client',''],['date','Fecha','date',''],['time','Hora','text',''],['service','Motivo / servicio','text','full']]
 };
@@ -161,9 +163,10 @@ function fieldHTML([name,label,type,cls],values={}){
 function openModal(kind,values={}){
   mode=kind;
   editingCaseId=kind==='case-edit'?values.id:null;
-  const actualKind=kind==='case-edit'?'case':kind;
+  editingPaymentId=kind==='payment-edit'?values.id:null;
+  const actualKind=kind==='case-edit'?'case':(kind==='payment-edit'?'payment':kind);
   const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',payment:'Registrar pago',appointment:'Nueva cita'};
-  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':titles[actualKind];
+  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='payment-edit'?'Editar pago':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   dialog.showModal();
 }
@@ -177,10 +180,19 @@ function bindCaseOpeners(){
   });
 }
 
-$$('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
+function bindPaymentOpeners(){
+  $('[data-payment-id]').forEach(el=>{
+    el.onclick=()=>{
+      const p=data.payments.find(x=>x.id===Number(el.dataset.paymentId));
+      if(p) openModal('payment-edit',p);
+    };
+  });
+}
+
+$('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
 $('#quickAdd').addEventListener('click',()=>openModal('client'));
-$('#closeDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;});
-$('#cancelDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;});
+$('#closeDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;editingPaymentId=null;});
+$('#cancelDialog').addEventListener('click',()=>{dialog.close();form.reset();editingCaseId=null;editingPaymentId=null;});
 
 
 form.addEventListener('submit',e=>{
@@ -221,6 +233,19 @@ form.addEventListener('submit',e=>{
   }
 
   if(mode==='payment') data.payments.push({id,clientId:Number(f.clientId),service:f.service,total:Number(f.total||0),paid:Number(f.paid||0)});
+
+  if(mode==='payment-edit'){
+    const index=data.payments.findIndex(p=>p.id===editingPaymentId);
+    if(index>=0){
+      data.payments[index]={
+        ...data.payments[index],
+        clientId:Number(f.clientId),
+        service:f.service,
+        total:Number(f.total||0),
+        paid:Number(f.paid||0)
+      };
+    }
+  }
   if(mode==='appointment') data.appointments.push({id,clientId:Number(f.clientId),date:f.date,time:f.time,service:f.service});
 
   save();
@@ -228,6 +253,7 @@ form.addEventListener('submit',e=>{
   dialog.close();
   form.reset();
   editingCaseId=null;
+  editingPaymentId=null;
 });
 
 save();
