@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { amount, caseId, clientName, service, clientEmail } = req.body || {};
+    const { amount, caseId, clientName, service, clientEmail, invoiceNumber } = req.body || {};
     const cents = Math.round(Number(amount) * 100);
 
     if (!Number.isFinite(cents) || cents <= 0) {
@@ -29,7 +29,8 @@ export default async function handler(req, res) {
     params.append('metadata[case_id]', String(caseId || ''));
     params.append('metadata[client_name]', clientName || '');
     params.append('metadata[service]', service || '');
-    if (clientEmail) params.append('custom_fields[0][key]', 'case_reference');
+    params.append('metadata[invoice_number]', invoiceNumber || '');
+    if (clientEmail) params.append('metadata[client_email]', clientEmail);
 
     const stripeRes = await fetch('https://api.stripe.com/v1/payment_links', {
       method: 'POST',
