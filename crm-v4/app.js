@@ -63,7 +63,7 @@ const statusLabels={
 };
 
 const storeKey='agr-crm-demo-v1';
-const STRIPE_BACKEND_URL='https://agr-crm-payments.vercel.app/api/create-payment-link';
+const STRIPE_BACKEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/create-payment-link';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 
