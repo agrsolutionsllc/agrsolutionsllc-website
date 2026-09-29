@@ -163,7 +163,7 @@ let editingPaymentId=null;
 const templates={
   client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
   case:()=>[['clientId','Cliente','client',''],['service','Servicio / trámite','text',''],['status','Estado','status',''],['next','Próximo paso','text','full'],['serviceTotal','Total del servicio','number',''],['paid','Pagado','number',''],['invoiceNumber','Número de factura','text','']],
-  payment:()=>[['caseId','Caso / trámite','caseSelect','full'],['amount','Monto del pago','number',''],['method','Forma de pago','paymentMethod',''],['date','Fecha del pago','date',''],['note','Nota','text','full']],
+  payment:()=>[['caseId','Caso / trámite','caseSelect','full'],['amount','Monto del pago','number',''],['method','Forma de pago','paymentMethod',''],['date','Fecha del pago','date',''],['note','Nota / referencia','text','full']],
   appointment:()=>[['clientId','Cliente','client',''],['date','Fecha','date',''],['time','Hora','text',''],['service','Motivo / servicio','text','full']]
 };
 
@@ -190,7 +190,7 @@ function openModal(kind,values={}){
   editingCaseId=kind==='case-edit'?values.id:null;
   editingPaymentId=null;
   const actualKind=kind==='case-edit'?'case':kind;
-  const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',payment:'Registrar pago',appointment:'Nueva cita'};
+  const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',payment:'Agregar pago al caso',appointment:'Nueva cita'};
   modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':titles[actualKind];
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   dialog.showModal();
@@ -261,11 +261,21 @@ form.addEventListener('submit',e=>{
   if(mode==='payment'){
     const k=caseById(f.caseId);
     if(k){
+      const balance=caseBalance(k);
+      const amount=Number(f.amount||0);
+      if(amount<=0){
+        alert('Ingresa un monto mayor a $0.');
+        return;
+      }
+      if(amount>balance){
+        alert('El pago no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
+        return;
+      }
       data.payments.push({
         id,
         caseId:Number(f.caseId),
         clientId:k.clientId,
-        amount:Number(f.amount||0),
+        amount,
         method:f.method,
         date:f.date||new Date().toISOString().slice(0,10),
         note:f.note||''
