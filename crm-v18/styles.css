@@ -626,3 +626,19 @@ dialog form{max-height:88vh;overflow:auto}
 @media(max-width:460px){
   .balance-reminder .notification-actions{grid-template-columns:1fr}
 }
+
+
+/* CRM v18 · enlace Stripe por saldo actual */
+.balance-card-link-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.balance-card-link{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 14px;border-radius:11px;background:#eaf7f1;color:#1d6c4e;
+  border:1px solid #b8dfce;text-decoration:none;font-weight:800;font-size:.84rem
+}
+.balance-card-link:hover{background:#dff2e9}
+.balance-link-status{color:var(--muted);font-size:.75rem}
+.balance-create-link{font-size:.84rem;padding:10px 14px}
+@media(max-width:700px){
+  .balance-card-link-row{display:grid;grid-template-columns:1fr}
+  .balance-card-link,.balance-create-link{width:100%}
+}
