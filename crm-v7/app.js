@@ -393,8 +393,8 @@ function refreshClientNotification(){
 
 
 function setCaseTab(tab){
-  $('.case-tab').forEach(b=>b.classList.toggle('active',b.dataset.caseTab===tab));
-  $('[data-case-pane]').forEach(p=>{
+  $$('.case-tab').forEach(b=>b.classList.toggle('active',b.dataset.caseTab===tab));
+  $$('[data-case-pane]').forEach(p=>{
     const active=p.dataset.casePane===tab;
     p.hidden=!active;
     p.classList.toggle('active',active);
@@ -415,7 +415,7 @@ function renderCaseDocuments(k){
       </div>`).join('')}</div>
     <div class="inline-add"><input id="newDocName" placeholder="Agregar documento o requisito"><button type="button" class="ghost" id="addDocBtn">+ Agregar</button></div>
     <small class="prototype-note">En esta versión se guarda el checklist y la referencia del archivo. Los archivos reales se conectarán a almacenamiento seguro más adelante.</small>`;
-  $('.doc-row').forEach(row=>{
+  $$('.doc-row').forEach(row=>{
     const id=Number(row.dataset.docId);
     row.querySelector('.doc-status').onchange=e=>{
       const d=docs.find(x=>x.id===id); if(!d) return;
@@ -473,7 +473,7 @@ function renderCommunicationHistory(k){
 function renderCaseWorkspace(k){
   const tabs=$('#caseWorkspaceTabs'); if(!tabs) return;
   tabs.hidden=false;
-  $('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
+  $$('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
   renderCaseDocuments(k); renderCasePayments(k); renderCaseHistory(k); renderCaseNotes(k); renderCommunicationHistory(k); setCaseTab('summary');
   const wa=$('.notify-whatsapp'), mail=$('.notify-email');
   if(wa) wa.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'WhatsApp',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de WhatsApp abierto','communication');renderCommunicationHistory(k);};
