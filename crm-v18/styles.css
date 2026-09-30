@@ -767,3 +767,5 @@ dialog form{max-height:88vh;overflow:auto}
 .cashbook-save{width:100%;min-height:48px}
 @media(max-width:1000px){.cashbook-meta-grid{grid-template-columns:1fr 1fr}.cashbook-item-labels{display:none}.cashbook-item-row{grid-template-columns:1fr 1fr .5fr .8fr .8fr 40px}}
 @media(max-width:720px){.cashbook-meta-grid{grid-template-columns:1fr}.cashbook-item-row{grid-template-columns:1fr 1fr}.cashbook-item-row .cashbook-item-total{grid-column:1/2}.cashbook-remove-item{grid-column:2/3;justify-self:end}}
+
+.folder-number-badge{display:inline-flex;align-items:center;justify-content:center;min-width:52px;padding:5px 9px;border-radius:999px;background:#f5f7fb;border:1px solid #dfe5ee;color:#0b2348;font-weight:800;font-variant-numeric:tabular-nums}
