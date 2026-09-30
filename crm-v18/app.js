@@ -122,6 +122,18 @@ function nextFolderNumberForName(name='',excludeId=null){
     .filter(n=>n>0);
   return letter+'-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
 }
+function nextCompanyFolderNumberForName(name='',excludeId=null){
+  const letter=folderLetterForName(name);
+  const nums=data.clients
+    .filter(c=>c.isCompany && Number(c.id)!==Number(excludeId))
+    .map(c=>String(c.folderNumber||'').trim().toUpperCase())
+    .map(v=>{
+      const m=v.match(/^EMP-([A-Z])-?(\d+)$/);
+      return m && m[1]===letter ? Number(m[2]) : 0;
+    })
+    .filter(n=>n>0);
+  return 'EMP-'+letter+'-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
+}
 function migrateFolderNumbersByLetter(){
   if(Number(data.folderSchemeVersion||0)>=2) return;
   const counters={};
@@ -138,6 +150,22 @@ function migrateFolderNumbersByLetter(){
   save();
 }
 migrateFolderNumbersByLetter();
+function migrateCompanyFolderNumbers(){
+  if(Number(data.companyFolderSchemeVersion||0)>=1) return;
+  const counters={};
+  data.clients
+    .filter(c=>c.isCompany)
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}))
+    .forEach(c=>{
+      const letter=folderLetterForName(c.name);
+      counters[letter]=(counters[letter]||0)+1;
+      c.folderNumber='EMP-'+letter+'-'+String(counters[letter]).padStart(3,'0');
+    });
+  data.companyFolderSchemeVersion=1;
+  save();
+}
+migrateCompanyFolderNumbers();
 const caseById=id=>data.cases.find(c=>c.id===Number(id));
 const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
 const caseDiscountCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.discountCredit||0),0);
@@ -730,12 +758,16 @@ function renderCompanies(filter=''){
   const q=filter.toLowerCase();
   const table=$('#companiesTable');
   if(!table) return;
-  table.innerHTML=data.clients.filter(c=>c.isCompany && [c.name,c.phone,c.email].join(' ').toLowerCase().includes(q)).map(c=>{
-    const cases=data.cases.filter(x=>x.clientId===c.id).length;
-    const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
-    const acctBal=accountBalance(c.id);
-    return `<tr><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta global: '+money(acctBal)+'</small>':''}</td><td><button type="button" class="primary client-account-btn" data-company-account-id="${c.id}">Cuenta / Factura global</button></td></tr>`
-  }).join('')||'<tr><td colspan="6">No hay empresas registradas.</td></tr>';
+  table.innerHTML=data.clients
+    .filter(c=>c.isCompany && [c.folderNumber,c.name,c.phone,c.email].join(' ').toLowerCase().includes(q))
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+    .map(c=>{
+      const cases=data.cases.filter(x=>x.clientId===c.id).length;
+      const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
+      const acctBal=accountBalance(c.id);
+      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta global: '+money(acctBal)+'</small>':''}</td><td><button type="button" class="primary client-account-btn" data-company-account-id="${c.id}">Cuenta / Factura global</button></td></tr>`
+    }).join('')||'<tr><td colspan="7">No hay empresas registradas.</td></tr>';
   table.querySelectorAll('[data-company-account-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClientAccount(Number(btn.dataset.companyAccountId));});
 }
 
@@ -787,7 +819,7 @@ let editingServiceId=null;
 
 const templates={
   client:()=>[['folderNumber','No. de carpeta física','text',''],['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email',''],['isCompany','Tipo de cliente','clientType','']],
-  company:()=>[['name','Nombre de la empresa','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
+  company:()=>[['folderNumber','No. de carpeta física','text',''],['name','Nombre de la empresa','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
   case:()=>[
     ['clientId','Cliente','client',''],
     ['service','Servicio / trámite','serviceSelect','full'],
@@ -1563,6 +1595,21 @@ function openModal(kind,values={}){
     nameInput?.addEventListener('input',refreshFolderNumber);
     refreshFolderNumber();
   }
+  if(kind==='company'){
+    const folderInput=fields.querySelector('[name="folderNumber"]');
+    const nameInput=fields.querySelector('[name="name"]');
+    if(folderInput){
+      folderInput.readOnly=true;
+      folderInput.placeholder='Se genera según la letra del nombre';
+    }
+    const refreshCompanyFolder=()=>{
+      if(!folderInput||!nameInput) return;
+      const name=nameInput.value.trim();
+      folderInput.value=name?nextCompanyFolderNumberForName(name):'';
+    };
+    nameInput?.addEventListener('input',refreshCompanyFolder);
+    refreshCompanyFolder();
+  }
   dialog.showModal();
   if(kind==='case-edit') renderCaseWorkspace(values);
   if(actualKind==='payment'){
@@ -1895,7 +1942,7 @@ form.addEventListener('submit',async e=>{
       isCompany
     });
   }
-  if(mode==='company') data.clients.push({id,name:f.name,phone:f.phone,email:f.email,isCompany:true});
+  if(mode==='company') data.clients.push({id,folderNumber:nextCompanyFolderNumberForName(f.name),name:f.name,phone:f.phone,email:f.email,isCompany:true});
 
   if(mode==='service') {
     data.services.push({
