@@ -570,3 +570,35 @@ dialog form{max-height:88vh;overflow:auto}
   .toolbar-actions{width:100%;display:grid;grid-template-columns:1fr}
   .toolbar-actions button{width:100%}
 }
+
+
+/* CRM v15 header branding refinement */
+.brand-logo{
+  width:58px;
+  height:58px;
+  object-fit:cover;
+  border-radius:14px;
+  background:#fff;
+  border:2px solid rgba(255,255,255,.92);
+  box-shadow:0 3px 0 var(--gold);
+  flex:0 0 auto;
+}
+.global-search-wrap{position:relative}
+.search-icon{
+  position:absolute;
+  left:16px;
+  top:50%;
+  transform:translateY(-50%);
+  display:grid;
+  place-items:center;
+  color:#7d8696;
+  pointer-events:none;
+  z-index:2;
+}
+.global-search-wrap input{
+  padding-left:46px;
+  padding-right:16px;
+}
+@media(max-width:1050px){
+  .brand-logo{width:52px;height:52px}
+}
