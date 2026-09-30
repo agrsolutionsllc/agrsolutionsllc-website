@@ -122,6 +122,22 @@ function nextFolderNumberForName(name='',excludeId=null){
     .filter(n=>n>0);
   return letter+'-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
 }
+function migrateFolderNumbersByLetter(){
+  if(Number(data.folderSchemeVersion||0)>=2) return;
+  const counters={};
+  data.clients
+    .filter(c=>!c.isCompany)
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}))
+    .forEach(c=>{
+      const letter=folderLetterForName(c.name);
+      counters[letter]=(counters[letter]||0)+1;
+      c.folderNumber=letter+'-'+String(counters[letter]).padStart(3,'0');
+    });
+  data.folderSchemeVersion=2;
+  save();
+}
+migrateFolderNumbersByLetter();
 const caseById=id=>data.cases.find(c=>c.id===Number(id));
 const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
 const caseDiscountCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.discountCredit||0),0);
