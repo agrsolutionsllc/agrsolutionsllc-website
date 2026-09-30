@@ -687,3 +687,8 @@ dialog form{max-height:88vh;overflow:auto}
 .case-pricing-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:900px){.case-pricing-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.case-pricing-summary{grid-template-columns:1fr}}
+
+
+/* Stripe sync status */
+.workspace-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stripe-sync-status{display:block;min-height:18px;margin:4px 0 8px;color:var(--muted)}
