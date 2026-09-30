@@ -13,8 +13,17 @@ export default async function handler(req, res) {
     if (!Number.isFinite(cents) || cents <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+    if (!stripeKey) {
       return res.status(500).json({ error: 'Stripe is not configured on the server.' });
+    }
+
+    // Production safety: never create client-facing payment links with a test key.
+    const isLiveKey = stripeKey.startsWith('rk_live_') || stripeKey.startsWith('sk_live_');
+    if (!isLiveKey) {
+      return res.status(503).json({
+        error: 'Live Stripe is not enabled yet. Configure STRIPE_SECRET_KEY with a live restricted key before accepting real payments.'
+      });
     }
 
     const params = new URLSearchParams();
@@ -35,7 +44,7 @@ export default async function handler(req, res) {
     const stripeRes = await fetch('https://api.stripe.com/v1/payment_links', {
       method: 'POST',
       headers: {
-        Authorization: 'Bearer ' + process.env.STRIPE_SECRET_KEY,
+        Authorization: 'Bearer ' + stripeKey,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: params.toString()
@@ -46,10 +55,14 @@ export default async function handler(req, res) {
       return res.status(stripeRes.status).json({ error: data?.error?.message || 'Stripe error' });
     }
 
+    if (!data.livemode) {
+      return res.status(502).json({ error: 'Stripe returned a test-mode payment link. No client link was issued.' });
+    }
+
     return res.status(200).json({
       id: data.id,
       url: data.url,
-      livemode: data.livemode
+      livemode: true
     });
   } catch (err) {
     return res.status(500).json({ error: err?.message || 'Unexpected server error' });
