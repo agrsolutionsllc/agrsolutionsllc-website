@@ -105,12 +105,22 @@ const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const clientById=id=>data.clients.find(c=>c.id===Number(id));
 const clientName=id=>clientById(id)?.name||'Cliente';
-function nextFolderNumber(){
+function folderLetterForName(name=''){
+  const clean=String(name||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const match=clean.match(/[A-Za-z]/);
+  return (match?match[0]:'X').toUpperCase();
+}
+function nextFolderNumberForName(name='',excludeId=null){
+  const letter=folderLetterForName(name);
   const nums=data.clients
-    .filter(c=>!c.isCompany)
-    .map(c=>Number(String(c.folderNumber||'').replace(/\D/g,'')))
-    .filter(n=>Number.isFinite(n)&&n>0);
-  return String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
+    .filter(c=>!c.isCompany && Number(c.id)!==Number(excludeId))
+    .map(c=>String(c.folderNumber||'').trim().toUpperCase())
+    .map(v=>{
+      const m=v.match(/^([A-Z])-?(\d+)$/);
+      return m && m[1]===letter ? Number(m[2]) : 0;
+    })
+    .filter(n=>n>0);
+  return letter+'-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
 }
 const caseById=id=>data.cases.find(c=>c.id===Number(id));
 const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
@@ -1524,7 +1534,18 @@ function openModal(kind,values={}){
 
   if(kind==='client'){
     const folderInput=fields.querySelector('[name="folderNumber"]');
-    if(folderInput && !folderInput.value) folderInput.value=nextFolderNumber();
+    const nameInput=fields.querySelector('[name="name"]');
+    if(folderInput){
+      folderInput.readOnly=true;
+      folderInput.placeholder='Se genera según la letra del nombre';
+    }
+    const refreshFolderNumber=()=>{
+      if(!folderInput||!nameInput) return;
+      const name=nameInput.value.trim();
+      folderInput.value=name?nextFolderNumberForName(name):'';
+    };
+    nameInput?.addEventListener('input',refreshFolderNumber);
+    refreshFolderNumber();
   }
   dialog.showModal();
   if(kind==='case-edit') renderCaseWorkspace(values);
@@ -1847,7 +1868,17 @@ form.addEventListener('submit',async e=>{
   const f=Object.fromEntries(new FormData(form));
   const id=Date.now();
 
-  if(mode==='client') data.clients.push({id,folderNumber:(f.folderNumber||'').trim(),name:f.name,phone:f.phone,email:f.email,isCompany:f.isCompany==='true'});
+  if(mode==='client'){
+    const isCompany=f.isCompany==='true';
+    data.clients.push({
+      id,
+      folderNumber:isCompany?'':nextFolderNumberForName(f.name),
+      name:f.name,
+      phone:f.phone,
+      email:f.email,
+      isCompany
+    });
+  }
   if(mode==='company') data.clients.push({id,name:f.name,phone:f.phone,email:f.email,isCompany:true});
 
   if(mode==='service') {
