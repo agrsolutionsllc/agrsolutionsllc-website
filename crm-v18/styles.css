@@ -612,3 +612,17 @@ dialog form{max-height:88vh;overflow:auto}
 .balance-reminder.paid{display:grid;gap:4px}
 .balance-reminder.paid span{color:var(--muted)}
 @media(max-width:700px){.balance-reminder-head{display:block}.balance-amount{margin-top:8px}}
+
+
+/* CRM v18 · acciones adicionales de recordatorio de saldo */
+.notify-sms{background:#fff7e6;color:#805412;border-color:#d7b45f}
+.notify-sms:hover{background:#fff1cf}
+.notify-copy{background:#fff;color:var(--navy);border-color:#cfd6e1}
+.notify-copy:hover{background:#f3f5f8}
+.copy-status{display:block;min-height:18px;margin-top:8px;color:var(--green);font-weight:800;font-size:.76rem}
+@media(max-width:700px){
+  .balance-reminder .notification-actions{grid-template-columns:1fr 1fr}
+}
+@media(max-width:460px){
+  .balance-reminder .notification-actions{grid-template-columns:1fr}
+}
