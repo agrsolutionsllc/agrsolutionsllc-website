@@ -513,9 +513,18 @@ function renderCashbook(){
     <div><span>Total registrado</span><strong>${money(t.total)}</strong></div>
   `;
   const rows=[...data.cashbook].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.id||0)-Number(a.id||0));
-  table.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td><strong>${esc(x.concept||'—')}</strong></td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`).join(''):'<tr><td colspan="6">No hay ingresos rápidos registrados.</td></tr>';
+  table.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${x.clientId?esc(clientName(x.clientId)):'—'}</td><td><strong>${esc(x.concept||'—')}</strong></td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`).join(''):'<tr><td colspan="7">No hay ingresos rápidos registrados.</td></tr>';
   const dateInput=$('#cashbookDate');
   if(dateInput && !dateInput.value) dateInput.value=todayISO();
+  const clientSelect=$('#cashbookClient');
+  if(clientSelect){
+    const current=clientSelect.value;
+    clientSelect.innerHTML='<option value="">Sin cliente vinculado</option>'+data.clients
+      .slice()
+      .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+      .map(c=>'<option value="'+c.id+'">'+esc(c.name)+(c.isCompany?' · Empresa':'')+'</option>').join('');
+    if(current) clientSelect.value=current;
+  }
 }
 
 function renderDashboardAlerts(){
@@ -1925,6 +1934,7 @@ if(cashbookForm){
     data.cashbook.push({
       id:Date.now(),
       date:$('#cashbookDate')?.value||todayISO(),
+      clientId:$('#cashbookClient')?.value?Number($('#cashbookClient').value):null,
       concept,
       category:$('#cashbookCategory')?.value||'Otros servicios',
       method:$('#cashbookMethod')?.value||'Cash',
