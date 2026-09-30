@@ -969,6 +969,26 @@ function renderCasePayments(k){
   const rows=data.payments.filter(p=>Number(p.caseId)===Number(k.id)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   pane.innerHTML=`
     <div class="workspace-head"><div><span class="workspace-kicker">PAGOS</span><h3>Historial de pagos</h3></div><button type="button" class="primary" id="workspaceAddPayment">+ Agregar pago</button></div>
+    <section class="case-pricing-config">
+      <div class="case-pricing-config-head">
+        <div><span class="workspace-kicker">CONFIGURAR PRECIOS</span><h4>Precio estándar y descuento Cash/Zelle</h4></div>
+        <button type="button" class="secondary" id="togglePricingConfig">Editar precios</button>
+      </div>
+      <div class="case-pricing-summary">
+        <div><span>Precio estándar</span><strong>${money(k.serviceTotal)}</strong></div>
+        <div><span>Descuento Cash/Zelle</span><strong>${money(caseCashDiscount(k))}</strong></div>
+        <div><span>Precio Cash/Zelle</span><strong>${money(caseCashPrice(k))}</strong></div>
+      </div>
+      <div class="case-pricing-editor" id="casePricingEditor" hidden>
+        <label>Precio estándar<input type="number" min="0" step="0.01" id="caseStandardPrice" value="${Number(k.serviceTotal||0).toFixed(2)}"></label>
+        <label>Descuento Cash / Zelle<input type="number" min="0" step="0.01" id="caseCashDiscount" value="${Number(k.cashZelleDiscount||0).toFixed(2)}"></label>
+        <div class="pricing-preview" id="casePricingLivePreview"></div>
+        <div class="case-pricing-actions">
+          <button type="button" class="primary" id="saveCasePricing">Guardar precios</button>
+          <small id="casePricingStatus" aria-live="polite"></small>
+        </div>
+      </div>
+    </section>
     <div class="finance-snapshot">
       <div><span>Precio estándar</span><strong>${money(k.serviceTotal)}</strong></div>
       <div><span>Cash / Zelle</span><strong>${money(caseCashPrice(k))}</strong></div>
@@ -980,7 +1000,58 @@ function renderCasePayments(k){
       ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
     </tbody></table></div>
     ${balanceReminderHTML(k)}`;
+
   $('#workspaceAddPayment').onclick=()=>{dialog.close();openModal('payment',{caseId:k.id,date:new Date().toISOString().slice(0,10)});};
+
+  const toggle=$('#togglePricingConfig');
+  const editor=$('#casePricingEditor');
+  const standardInput=$('#caseStandardPrice');
+  const discountInput=$('#caseCashDiscount');
+  const preview=$('#casePricingLivePreview');
+  const saveBtn=$('#saveCasePricing');
+  const priceStatus=$('#casePricingStatus');
+
+  const refreshPricingEditor=()=>{
+    const standard=Math.max(0,Number(standardInput?.value||0));
+    const discount=Math.max(0,Number(discountInput?.value||0));
+    const capped=Math.min(discount,standard);
+    const cash=Math.max(standard-capped,0);
+    if(preview) preview.innerHTML='<span>Precio estándar</span><strong>'+money(standard)+'</strong><span>Cash / Zelle</span><strong>'+money(cash)+'</strong>';
+  };
+  if(toggle && editor) toggle.onclick=()=>{editor.hidden=!editor.hidden;toggle.textContent=editor.hidden?'Editar precios':'Ocultar';refreshPricingEditor();};
+  standardInput?.addEventListener('input',refreshPricingEditor);
+  discountInput?.addEventListener('input',refreshPricingEditor);
+  if(saveBtn) saveBtn.onclick=()=>{
+    const standard=Math.max(0,Number(standardInput?.value||0));
+    const discount=Math.max(0,Number(discountInput?.value||0));
+    const collected=caseCollected(k.id);
+    if(!Number.isFinite(standard) || standard<=0){
+      if(priceStatus) priceStatus.textContent='Ingresa un precio estándar mayor que $0.00.';
+      return;
+    }
+    if(discount>standard){
+      if(priceStatus) priceStatus.textContent='El descuento no puede ser mayor que el precio estándar.';
+      return;
+    }
+    if(standard<collected){
+      if(priceStatus) priceStatus.textContent='El precio estándar no puede ser menor que lo ya cobrado: '+money(collected)+'.';
+      return;
+    }
+    k.serviceTotal=standard;
+    k.cashZelleDiscount=discount;
+    // Any existing balance link may now have the wrong ceiling; invalidate it.
+    k.balancePaymentLink='';
+    k.balancePaymentLinkAmount=0;
+    k.balancePaymentLinkMode='';
+    k.balancePaymentLinkCreatedAt='';
+    save();
+    logCaseEvent(k.id,'Precios actualizados · estándar '+money(standard)+' · descuento Cash/Zelle '+money(discount),'payment');
+    renderCasePayments(k);
+    renderCaseSummarySnapshot(k);
+    renderCommunicationHistory(k);
+  };
+
+  refreshPricingEditor();
   bindBalanceReminder(k,pane);
 }
 function renderCaseHistory(k){
