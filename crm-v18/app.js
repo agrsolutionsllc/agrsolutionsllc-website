@@ -1067,13 +1067,9 @@ function renderCasePayments(k){
       </div>
     </section>
 
-    <div class="finance-snapshot">
-      <div><span>Precio estándar</span><strong>${money(caseStandardPrice(k))}</strong></div>
-      <div><span>Cash</span><strong>${money(caseCashPrice(k))}</strong></div>
-      <div><span>Zelle</span><strong>${money(caseZellePrice(k))}</strong></div>
-      <div><span>Tarjeta</span><strong>${money(caseCardPrice(k))}</strong></div>
+    <div class="finance-snapshot finance-snapshot-compact">
       <div><span>Cobrado</span><strong>${money(caseCollected(k.id))}</strong></div>
-      <div><span>Saldo estándar</span><strong>${money(caseBalance(k))}</strong></div>
+      <div><span>Saldo pendiente</span><strong>${money(caseBalance(k))}</strong></div>
     </div>
 
     <div class="workspace-table"><table>
