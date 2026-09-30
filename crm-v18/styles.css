@@ -642,3 +642,17 @@ dialog form{max-height:88vh;overflow:auto}
   .balance-card-link-row{display:grid;grid-template-columns:1fr}
   .balance-card-link,.balance-create-link{width:100%}
 }
+
+
+/* CRM v18 · selector de pago parcial */
+.balance-payment-picker{margin:14px 0;padding:14px;border:1px solid #e3e7ee;border-radius:14px;background:#fafbfc}
+.balance-payment-picker label{display:block;font-weight:800;margin-bottom:8px;color:var(--navy)}
+.balance-payment-picker-row{display:flex;align-items:center;gap:8px}
+.balance-payment-picker-row>span{font-weight:800;color:var(--muted)}
+.balance-payment-amount{max-width:180px;font-weight:800;font-size:1rem}
+.balance-payment-amount.invalid{border-color:#c93434;box-shadow:0 0 0 2px rgba(201,52,52,.08)}
+.balance-payment-picker small{display:block;margin-top:7px;color:var(--muted)}
+@media(max-width:700px){
+  .balance-payment-picker-row{align-items:stretch;flex-wrap:wrap}
+  .balance-payment-amount{max-width:none;flex:1;min-width:150px}
+}
