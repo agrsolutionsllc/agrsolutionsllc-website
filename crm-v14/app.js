@@ -949,8 +949,8 @@ function bindCasePaymentOpeners(){
   });
 }
 
-$('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
-$('[data-whatsapp-appointment]').forEach(b=>b.addEventListener('click',openWhatsAppAppointment));
+$$('[data-open]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.open)));
+$$('[data-whatsapp-appointment]').forEach(b=>b.addEventListener('click',openWhatsAppAppointment));
 const waDialog=$('#whatsappAppointmentDialog');
 const waPrepare=$('#prepareWhatsAppAppointment');
 const waCancel=$('#cancelWhatsAppAppointment');
