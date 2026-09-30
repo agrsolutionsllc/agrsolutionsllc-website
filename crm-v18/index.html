@@ -35,6 +35,7 @@
         <button class="nav-item" data-view="cashbook">▧ <span>Caja / Ingresos</span></button>
         <button class="nav-item" data-view="appointments">◫ <span>Citas</span></button>
         <button class="nav-item" data-view="tasks">✓ <span>Tareas</span></button>
+        <button class="nav-item" data-view="backup">⬇ <span>Backup</span></button>
       </nav>
 
       <div class="sidebar-footer">
@@ -274,6 +275,49 @@
             </table>
           </div>
         </div>
+      </section>
+
+
+      <section class="view" id="view-backup">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">SEGURIDAD DE DATOS</p>
+            <h2>Backup y restauración</h2>
+            <p class="section-subtext">Guarda una copia completa del CRM fuera del navegador.</p>
+          </div>
+        </div>
+
+        <div class="backup-grid">
+          <article class="panel backup-card">
+            <div>
+              <p class="eyebrow">COPIA DE SEGURIDAD</p>
+              <h2>Descargar backup completo</h2>
+              <p>Incluye clientes, empresas, carpetas, casos, pagos, caja, citas, tareas, documentos, notas y cuentas globales.</p>
+            </div>
+            <div class="backup-summary" id="backupSummary"></div>
+            <button type="button" class="primary" id="downloadBackup">Descargar backup</button>
+            <small id="backupDownloadStatus" class="backup-status" aria-live="polite"></small>
+          </article>
+
+          <article class="panel backup-card backup-restore-card">
+            <div>
+              <p class="eyebrow">RESTAURAR</p>
+              <h2>Restaurar desde un archivo</h2>
+              <p>Usa un archivo <strong>.json</strong> creado por este CRM. Antes de restaurar, se descargará una copia de seguridad del estado actual.</p>
+            </div>
+            <input type="file" id="restoreBackupFile" accept=".json,application/json" hidden>
+            <button type="button" class="secondary" id="chooseRestoreBackup">Seleccionar backup</button>
+            <div id="restoreBackupPreview" class="restore-preview" hidden></div>
+            <button type="button" class="primary danger-safe" id="confirmRestoreBackup" hidden>Restaurar este backup</button>
+            <small id="backupRestoreStatus" class="backup-status" aria-live="polite"></small>
+          </article>
+        </div>
+
+        <article class="panel backup-help">
+          <p class="eyebrow">RECOMENDACIÓN</p>
+          <h3>Cómo guardarlo en tu disco duro externo</h3>
+          <p>Descarga el archivo y conserva varias copias por fecha. Una estructura sencilla sería: <strong>AGR CRM Backups → 2026 → Septiembre</strong>.</p>
+        </article>
       </section>
 
       <section class="view" id="view-appointments">
