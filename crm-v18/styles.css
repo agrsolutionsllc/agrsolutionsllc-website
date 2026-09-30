@@ -681,3 +681,9 @@ dialog form{max-height:88vh;overflow:auto}
 .case-pricing-editor input{margin-top:6px}
 .case-pricing-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
 @media(max-width:700px){.case-pricing-summary{grid-template-columns:1fr}.case-pricing-config-head{align-items:flex-start;flex-direction:column}}
+
+
+/* CRM v18 direct method pricing */
+.case-pricing-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.case-pricing-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.case-pricing-summary{grid-template-columns:1fr}}
