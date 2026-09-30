@@ -166,6 +166,33 @@ function migrateCompanyFolderNumbers(){
   save();
 }
 migrateCompanyFolderNumbers();
+function repairMissingCompanyFolderNumbers(){
+  const used={};
+  data.clients.filter(c=>c.isCompany).forEach(c=>{
+    const v=String(c.folderNumber||'').trim().toUpperCase();
+    const m=v.match(/^([A-Z])-(\d+)$/);
+    if(m){
+      const letter=m[1];
+      used[letter]=Math.max(used[letter]||0,Number(m[2]));
+    }
+  });
+
+  let changed=false;
+  data.clients
+    .filter(c=>c.isCompany)
+    .filter(c=>!/^[A-Z]-\d+$/.test(String(c.folderNumber||'').trim().toUpperCase()))
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}))
+    .forEach(c=>{
+      const letter=folderLetterForName(c.name);
+      used[letter]=(used[letter]||0)+1;
+      c.folderNumber=letter+'-'+String(used[letter]).padStart(3,'0');
+      changed=true;
+    });
+
+  if(changed) save();
+}
+repairMissingCompanyFolderNumbers();
 const caseById=id=>data.cases.find(c=>c.id===Number(id));
 const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
 const caseDiscountCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.discountCredit||0),0);
