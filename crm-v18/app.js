@@ -238,8 +238,9 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
 </body></html>`;
 }
 function openPaymentDocument(k,p,finalInvoice=false){
-  const w=window.open('','_blank','noopener,noreferrer');
+  const w=window.open('','_blank');
   if(!w){alert('Permite ventanas emergentes para abrir el documento.');return;}
+  try{w.opener=null;}catch(_){}
   w.document.open();
   w.document.write(paymentDocumentHTML(k,p,{finalInvoice}));
   w.document.close();
