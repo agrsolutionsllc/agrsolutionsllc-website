@@ -434,7 +434,7 @@ function badgeClass(s){
 function switchView(view){
   $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  const labels={dashboard:'Dashboard',clients:'Clientes',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',appointments:'Citas',tasks:'Tareas'};
+  const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',appointments:'Citas',tasks:'Tareas'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
 }
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
@@ -484,6 +484,7 @@ function render(){
   $('#appointmentsTable').innerHTML=upcomingAppointments.map(apptCard).join('')||'<p>No hay citas próximas.</p>';
 
   renderClients();
+  renderCompanies();
   renderCases();
   renderServices();
   renderPayments();
@@ -582,13 +583,26 @@ function renderGlobalSearch(q=''){
 }
 function renderClients(filter=''){
   const q=filter.toLowerCase();
-  $('#clientsTable').innerHTML=data.clients.filter(c=>[c.name,c.phone,c.email].join(' ').toLowerCase().includes(q)).map(c=>{
+  const table=$('#clientsTable');
+  if(!table) return;
+  table.innerHTML=data.clients.filter(c=>!c.isCompany && [c.name,c.phone,c.email].join(' ').toLowerCase().includes(q)).map(c=>{
+    const cases=data.cases.filter(x=>x.clientId===c.id).length;
+    const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
+    return `<tr><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal)}</strong></td><td><button type="button" class="secondary client-account-btn" data-client-account-id="${c.id}">Cuenta</button></td></tr>`
+  }).join('');
+  table.querySelectorAll('[data-client-account-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClientAccount(Number(btn.dataset.clientAccountId));});
+}
+function renderCompanies(filter=''){
+  const q=filter.toLowerCase();
+  const table=$('#companiesTable');
+  if(!table) return;
+  table.innerHTML=data.clients.filter(c=>c.isCompany && [c.name,c.phone,c.email].join(' ').toLowerCase().includes(q)).map(c=>{
     const cases=data.cases.filter(x=>x.clientId===c.id).length;
     const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
     const acctBal=accountBalance(c.id);
-    return `<tr><td><strong>${c.name}</strong><small class="client-type-pill">${c.isCompany?'Empresa':'Cliente'}</small></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta global: '+money(acctBal)+'</small>':''}</td><td><button type="button" class="secondary client-account-btn" data-client-account-id="${c.id}">${c.isCompany?'Cuenta / Factura global':'Cuenta'}</button></td></tr>`
-  }).join('');
-  document.querySelectorAll('[data-client-account-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClientAccount(Number(btn.dataset.clientAccountId));});
+    return `<tr><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta global: '+money(acctBal)+'</small>':''}</td><td><button type="button" class="primary client-account-btn" data-company-account-id="${c.id}">Cuenta / Factura global</button></td></tr>`
+  }).join('')||'<tr><td colspan="6">No hay empresas registradas.</td></tr>';
+  table.querySelectorAll('[data-company-account-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClientAccount(Number(btn.dataset.companyAccountId));});
 }
 
 function renderCases(){
@@ -628,7 +642,8 @@ function renderPayments(){
   </tr>`).join('');
   bindCasePaymentOpeners();
 }
-$('#clientSearch').addEventListener('input',e=>renderClients(e.target.value));
+$('#clientSearch')?.addEventListener('input',e=>renderClients(e.target.value));
+$('#companySearch')?.addEventListener('input',e=>renderCompanies(e.target.value));
 
 const dialog=$('#recordDialog'), form=$('#recordForm'), fields=$('#formFields'), modalTitle=$('#modalTitle');
 let mode='client';
@@ -637,7 +652,8 @@ let editingPaymentId=null;
 let editingServiceId=null;
 
 const templates={
-  client:()=>[['name','Nombre / empresa','text','full'],['phone','Teléfono','tel',''],['email','Email','email',''],['isCompany','Tipo de cliente','clientType','']],
+  client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email',''],['isCompany','Tipo de cliente','clientType','']],
+  company:()=>[['name','Nombre de la empresa','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
   case:()=>[
     ['clientId','Cliente','client',''],
     ['service','Servicio / trámite','serviceSelect','full'],
@@ -1342,7 +1358,7 @@ function openModal(kind,values={}){
   editingPaymentId=null;
   editingServiceId=kind==='service-edit'?values.id:null;
   const actualKind=kind==='case-edit'?'caseEdit':(kind==='service-edit'?'service':kind);
-  const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',caseEdit:'Seguimiento del caso',service:'Nuevo servicio',payment:'Agregar pago al caso',appointment:'Nueva cita',task:'Nueva tarea'};
+  const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',caseEdit:'Seguimiento del caso',service:'Nuevo servicio',payment:'Agregar pago al caso',appointment:'Nueva cita',task:'Nueva tarea',company:'Nueva empresa'};
   modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   const workspaceTabs=$('#caseWorkspaceTabs');
@@ -1682,7 +1698,8 @@ document.addEventListener('click',e=>{
   const openBtn=e.target.closest('[data-open]');
   if(openBtn){
     e.preventDefault();
-    openModal(openBtn.dataset.open);
+    if(openBtn.dataset.open==='client-company') openModal('company');
+    else openModal(openBtn.dataset.open);
     return;
   }
   const waBtn=e.target.closest('[data-whatsapp-appointment]');
@@ -1719,6 +1736,7 @@ form.addEventListener('submit',async e=>{
   const id=Date.now();
 
   if(mode==='client') data.clients.push({id,name:f.name,phone:f.phone,email:f.email,isCompany:f.isCompany==='true'});
+  if(mode==='company') data.clients.push({id,name:f.name,phone:f.phone,email:f.email,isCompany:true});
 
   if(mode==='service') {
     data.services.push({
