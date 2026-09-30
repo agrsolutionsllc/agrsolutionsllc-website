@@ -728,3 +728,7 @@ dialog form{max-height:88vh;overflow:auto}
   .account-summary-grid,.account-entry-grid{grid-template-columns:1fr}
   .client-account-dialog{min-width:auto;padding:15px}
 }
+
+.account-global-help{margin:10px 0 14px;padding:12px 14px;border:1px solid #e7d7a4;border-radius:12px;background:#fffaf0;color:#5f4c18}
+.account-save-flash{margin-bottom:12px;padding:10px 12px;border-radius:10px;background:#eef8f2;color:#1f6b48;font-weight:700}
+.client-account-btn{white-space:nowrap}
