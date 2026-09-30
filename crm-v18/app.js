@@ -516,6 +516,59 @@ function populateCashbookClients(){
   clientSelect.innerHTML='<option value="">Sin cliente vinculado</option>'+options;
   if(current && data.clients.some(c=>String(c.id)===String(current))) clientSelect.value=current;
 }
+function cashbookItemRowHTML(item={}){
+  const qty=Math.max(1,Number(item.quantity||1));
+  const unit=Math.max(0,Number(item.unitPrice||0));
+  return `<div class="cashbook-item-row">
+    <input class="cashbook-item-service" type="text" placeholder="Ej. Contrato de renta" value="${esc(item.service||'')}">
+    <input class="cashbook-item-subservice" type="text" placeholder="Ej. Renovación / Mes enero" value="${esc(item.subservice||'')}">
+    <input class="cashbook-item-qty" type="number" min="1" step="1" value="${qty}">
+    <input class="cashbook-item-unit" type="number" min="0" step="0.01" value="${unit||''}" placeholder="0.00">
+    <strong class="cashbook-item-total">${money(qty*unit)}</strong>
+    <button type="button" class="cashbook-remove-item" aria-label="Eliminar">×</button>
+  </div>`;
+}
+function getCashbookItems(){
+  return [...document.querySelectorAll('.cashbook-item-row')].map(row=>({
+    service:row.querySelector('.cashbook-item-service')?.value?.trim()||'',
+    subservice:row.querySelector('.cashbook-item-subservice')?.value?.trim()||'',
+    quantity:Math.max(1,Number(row.querySelector('.cashbook-item-qty')?.value||1)),
+    unitPrice:Math.max(0,Number(row.querySelector('.cashbook-item-unit')?.value||0))
+  })).filter(x=>x.service && x.unitPrice>0);
+}
+function refreshCashbookItems(){
+  document.querySelectorAll('.cashbook-item-row').forEach(row=>{
+    const qty=Math.max(1,Number(row.querySelector('.cashbook-item-qty')?.value||1));
+    const unit=Math.max(0,Number(row.querySelector('.cashbook-item-unit')?.value||0));
+    const total=row.querySelector('.cashbook-item-total');
+    if(total) total.textContent=money(qty*unit);
+  });
+  const grand=getCashbookItems().reduce((s,x)=>s+x.quantity*x.unitPrice,0);
+  const box=$('#cashbookGrandTotal');
+  if(box) box.textContent=money(grand);
+}
+function bindCashbookItems(){
+  const wrap=$('#cashbookItems');
+  if(!wrap) return;
+  wrap.querySelectorAll('.cashbook-item-qty,.cashbook-item-unit').forEach(el=>el.oninput=refreshCashbookItems);
+  wrap.querySelectorAll('.cashbook-remove-item').forEach(btn=>btn.onclick=()=>{
+    const rows=wrap.querySelectorAll('.cashbook-item-row');
+    if(rows.length<=1){
+      const row=btn.closest('.cashbook-item-row');
+      row.querySelectorAll('input').forEach(input=>input.value=input.classList.contains('cashbook-item-qty')?'1':'');
+    }else{
+      btn.closest('.cashbook-item-row')?.remove();
+    }
+    refreshCashbookItems();
+  });
+}
+function ensureCashbookItemRow(){
+  const wrap=$('#cashbookItems');
+  if(!wrap) return;
+  if(!wrap.querySelector('.cashbook-item-row')) wrap.innerHTML=cashbookItemRowHTML();
+  bindCashbookItems();
+  refreshCashbookItems();
+}
 function renderCashbook(){
   const summary=$('#cashbookSummary'), table=$('#cashbookTable'), form=$('#cashbookForm');
   if(!summary||!table||!form) return;
@@ -527,9 +580,14 @@ function renderCashbook(){
     <div><span>Total registrado</span><strong>${money(t.total)}</strong></div>
   `;
   const rows=[...data.cashbook].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.id||0)-Number(a.id||0));
-  table.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${x.clientId?esc(clientName(x.clientId)):'—'}</td><td><strong>${esc(x.concept||'—')}</strong></td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`).join(''):'<tr><td colspan="7">No hay ingresos rápidos registrados.</td></tr>';
+  table.innerHTML=rows.length?rows.map(x=>{
+    const items=Array.isArray(x.items)&&x.items.length?x.items:[{service:x.concept||'Ingreso',subservice:'',quantity:1,unitPrice:Number(x.amount||0)}];
+    const detail=items.map(i=>esc(i.service)+(i.subservice?' · '+esc(i.subservice):'')+' · '+Number(i.quantity||1)+' × '+money(i.unitPrice||0)).join('<br>');
+    return `<tr><td>${esc(x.date||'—')}</td><td>${x.clientId?esc(clientName(x.clientId)):'—'}</td><td>${detail}</td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`;
+  }).join(''):'<tr><td colspan="7">No hay ingresos rápidos registrados.</td></tr>';
   const dateInput=$('#cashbookDate');
   if(dateInput && !dateInput.value) dateInput.value=todayISO();
+  ensureCashbookItemRow();
 }
 
 function renderDashboardAlerts(){
@@ -1931,21 +1989,32 @@ if(cashbookClientSelect){
   cashbookClientSelect.addEventListener('focus',populateCashbookClients);
   cashbookClientSelect.addEventListener('pointerdown',populateCashbookClients);
 }
+const addCashbookItem=$('#addCashbookItem');
+if(addCashbookItem){
+  addCashbookItem.onclick=()=>{
+    const wrap=$('#cashbookItems');
+    if(!wrap) return;
+    wrap.insertAdjacentHTML('beforeend',cashbookItemRowHTML());
+    bindCashbookItems();
+    refreshCashbookItems();
+  };
+}
 const cashbookForm=$('#cashbookForm');
 if(cashbookForm){
   cashbookForm.addEventListener('submit',e=>{
     e.preventDefault();
-    const amount=Number($('#cashbookAmount')?.value||0);
-    const concept=$('#cashbookConcept')?.value?.trim()||'';
-    if(!concept || amount<=0){
-      alert('Ingresa un concepto y un monto válido.');
+    const items=getCashbookItems();
+    const amount=items.reduce((s,x)=>s+x.quantity*x.unitPrice,0);
+    if(!items.length || amount<=0){
+      alert('Agrega al menos un trámite con cantidad y valor.');
       return;
     }
     data.cashbook.push({
       id:Date.now(),
       date:$('#cashbookDate')?.value||todayISO(),
       clientId:$('#cashbookClient')?.value?Number($('#cashbookClient').value):null,
-      concept,
+      concept:items.length===1?items[0].service:(items.length+' trámites / servicios'),
+      items,
       category:$('#cashbookCategory')?.value||'Otros servicios',
       method:$('#cashbookMethod')?.value||'Cash',
       amount,
@@ -1954,6 +2023,8 @@ if(cashbookForm){
     save();
     cashbookForm.reset();
     $('#cashbookDate').value=todayISO();
+    const wrap=$('#cashbookItems');
+    if(wrap) wrap.innerHTML=cashbookItemRowHTML();
     renderCashbook();
   });
 }
