@@ -769,3 +769,17 @@ dialog form{max-height:88vh;overflow:auto}
 @media(max-width:720px){.cashbook-meta-grid{grid-template-columns:1fr}.cashbook-item-row{grid-template-columns:1fr 1fr}.cashbook-item-row .cashbook-item-total{grid-column:1/2}.cashbook-remove-item{grid-column:2/3;justify-self:end}}
 
 .folder-number-badge{display:inline-flex;align-items:center;justify-content:center;min-width:52px;padding:5px 9px;border-radius:999px;background:#f5f7fb;border:1px solid #dfe5ee;color:#0b2348;font-weight:800;font-variant-numeric:tabular-nums}
+
+
+/* CRM backup & restore */
+.backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.backup-card{display:flex;flex-direction:column;gap:16px}
+.backup-card h2{margin:2px 0 8px}.backup-card p{color:var(--muted);line-height:1.5}
+.backup-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.backup-summary>div{padding:12px;border:1px solid #e3e7ee;border-radius:12px;background:#fafbfc;text-align:center}
+.backup-summary span{display:block;font-size:.72rem;color:var(--muted);margin-bottom:4px}.backup-summary strong{font-size:1.15rem;color:var(--navy)}
+.backup-status{display:block;min-height:18px;color:var(--muted)}
+.restore-preview{padding:14px;border:1px solid #dfe5ee;border-radius:12px;background:#f8fafc}.restore-preview strong,.restore-preview span{display:block}.restore-preview span{margin-top:5px;color:var(--muted)}
+.backup-help{margin-top:4px}.backup-help h3{margin:2px 0 8px}.backup-help p{color:var(--muted)}
+.danger-safe{background:#0b2348}
+@media(max-width:900px){.backup-grid{grid-template-columns:1fr}.backup-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
