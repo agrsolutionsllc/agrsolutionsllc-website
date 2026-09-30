@@ -746,3 +746,24 @@ dialog form{max-height:88vh;overflow:auto}
 .cashbook-form button{min-height:44px}
 @media(max-width:900px){.cashbook-summary{grid-template-columns:1fr 1fr}.cashbook-form{grid-template-columns:1fr 1fr}.cashbook-form .cashbook-note{grid-column:1/-1}}
 @media(max-width:560px){.cashbook-summary,.cashbook-form{grid-template-columns:1fr}.cashbook-form .cashbook-note{grid-column:auto}}
+
+
+/* Multi-line quick income entry */
+.cashbook-form-multi{display:block}
+.cashbook-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.cashbook-items-wrap{border:1px solid #e3e7ee;border-radius:16px;padding:16px;margin:10px 0 16px;background:#fafbfc}
+.cashbook-items-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.cashbook-items-head h3{margin:2px 0 0;color:var(--navy)}
+.cashbook-item-labels,.cashbook-item-row{display:grid;grid-template-columns:1.3fr 1.5fr .45fr .7fr .7fr 40px;gap:10px;align-items:center}
+.cashbook-item-labels{padding:0 4px 7px;font-size:.75rem;font-weight:800;text-transform:uppercase;color:var(--muted)}
+.cashbook-item-row{padding:8px 0;border-top:1px solid #e8ebf0}
+.cashbook-item-row input{width:100%;min-width:0}
+.cashbook-item-total{font-size:1rem;color:var(--navy)}
+.cashbook-remove-item{border:0;background:transparent;font-size:1.4rem;cursor:pointer;color:#8a2f2f}
+.cashbook-grand-total{display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-top:14px;padding-top:14px;border-top:2px solid #d7dde7}
+.cashbook-grand-total span{font-size:.8rem;font-weight:800;color:var(--muted);letter-spacing:.08em}
+.cashbook-grand-total strong{font-size:1.6rem;color:var(--navy)}
+.cashbook-form-multi .cashbook-note{display:block;margin:12px 0}
+.cashbook-save{width:100%;min-height:48px}
+@media(max-width:1000px){.cashbook-meta-grid{grid-template-columns:1fr 1fr}.cashbook-item-labels{display:none}.cashbook-item-row{grid-template-columns:1fr 1fr .5fr .8fr .8fr 40px}}
+@media(max-width:720px){.cashbook-meta-grid{grid-template-columns:1fr}.cashbook-item-row{grid-template-columns:1fr 1fr}.cashbook-item-row .cashbook-item-total{grid-column:1/2}.cashbook-remove-item{grid-column:2/3;justify-self:end}}
