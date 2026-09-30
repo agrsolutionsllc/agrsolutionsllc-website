@@ -666,3 +666,18 @@ dialog form{max-height:88vh;overflow:auto}
 .payment-discount-helper{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .payment-credit{display:block;color:var(--muted);font-weight:600;margin-top:2px}
 .cash-discount-note{color:var(--muted)}
+
+
+/* CRM v18 case pricing editor */
+.case-pricing-config{margin:16px 0;padding:16px;border:1px solid #e3e7ee;border-radius:16px;background:#fff}
+.case-pricing-config-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.case-pricing-config-head h4{margin:2px 0 0}
+.case-pricing-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.case-pricing-summary>div{padding:12px;border-radius:12px;background:#fafbfc;border:1px solid #edf0f4}
+.case-pricing-summary span{display:block;color:var(--muted);font-size:.82rem;margin-bottom:4px}
+.case-pricing-summary strong{color:var(--navy);font-size:1.02rem}
+.case-pricing-editor{margin-top:14px;padding-top:14px;border-top:1px solid #edf0f4}
+.case-pricing-editor>label{display:block;margin-bottom:10px;font-weight:700}
+.case-pricing-editor input{margin-top:6px}
+.case-pricing-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:700px){.case-pricing-summary{grid-template-columns:1fr}.case-pricing-config-head{align-items:flex-start;flex-direction:column}}
