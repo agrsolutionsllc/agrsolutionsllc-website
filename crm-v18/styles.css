@@ -656,3 +656,13 @@ dialog form{max-height:88vh;overflow:auto}
   .balance-payment-picker-row{align-items:stretch;flex-wrap:wrap}
   .balance-payment-amount{max-width:none;flex:1;min-width:150px}
 }
+
+
+/* AGR dual pricing helpers */
+.pricing-preview,.payment-discount-helper,.cash-discount-note{margin-top:8px;padding:10px 12px;border:1px solid #e3e7ee;border-radius:12px;background:#fafbfc}
+.pricing-preview{display:grid;grid-template-columns:1fr auto;gap:6px 16px}
+.pricing-preview span,.payment-discount-helper span{color:var(--muted);font-size:.9rem}
+.pricing-preview strong,.payment-discount-helper strong{color:var(--navy)}
+.payment-discount-helper{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.payment-credit{display:block;color:var(--muted);font-weight:600;margin-top:2px}
+.cash-discount-note{color:var(--muted)}
