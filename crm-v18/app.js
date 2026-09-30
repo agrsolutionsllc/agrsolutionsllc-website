@@ -782,6 +782,7 @@ function balanceReminderHTML(k){
   const message=buildBalanceReminder(k);
   const normalized=phone?(phone.length===10?'1'+phone:phone):'';
   const waHref=normalized?'https://wa.me/'+normalized+'?text='+encodeURIComponent(message):'#';
+  const smsHref=normalized?'sms:+'+normalized+'?body='+encodeURIComponent(message):'#';
   const subject='Recordatorio de saldo - AGR Solutions LLC';
   const mailHref=email?'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message):'#';
   return '<section class="balance-reminder">'+
@@ -789,22 +790,48 @@ function balanceReminderHTML(k){
     '<div class="balance-preview">'+esc(message)+'</div>'+
     '<div class="notification-actions">'+
       '<a class="notify-btn notify-whatsapp balance-wa '+(phone?'':'disabled')+'" href="'+waHref+'" target="_blank" rel="noopener">WhatsApp · saldo</a>'+
+      '<a class="notify-btn notify-sms balance-sms '+(phone?'':'disabled')+'" href="'+smsHref+'">SMS · saldo</a>'+
       '<a class="notify-btn notify-email balance-mail '+(email?'':'disabled')+'" href="'+mailHref+'" target="_blank" rel="noopener">Correo · saldo</a>'+
+      '<button type="button" class="notify-btn notify-copy balance-copy">Copiar mensaje</button>'+
     '</div>'+
+    '<small class="copy-status" aria-live="polite"></small>'+
     '<small class="notification-note">Este mensaje solo incluye el saldo pendiente y las opciones de pago; no incluye el estado del caso.</small>'+
   '</section>';
 }
 function bindBalanceReminder(k,root){
   root=root||document;
   const wa=root.querySelector('.balance-wa');
+  const sms=root.querySelector('.balance-sms');
   const mail=root.querySelector('.balance-mail');
+  const copy=root.querySelector('.balance-copy');
+  const status=root.querySelector('.copy-status');
   if(wa && !wa.classList.contains('disabled')) wa.onclick=()=>{
     data.communications.unshift({id:Date.now(),caseId:k.id,channel:'WhatsApp',action:'Recordatorio de saldo abierto · '+money(caseBalance(k)),at:new Date().toISOString()});
     save(); logCaseEvent(k.id,'Recordatorio de saldo por WhatsApp abierto','communication');
   };
+  if(sms && !sms.classList.contains('disabled')) sms.onclick=()=>{
+    data.communications.unshift({id:Date.now(),caseId:k.id,channel:'SMS',action:'Recordatorio de saldo abierto · '+money(caseBalance(k)),at:new Date().toISOString()});
+    save(); logCaseEvent(k.id,'Recordatorio de saldo por SMS abierto','communication');
+  };
   if(mail && !mail.classList.contains('disabled')) mail.onclick=()=>{
     data.communications.unshift({id:Date.now(),caseId:k.id,channel:'Correo',action:'Recordatorio de saldo abierto · '+money(caseBalance(k)),at:new Date().toISOString()});
     save(); logCaseEvent(k.id,'Recordatorio de saldo por correo abierto','communication');
+  };
+  if(copy) copy.onclick=async()=>{
+    const message=buildBalanceReminder(k);
+    try{
+      if(navigator.clipboard?.writeText) await navigator.clipboard.writeText(message);
+      else{
+        const ta=document.createElement('textarea');
+        ta.value=message; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      }
+      if(status){status.textContent='✓ Mensaje copiado';setTimeout(()=>{status.textContent='';},2200);}
+      data.communications.unshift({id:Date.now(),caseId:k.id,channel:'Copiar',action:'Recordatorio de saldo copiado · '+money(caseBalance(k)),at:new Date().toISOString()});
+      save(); logCaseEvent(k.id,'Recordatorio de saldo copiado','communication');
+    }catch(err){
+      if(status) status.textContent='No se pudo copiar automáticamente.';
+    }
   };
 }
 function renderCasePayments(k){
