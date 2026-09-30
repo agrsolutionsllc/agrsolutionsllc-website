@@ -128,11 +128,11 @@ function nextCompanyFolderNumberForName(name='',excludeId=null){
     .filter(c=>c.isCompany && Number(c.id)!==Number(excludeId))
     .map(c=>String(c.folderNumber||'').trim().toUpperCase())
     .map(v=>{
-      const m=v.match(/^EMP-([A-Z])-?(\d+)$/);
+      const m=v.match(/^([A-Z])-?(\d+)$/);
       return m && m[1]===letter ? Number(m[2]) : 0;
     })
     .filter(n=>n>0);
-  return 'EMP-'+letter+'-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
+  return letter+'-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
 }
 function migrateFolderNumbersByLetter(){
   if(Number(data.folderSchemeVersion||0)>=2) return;
@@ -151,7 +151,7 @@ function migrateFolderNumbersByLetter(){
 }
 migrateFolderNumbersByLetter();
 function migrateCompanyFolderNumbers(){
-  if(Number(data.companyFolderSchemeVersion||0)>=1) return;
+  if(Number(data.companyFolderSchemeVersion||0)>=2) return;
   const counters={};
   data.clients
     .filter(c=>c.isCompany)
@@ -160,9 +160,9 @@ function migrateCompanyFolderNumbers(){
     .forEach(c=>{
       const letter=folderLetterForName(c.name);
       counters[letter]=(counters[letter]||0)+1;
-      c.folderNumber='EMP-'+letter+'-'+String(counters[letter]).padStart(3,'0');
+      c.folderNumber=letter+'-'+String(counters[letter]).padStart(3,'0');
     });
-  data.companyFolderSchemeVersion=1;
+  data.companyFolderSchemeVersion=2;
   save();
 }
 migrateCompanyFolderNumbers();
