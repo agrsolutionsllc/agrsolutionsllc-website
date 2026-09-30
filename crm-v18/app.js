@@ -588,9 +588,8 @@ function renderClients(filter=''){
   table.innerHTML=data.clients.filter(c=>!c.isCompany && [c.name,c.phone,c.email].join(' ').toLowerCase().includes(q)).map(c=>{
     const cases=data.cases.filter(x=>x.clientId===c.id).length;
     const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
-    return `<tr><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal)}</strong></td><td><button type="button" class="secondary client-account-btn" data-client-account-id="${c.id}">Cuenta</button></td></tr>`
-  }).join('');
-  table.querySelectorAll('[data-client-account-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClientAccount(Number(btn.dataset.clientAccountId));});
+    return `<tr><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal)}</strong></td></tr>`
+  }).join('')||'<tr><td colspan="5">No hay clientes personales registrados.</td></tr>';
 }
 function renderCompanies(filter=''){
   const q=filter.toLowerCase();
