@@ -83,6 +83,7 @@ if(!Array.isArray(data.tasks)) data.tasks=[];
 if(!Array.isArray(data.clientAccountCharges)) data.clientAccountCharges=[];
 if(!Array.isArray(data.clientAccountPayments)) data.clientAccountPayments=[];
 if(!Array.isArray(data.clientAccountInvoices)) data.clientAccountInvoices=[];
+if(!Array.isArray(data.cashbook)) data.cashbook=[];
 
 // migrate old prototype statuses if they exist in this browser
 const migration={nuevo:'inicial',pendiente:'evidencia',proceso:'preparacion',completado:'completado'};
@@ -434,7 +435,7 @@ function badgeClass(s){
 function switchView(view){
   $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',appointments:'Citas',tasks:'Tareas'};
+  const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja / Ingresos',appointments:'Citas',tasks:'Tareas'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
 }
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
@@ -488,9 +489,34 @@ function render(){
   renderCases();
   renderServices();
   renderPayments();
+  renderCashbook();
   bindCaseOpeners();
 }
 
+
+
+function cashbookTotals(){
+  const today=todayISO();
+  const month=today.slice(0,7);
+  const total=data.cashbook.reduce((s,x)=>s+Number(x.amount||0),0);
+  const todayTotal=data.cashbook.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount||0),0);
+  const monthTotal=data.cashbook.filter(x=>String(x.date||'').startsWith(month)).reduce((s,x)=>s+Number(x.amount||0),0);
+  return {todayTotal,monthTotal,total};
+}
+function renderCashbook(){
+  const summary=$('#cashbookSummary'), table=$('#cashbookTable'), form=$('#cashbookForm');
+  if(!summary||!table||!form) return;
+  const t=cashbookTotals();
+  summary.innerHTML=`
+    <div><span>Hoy</span><strong>${money(t.todayTotal)}</strong></div>
+    <div><span>Este mes</span><strong>${money(t.monthTotal)}</strong></div>
+    <div><span>Total registrado</span><strong>${money(t.total)}</strong></div>
+  `;
+  const rows=[...data.cashbook].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.id||0)-Number(a.id||0));
+  table.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td><strong>${esc(x.concept||'—')}</strong></td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`).join(''):'<tr><td colspan="6">No hay ingresos rápidos registrados.</td></tr>';
+  const dateInput=$('#cashbookDate');
+  if(dateInput && !dateInput.value) dateInput.value=todayISO();
+}
 
 function renderDashboardAlerts(){
   const box=$('#dashboardAlerts');
@@ -1885,6 +1911,32 @@ form.addEventListener('submit',async e=>{
 
 save();
 render();
+
+const cashbookForm=$('#cashbookForm');
+if(cashbookForm){
+  cashbookForm.addEventListener('submit',e=>{
+    e.preventDefault();
+    const amount=Number($('#cashbookAmount')?.value||0);
+    const concept=$('#cashbookConcept')?.value?.trim()||'';
+    if(!concept || amount<=0){
+      alert('Ingresa un concepto y un monto válido.');
+      return;
+    }
+    data.cashbook.push({
+      id:Date.now(),
+      date:$('#cashbookDate')?.value||todayISO(),
+      concept,
+      category:$('#cashbookCategory')?.value||'Otros servicios',
+      method:$('#cashbookMethod')?.value||'Cash',
+      amount,
+      note:$('#cashbookNote')?.value?.trim()||''
+    });
+    save();
+    cashbookForm.reset();
+    $('#cashbookDate').value=todayISO();
+    renderCashbook();
+  });
+}
 const globalSearch=$('#globalSearch');
 if(globalSearch) globalSearch.addEventListener('input',e=>renderGlobalSearch(e.target.value));
 document.addEventListener('click',e=>{
