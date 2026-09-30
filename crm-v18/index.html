@@ -213,7 +213,12 @@
           </div>
           <form id="cashbookForm" class="cashbook-form">
             <label>Fecha<input id="cashbookDate" type="date" required></label>
-            <label>Concepto<input id="cashbookConcept" type="text" placeholder="Ej. Notaría, copia, traducción..." required></label>
+            <label>Cliente (opcional)
+              <select id="cashbookClient">
+                <option value="">Sin cliente vinculado</option>
+              </select>
+            </label>
+            <label>Concepto<input id="cashbookConcept" type="text" placeholder="Ej. Contrato de renta, notaría, traducción..." required></label>
             <label>Categoría
               <select id="cashbookCategory">
                 <option>Notaría</option>
@@ -248,7 +253,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Método</th><th>Monto</th><th>Nota</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Cliente</th><th>Concepto</th><th>Categoría</th><th>Método</th><th>Monto</th><th>Nota</th></tr></thead>
               <tbody id="cashbookTable"></tbody>
             </table>
           </div>
