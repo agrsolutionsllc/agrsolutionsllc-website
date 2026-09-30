@@ -520,12 +520,75 @@ function badgeClass(s){
   return 'nuevo';
 }
 
+function backupFileStamp(){
+  const d=new Date();
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
+}
+function crmBackupPayload(){
+  return {
+    app:'AGR CRM',
+    version:'v18',
+    createdAt:new Date().toISOString(),
+    storeKey,
+    counts:{
+      clients:data.clients?.length||0,
+      companies:data.clients?.filter(c=>c.isCompany).length||0,
+      cases:data.cases?.length||0,
+      payments:data.payments?.length||0,
+      cashbook:data.cashbook?.length||0,
+      appointments:data.appointments?.length||0,
+      tasks:data.tasks?.length||0
+    },
+    data:structuredClone(data)
+  };
+}
+function downloadCRMBackup(prefix='AGR-CRM-BACKUP'){
+  const payload=crmBackupPayload();
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=prefix+'-'+backupFileStamp()+'.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  return payload;
+}
+function validateCRMBackupPayload(payload){
+  const restored=payload?.data && typeof payload.data==='object' ? payload.data : payload;
+  if(!restored || typeof restored!=='object') throw new Error('El archivo no contiene datos válidos.');
+  const required=['clients','cases','payments','appointments'];
+  for(const key of required){
+    if(!Array.isArray(restored[key])) throw new Error('Falta la sección "'+key+'" del CRM.');
+  }
+  return restored;
+}
+function renderBackup(){
+  const box=$('#backupSummary');
+  if(!box) return;
+  const counts={
+    clientes:data.clients.filter(c=>!c.isCompany).length,
+    empresas:data.clients.filter(c=>c.isCompany).length,
+    casos:data.cases.length,
+    pagos:data.payments.length,
+    caja:data.cashbook.length
+  };
+  box.innerHTML=
+    '<div><span>Clientes</span><strong>'+counts.clientes+'</strong></div>'+
+    '<div><span>Empresas</span><strong>'+counts.empresas+'</strong></div>'+
+    '<div><span>Casos</span><strong>'+counts.casos+'</strong></div>'+
+    '<div><span>Pagos</span><strong>'+counts.pagos+'</strong></div>'+
+    '<div><span>Caja</span><strong>'+counts.caja+'</strong></div>';
+}
 function switchView(view){
   $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja / Ingresos',appointments:'Citas',tasks:'Tareas'};
+  const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja / Ingresos',appointments:'Citas',tasks:'Tareas',backup:'Backup'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
   if(view==='cashbook') requestAnimationFrame(()=>renderCashbook());
+  if(view==='backup') requestAnimationFrame(()=>renderBackup());
 }
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
 $$('[data-jump]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.jump)));
@@ -579,6 +642,7 @@ function render(){
   renderServices();
   renderPayments();
   renderCashbook();
+  renderBackup();
   bindCaseOpeners();
 }
 
@@ -2164,6 +2228,73 @@ if(cashbookForm){
     renderCashbook();
   });
 }
+const downloadBackupBtn=$('#downloadBackup');
+if(downloadBackupBtn){
+  downloadBackupBtn.addEventListener('click',()=>{
+    const status=$('#backupDownloadStatus');
+    try{
+      const payload=downloadCRMBackup();
+      if(status) status.textContent='✓ Backup creado '+new Date(payload.createdAt).toLocaleString('es-US')+'.';
+    }catch(err){
+      if(status) status.textContent='No se pudo crear el backup: '+err.message;
+    }
+  });
+}
+
+const restoreInput=$('#restoreBackupFile');
+const chooseRestoreBtn=$('#chooseRestoreBackup');
+const confirmRestoreBtn=$('#confirmRestoreBackup');
+let pendingRestoreData=null;
+if(chooseRestoreBtn && restoreInput){
+  chooseRestoreBtn.addEventListener('click',()=>restoreInput.click());
+  restoreInput.addEventListener('change',async()=>{
+    const status=$('#backupRestoreStatus');
+    const preview=$('#restoreBackupPreview');
+    pendingRestoreData=null;
+    if(confirmRestoreBtn) confirmRestoreBtn.hidden=true;
+    if(preview){preview.hidden=true;preview.innerHTML='';}
+    const file=restoreInput.files?.[0];
+    if(!file) return;
+    try{
+      const text=await file.text();
+      const payload=JSON.parse(text);
+      const restored=validateCRMBackupPayload(payload);
+      pendingRestoreData=restored;
+      const clients=restored.clients?.length||0;
+      const companies=restored.clients?.filter(c=>c.isCompany).length||0;
+      const cases=restored.cases?.length||0;
+      const payments=restored.payments?.length||0;
+      if(preview){
+        preview.innerHTML='<strong>'+esc(file.name)+'</strong><span>'+clients+' clientes/empresas · '+cases+' casos · '+payments+' pagos</span>';
+        preview.hidden=false;
+      }
+      if(confirmRestoreBtn) confirmRestoreBtn.hidden=false;
+      if(status) status.textContent='Archivo válido. Revisa el resumen antes de restaurar.';
+    }catch(err){
+      if(status) status.textContent='No se puede usar este archivo: '+err.message;
+    }
+  });
+}
+if(confirmRestoreBtn){
+  confirmRestoreBtn.addEventListener('click',()=>{
+    const status=$('#backupRestoreStatus');
+    if(!pendingRestoreData){
+      if(status) status.textContent='Primero selecciona un backup válido.';
+      return;
+    }
+    const ok=window.confirm('Esta acción reemplazará los datos actuales del CRM por los del backup seleccionado. Antes se descargará una copia del estado actual. ¿Deseas continuar?');
+    if(!ok) return;
+    try{
+      downloadCRMBackup('AGR-CRM-PRE-RESTAURACION');
+      localStorage.setItem(storeKey,JSON.stringify(pendingRestoreData));
+      if(status) status.textContent='✓ Backup restaurado. Recargando CRM...';
+      setTimeout(()=>location.reload(),350);
+    }catch(err){
+      if(status) status.textContent='No se pudo restaurar: '+err.message;
+    }
+  });
+}
+
 const globalSearch=$('#globalSearch');
 if(globalSearch) globalSearch.addEventListener('input',e=>renderGlobalSearch(e.target.value));
 document.addEventListener('click',e=>{
