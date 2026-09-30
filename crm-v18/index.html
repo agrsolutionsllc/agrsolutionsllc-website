@@ -32,6 +32,7 @@
         <button class="nav-item" data-view="cases">▣ <span>Casos & trámites</span></button>
         <button class="nav-item" data-view="services">≡ <span>Servicios</span></button>
         <button class="nav-item" data-view="payments">$ <span>Pagos</span></button>
+        <button class="nav-item" data-view="cashbook">▧ <span>Caja / Ingresos</span></button>
         <button class="nav-item" data-view="appointments">◫ <span>Citas</span></button>
         <button class="nav-item" data-view="tasks">✓ <span>Tareas</span></button>
       </nav>
@@ -189,6 +190,66 @@
             <table>
               <thead><tr><th>Cliente</th><th>Servicio</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
               <tbody id="paymentsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="view" id="view-cashbook">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">CAJA / INGRESOS RÁPIDOS</p>
+            <h2>Movimientos pequeños del negocio</h2>
+            <p class="section-subtext">Para cobros simples que no necesitan caso ni factura formal.</p>
+          </div>
+        </div>
+
+        <div class="cashbook-summary" id="cashbookSummary"></div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div><p class="eyebrow">NUEVO MOVIMIENTO</p><h2>Registrar ingreso</h2></div>
+          </div>
+          <form id="cashbookForm" class="cashbook-form">
+            <label>Fecha<input id="cashbookDate" type="date" required></label>
+            <label>Concepto<input id="cashbookConcept" type="text" placeholder="Ej. Notaría, copia, traducción..." required></label>
+            <label>Categoría
+              <select id="cashbookCategory">
+                <option>Notaría</option>
+                <option>Traducciones</option>
+                <option>DMV</option>
+                <option>Taxes</option>
+                <option>Copias / Impresiones</option>
+                <option>Consultas</option>
+                <option>Otros servicios</option>
+              </select>
+            </label>
+            <label>Método
+              <select id="cashbookMethod">
+                <option>Cash</option>
+                <option>Zelle</option>
+                <option>Credit Card</option>
+                <option>Debit Card</option>
+                <option>Check</option>
+                <option>ACH / Bank Transfer</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label>Monto<input id="cashbookAmount" type="number" min="0.01" step="0.01" required></label>
+            <label class="cashbook-note">Nota<input id="cashbookNote" type="text" placeholder="Opcional"></label>
+            <button type="submit" class="primary">Guardar ingreso</button>
+          </form>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div><p class="eyebrow">HISTORIAL</p><h2>Ingresos registrados</h2></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Método</th><th>Monto</th><th>Nota</th></tr></thead>
+              <tbody id="cashbookTable"></tbody>
             </table>
           </div>
         </div>
