@@ -72,6 +72,7 @@ const statusLabels={
 
 const storeKey='agr-crm-demo-v1';
 const STRIPE_BACKEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/create-payment-link';
+const STRIPE_SYNC_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/sync-payments';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 if(!data.documents || typeof data.documents!=='object') data.documents={};
@@ -631,6 +632,60 @@ function getCaseValuesFromForm(){
   };
 }
 
+function makeCaseSyncToken(){
+  try{
+    if(crypto?.randomUUID) return crypto.randomUUID();
+    if(crypto?.getRandomValues){
+      const a=new Uint32Array(4); crypto.getRandomValues(a);
+      return Array.from(a,x=>x.toString(16).padStart(8,'0')).join('');
+    }
+  }catch(_){}
+  return 'agr-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+}
+function ensureCaseSyncToken(k){
+  if(!k.syncToken){
+    k.syncToken=makeCaseSyncToken();
+    save();
+  }
+  return k.syncToken;
+}
+async function syncStripePaymentsForCase(k,{silent=true}={}){
+  if(!k?.id) return {added:0};
+  const syncToken=ensureCaseSyncToken(k);
+  const response=await fetch(STRIPE_SYNC_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({caseId:k.id,syncToken})
+  });
+  let payload={};
+  try{payload=await response.json();}catch(_){}
+  if(!response.ok) throw new Error(payload.error||payload.message||('Error '+response.status));
+  const existing=new Set(data.payments.map(p=>p.stripePaymentIntentId).filter(Boolean));
+  let added=0;
+  for(const p of (payload.payments||[])){
+    if(!p?.id || existing.has(p.id) || Number(p.amount||0)<=0) continue;
+    data.payments.push({
+      id:Date.now()+added,
+      caseId:Number(k.id),
+      clientId:k.clientId,
+      amount:Number(p.amount||0),
+      discountCredit:0,
+      method:'Credit / Debit Card',
+      date:p.created?new Date(Number(p.created)*1000).toISOString().slice(0,10):new Date().toISOString().slice(0,10),
+      note:'Pago Stripe confirmado automáticamente'+(p.invoiceNumber?' · '+p.invoiceNumber:''),
+      stripePaymentIntentId:p.id,
+      stripeSynced:true
+    });
+    existing.add(p.id);
+    added++;
+  }
+  if(added){
+    save();
+    logCaseEvent(k.id,added===1?'Pago Stripe sincronizado automáticamente':'Pagos Stripe sincronizados automáticamente ('+added+')','payment');
+  }
+  return {added};
+}
+
 async function createStripePaymentLinkForCase(values){
   const amount=Number(values.initialPayment||0);
   if(!amount || amount<=0) return '';
@@ -646,7 +701,8 @@ async function createStripePaymentLinkForCase(values){
       clientName: client?.name||'',
       clientEmail: client?.email||'',
       service: values.service||'AGR Solutions LLC',
-      invoiceNumber: values.invoiceNumber||''
+      invoiceNumber: values.invoiceNumber||'',
+      syncToken: values.syncToken||''
     })
   });
   const result=await response.json();
@@ -685,7 +741,7 @@ function refreshClientNotification(){
   if(mail){
     if(email){
       const subject='Actualización de su caso - AGR Solutions LLC';
-      mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
+      mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subjectForAmount())+'&body='+encodeURIComponent(message);
       mail.target='_blank';
       mail.rel='noopener';
       mail.classList.remove('disabled');
@@ -804,6 +860,7 @@ async function ensureBalancePaymentLink(k,requestedAmount){
   if(amount>balance) throw new Error('El monto no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
   if(k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(amount)) return k.balancePaymentLink;
   const client=clientById(k.clientId);
+  const syncToken=ensureCaseSyncToken(k);
   const response=await fetch(STRIPE_BACKEND_URL,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -813,7 +870,8 @@ async function ensureBalancePaymentLink(k,requestedAmount){
       clientName:client?.name||'',
       clientEmail:client?.email||'',
       service:(k.service||'AGR Solutions LLC')+(amount<balance?' · Pago parcial':' · Saldo pendiente'),
-      invoiceNumber:k.invoiceNumber||''
+      invoiceNumber:k.invoiceNumber||'',
+      syncToken
     })
   });
   let payload={};
@@ -844,7 +902,7 @@ function balanceReminderHTML(k){
   const normalized=phone?(phone.length===10?'1'+phone:phone):'';
   const waHref=normalized?'https://wa.me/'+normalized+'?text='+encodeURIComponent(message):'#';
   const smsHref=normalized?'sms:+'+normalized+'?body='+encodeURIComponent(message):'#';
-  const subject='Recordatorio de saldo - AGR Solutions LLC';
+  const subject='Recordatorio de pago · '+(k.invoiceNumber||'AGR')+' · '+money(savedAmount||currentAmount?.()||0);
   const mailHref=email?'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message):'#';
   return '<section class="balance-reminder">'+
     '<div class="balance-reminder-head"><div><span class="workspace-kicker">RECORDATORIO DE SALDO</span><strong>Saldo pendiente total</strong></div><strong class="balance-amount">'+money(balance)+'</strong></div>'+
@@ -888,12 +946,11 @@ function bindBalanceReminder(k,root){
   const phone=(client?.phone||'').replace(/\D/g,'');
   const email=(client?.email||'').trim();
   const normalized=phone?(phone.length===10?'1'+phone:phone):'';
-  const subject='Recordatorio de saldo - AGR Solutions LLC';
-
   const currentAmount=()=>{
     const n=Number(amountInput?.value||balance);
     return Number.isFinite(n)?n:0;
   };
+  const subjectForAmount=()=> 'Recordatorio de pago · '+(k.invoiceNumber||'AGR')+' · '+money(currentAmount());
 
   const refreshDraft=()=>{
     const amount=currentAmount();
@@ -977,7 +1034,15 @@ function renderCasePayments(k){
   const pane=$('#casePaymentsPane'); if(!pane) return;
   const rows=data.payments.filter(p=>Number(p.caseId)===Number(k.id)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   pane.innerHTML=`
-    <div class="workspace-head"><div><span class="workspace-kicker">PAGOS</span><h3>Historial de pagos</h3></div><button type="button" class="primary" id="workspaceAddPayment">+ Agregar pago</button></div>
+    <div class="workspace-head">
+      <div><span class="workspace-kicker">PAGOS</span><h3>Historial de pagos</h3></div>
+      <div class="workspace-head-actions">
+        <button type="button" class="secondary" id="syncStripePayments">↻ Sincronizar Stripe</button>
+        <button type="button" class="primary" id="workspaceAddPayment">+ Agregar pago</button>
+      </div>
+    </div>
+    <small class="stripe-sync-status" id="stripeSyncStatus" aria-live="polite"></small>
+
     <section class="case-pricing-config">
       <div class="case-pricing-config-head">
         <div><span class="workspace-kicker">CONFIGURAR PRECIOS</span><h4>Precio estándar y precios por método</h4></div>
@@ -1001,6 +1066,7 @@ function renderCasePayments(k){
         </div>
       </div>
     </section>
+
     <div class="finance-snapshot">
       <div><span>Precio estándar</span><strong>${money(caseStandardPrice(k))}</strong></div>
       <div><span>Cash</span><strong>${money(caseCashPrice(k))}</strong></div>
@@ -1008,11 +1074,39 @@ function renderCasePayments(k){
       <div><span>Tarjeta</span><strong>${money(caseCardPrice(k))}</strong></div>
       <div><span>Cobrado</span><strong>${money(caseCollected(k.id))}</strong></div>
       <div><span>Saldo estándar</span><strong>${money(caseBalance(k))}</strong></div>
-    </div>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
-    </tbody></table></div>
+    </div>
+
+    <div class="workspace-table"><table>
+      <thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th></tr></thead>
+      <tbody>
+        ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
+      </tbody>
+    </table></div>
     ${balanceReminderHTML(k)}`;
 
   $('#workspaceAddPayment').onclick=()=>{dialog.close();openModal('payment',{caseId:k.id,date:new Date().toISOString().slice(0,10)});};
+
+  const syncBtn=$('#syncStripePayments');
+  const syncStatus=$('#stripeSyncStatus');
+  if(syncBtn) syncBtn.onclick=async()=>{
+    const original=syncBtn.textContent;
+    syncBtn.disabled=true;
+    syncBtn.textContent='Sincronizando...';
+    if(syncStatus) syncStatus.textContent='';
+    try{
+      const result=await syncStripePaymentsForCase(k,{silent:false});
+      if(syncStatus) syncStatus.textContent=result.added?'✓ '+result.added+' pago(s) importado(s) desde Stripe.':'✓ Stripe al día. No hay pagos nuevos.';
+      if(result.added){
+        renderCasePayments(k);
+        renderCaseSummarySnapshot(k);
+        renderCommunicationHistory(k);
+      }
+    }catch(err){
+      if(syncStatus) syncStatus.textContent='No se pudo sincronizar Stripe: '+err.message;
+    }finally{
+      if(syncBtn){syncBtn.disabled=false;syncBtn.textContent=original;}
+    }
+  };
 
   const toggle=$('#togglePricingConfig');
   const editor=$('#casePricingEditor');
@@ -1037,29 +1131,20 @@ function renderCasePayments(k){
   };
   if(toggle && editor) toggle.onclick=()=>{editor.hidden=!editor.hidden;toggle.textContent=editor.hidden?'Editar precios':'Ocultar';refreshPricingEditor();};
   [standardInput,cashInput,zelleInput,cardInput].forEach(el=>el?.addEventListener('input',refreshPricingEditor));
+
   if(saveBtn) saveBtn.onclick=()=>{
     const standard=Math.max(0,Number(standardInput?.value||0));
     const cash=Math.max(0,Number(cashInput?.value||0));
     const zelle=Math.max(0,Number(zelleInput?.value||0));
     const card=Math.max(0,Number(cardInput?.value||0));
     const collected=caseCollected(k.id);
-    if(!Number.isFinite(standard) || standard<=0){
-      if(priceStatus) priceStatus.textContent='Ingresa un precio estándar mayor que $0.00.';
-      return;
-    }
-    if([cash,zelle,card].some(v=>!Number.isFinite(v)||v<=0)){
-      if(priceStatus) priceStatus.textContent='Todos los precios deben ser mayores que $0.00.';
-      return;
-    }
-    if(standard<collected){
-      if(priceStatus) priceStatus.textContent='El precio estándar no puede ser menor que lo ya cobrado: '+money(collected)+'.';
-      return;
-    }
+    if(!Number.isFinite(standard)||standard<=0){if(priceStatus)priceStatus.textContent='Ingresa un precio estándar mayor que $0.00.';return;}
+    if([cash,zelle,card].some(v=>!Number.isFinite(v)||v<=0)){if(priceStatus)priceStatus.textContent='Todos los precios deben ser mayores que $0.00.';return;}
+    if(standard<collected){if(priceStatus)priceStatus.textContent='El precio estándar no puede ser menor que lo ya cobrado: '+money(collected)+'.';return;}
     k.serviceTotal=standard;
     k.cashPrice=cash;
     k.zellePrice=zelle;
     k.cardPrice=card;
-    // Any existing balance link may now have the wrong ceiling; invalidate it.
     k.balancePaymentLink='';
     k.balancePaymentLinkAmount=0;
     k.balancePaymentLinkMode='';
@@ -1073,6 +1158,19 @@ function renderCasePayments(k){
 
   refreshPricingEditor();
   bindBalanceReminder(k,pane);
+
+  // Silent sync whenever the Payments tab is rendered.
+  syncStripePaymentsForCase(k).then(result=>{
+    if(result.added){
+      renderCasePayments(k);
+      renderCaseSummarySnapshot(k);
+      renderCommunicationHistory(k);
+    }
+  }).catch(err=>{
+    if(syncStatus && /permission|not have the required permissions|403/i.test(String(err.message||err))){
+      syncStatus.textContent='Stripe necesita permiso de lectura de Payment Intents para sincronizar automáticamente.';
+    }
+  });
 }
 function renderCaseHistory(k){
   const pane=$('#caseHistoryPane'); if(!pane) return;
@@ -1380,7 +1478,8 @@ form.addEventListener('submit',async e=>{
       cardPrice:Number(f.cardPrice||f.serviceTotal||0),
       initialPayment:Number(f.initialPayment||0),
       invoiceNumber:f.invoiceNumber||nextInvoiceNumber(),
-      stripePaymentLink:f.stripePaymentLink||''
+      stripePaymentLink:f.stripePaymentLink||'',
+      syncToken:makeCaseSyncToken()
     };
     if(newCase.initialPayment>0 && !newCase.stripePaymentLink){
       try{
