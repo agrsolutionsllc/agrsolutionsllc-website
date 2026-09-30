@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { amount, caseId, clientName, service, clientEmail, invoiceNumber } = req.body || {};
+    const { amount, caseId, clientName, service, clientEmail, invoiceNumber, syncToken } = req.body || {};
     const cents = Math.round(Number(amount) * 100);
 
     if (!Number.isFinite(cents) || cents <= 0) {
@@ -40,6 +40,11 @@ export default async function handler(req, res) {
     params.append('metadata[service]', service || '');
     params.append('metadata[invoice_number]', invoiceNumber || '');
     if (clientEmail) params.append('metadata[client_email]', clientEmail);
+
+    // Copy reconciliation metadata to every PaymentIntent created by this Payment Link.
+    params.append('payment_intent_data[metadata][case_id]', String(caseId || ''));
+    params.append('payment_intent_data[metadata][invoice_number]', invoiceNumber || '');
+    if (syncToken) params.append('payment_intent_data[metadata][sync_token]', String(syncToken));
 
     const stripeRes = await fetch('https://api.stripe.com/v1/payment_links', {
       method: 'POST',
