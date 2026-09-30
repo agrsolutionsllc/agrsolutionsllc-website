@@ -543,6 +543,61 @@ function crmBackupPayload(){
     data:structuredClone(data)
   };
 }
+async function downloadStandaloneCRM(){
+  const fetchText=async url=>{
+    const res=await fetch(url,{cache:'no-store'});
+    if(!res.ok) throw new Error('No se pudo descargar '+url);
+    return await res.text();
+  };
+  const fetchDataUrl=async url=>{
+    const res=await fetch(url,{cache:'no-store'});
+    if(!res.ok) throw new Error('No se pudo descargar '+url);
+    const blob=await res.blob();
+    return await new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=()=>resolve(reader.result);
+      reader.onerror=()=>reject(reader.error||new Error('No se pudo leer el logo.'));
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const base=new URL('./',location.href);
+  const indexUrl=new URL('index.html',base).href+'?offline='+Date.now();
+  const cssUrl=new URL('styles.css',base).href+'?offline='+Date.now();
+  const jsUrl=new URL('app.js',base).href+'?offline='+Date.now();
+  const logoUrl=new URL('../logo-agr.jpeg.jpeg',base).href+'?offline='+Date.now();
+
+  const [html,css,js,logoData]=await Promise.all([
+    fetchText(indexUrl),
+    fetchText(cssUrl),
+    fetchText(jsUrl),
+    fetchDataUrl(logoUrl)
+  ]);
+
+  let standalone=html
+    .replace(/<link rel="stylesheet" href="\.\/styles\.css\?v=[^"]+"\s*\/?>/i,'<style>'+css.replace(/<\/style/gi,'<\\/style')+'</style>')
+    .replace(/<script src="\.\/app\.js\?v=[^"]+"><\/script>/i,'<script>'+js.replace(/<\/script/gi,'<\\/script')+'<\/script>')
+    .replace(/src="\.\.\/logo-agr\.jpeg\.jpeg"/g,'src="'+logoData+'"');
+
+  standalone=standalone.replace(
+    '<div class="demo-banner">',
+    '<div class="demo-banner">COPIA LOCAL DEL CRM · Restaura tu backup de datos desde la sección Backup<br><span style="display:none">'
+  ).replace(
+    '</div>\n  <div class="app-shell">',
+    '</span></div>\n  <div class="app-shell">'
+  );
+
+  const blob=new Blob([standalone],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='AGR-CRM-COMPLETO-'+backupFileStamp()+'.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
 function downloadCRMBackup(prefix='AGR-CRM-BACKUP'){
   const payload=crmBackupPayload();
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -2228,6 +2283,26 @@ if(cashbookForm){
     renderCashbook();
   });
 }
+const downloadFullCRMBtn=$('#downloadFullCRM');
+if(downloadFullCRMBtn){
+  downloadFullCRMBtn.addEventListener('click',async()=>{
+    const status=$('#fullCRMDownloadStatus');
+    downloadFullCRMBtn.disabled=true;
+    const original=downloadFullCRMBtn.textContent;
+    downloadFullCRMBtn.textContent='Preparando CRM...';
+    if(status) status.textContent='';
+    try{
+      await downloadStandaloneCRM();
+      if(status) status.textContent='✓ CRM completo descargado como archivo HTML.';
+    }catch(err){
+      if(status) status.textContent='No se pudo crear la copia completa: '+err.message;
+    }finally{
+      downloadFullCRMBtn.disabled=false;
+      downloadFullCRMBtn.textContent=original;
+    }
+  });
+}
+
 const downloadBackupBtn=$('#downloadBackup');
 if(downloadBackupBtn){
   downloadBackupBtn.addEventListener('click',()=>{
