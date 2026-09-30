@@ -1,3 +1,11 @@
+window.addEventListener('error',function(e){
+  const banner=document.querySelector('.demo-banner');
+  if(banner){
+    banner.textContent='CRM v15 · Error de carga: '+(e.message||'JavaScript');
+    banner.style.background='#fdecec';
+    banner.style.color='#8f2f2f';
+  }
+});
 const seed={
   services:[
     {id:1,name:'I-130 Petición familiar',category:'Inmigración',price:1200,active:true},
