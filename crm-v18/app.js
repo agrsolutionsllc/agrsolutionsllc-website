@@ -105,9 +105,14 @@ const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).r
 const caseDiscountCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.discountCredit||0),0);
 const casePaid=id=>caseCollected(id)+caseDiscountCredits(id);
 const caseBalance=c=>Math.max(Number(c.serviceTotal||0)-casePaid(c.id),0);
-const caseCashDiscount=c=>Math.max(0,Math.min(Number(c.cashZelleDiscount||0),Number(c.serviceTotal||0)));
-const caseCashPrice=c=>Math.max(Number(c.serviceTotal||0)-caseCashDiscount(c),0);
+const caseStandardPrice=c=>Number(c.serviceTotal||0);
+const caseCashPrice=c=>Number(c.cashPrice ?? Math.max(caseStandardPrice(c)-Number(c.cashZelleDiscount||0),0));
+const caseZellePrice=c=>Number(c.zellePrice ?? caseCashPrice(c));
+const caseCardPrice=c=>Number(c.cardPrice ?? caseStandardPrice(c));
+const caseCashDiscount=c=>Math.max(caseStandardPrice(c)-caseCashPrice(c),0);
+const caseZelleDiscount=c=>Math.max(caseStandardPrice(c)-caseZellePrice(c),0);
 const caseCashPayoff=c=>Math.max(caseBalance(c)-caseCashDiscount(c),0);
+const caseZellePayoff=c=>Math.max(caseBalance(c)-caseZelleDiscount(c),0);
 
 function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function dt(v){return v?new Date(v).toLocaleString('es-US',{dateStyle:'medium',timeStyle:'short'}):'—'}
@@ -514,7 +519,9 @@ const templates={
     ['receiptNumber','Receipt Number (cuando se reciba)','text',''],
     ['aNumber','A-Number (opcional)','text',''],
     ['serviceTotal','Precio estándar del servicio','number',''],
-    ['cashZelleDiscount','Descuento Cash / Zelle','number',''],
+    ['cashPrice','Precio Cash','number',''],
+    ['zellePrice','Precio Zelle','number',''],
+    ['cardPrice','Precio Tarjeta / Stripe','number',''],
     ['initialPayment','Pago inicial requerido','number',''],
     ['invoiceNumber','Número de factura','text',''],
     ['stripePaymentLink','Enlace Stripe','url','full']
@@ -615,7 +622,9 @@ function getCaseValuesFromForm(){
     deadline:fd.deadline!==undefined?fd.deadline:(existing?.deadline||''),
     receiptNumber:fd.receiptNumber!==undefined?fd.receiptNumber:(existing?.receiptNumber||''),
     aNumber:fd.aNumber!==undefined?fd.aNumber:(existing?.aNumber||''),
-    cashZelleDiscount:fd.cashZelleDiscount!==undefined?fd.cashZelleDiscount:(existing?.cashZelleDiscount||0),
+    cashPrice:fd.cashPrice!==undefined?fd.cashPrice:(existing?.cashPrice ?? caseCashPrice(existing||{})),
+    zellePrice:fd.zellePrice!==undefined?fd.zellePrice:(existing?.zellePrice ?? caseZellePrice(existing||{})),
+    cardPrice:fd.cardPrice!==undefined?fd.cardPrice:(existing?.cardPrice ?? caseCardPrice(existing||{})),
     initialPayment:fd.initialPayment!==undefined?fd.initialPayment:(existing?.initialPayment||0),
     invoiceNumber:fd.invoiceNumber||existing?.invoiceNumber||'',
     stripePaymentLink:fd.stripePaymentLink||existing?.stripePaymentLink||''
@@ -776,7 +785,7 @@ function renderCaseDocuments(k){
 function buildBalanceReminder(k,requestedAmount){
   const client=clientById(k.clientId);
   const name=client?.name||'cliente';
-  const balance=caseBalance(k);
+  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
   const invoice=k.invoiceNumber?.trim();
   const requested=Math.min(balance,Math.max(0,Number(requestedAmount||balance)));
   const hasLiveLink=k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(requested);
@@ -788,7 +797,7 @@ function buildBalanceReminder(k,requestedAmount){
 }
 
 async function ensureBalancePaymentLink(k,requestedAmount){
-  const balance=caseBalance(k);
+  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
   const amount=Number(requestedAmount||0);
   if(balance<=0) return '';
   if(!Number.isFinite(amount) || amount<=0) throw new Error('Ingresa un monto válido.');
@@ -822,7 +831,7 @@ async function ensureBalancePaymentLink(k,requestedAmount){
 }
 
 function balanceReminderHTML(k){
-  const balance=caseBalance(k);
+  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
   if(balance<=0) return '<div class="balance-reminder paid"><strong>Saldo pagado</strong><span>Este caso no tiene saldo pendiente.</span></div>';
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
@@ -874,7 +883,7 @@ function bindBalanceReminder(k,root){
   const status=root.querySelector('.copy-status');
   const linkStatus=root.querySelector('.balance-link-status');
   const preview=root.querySelector('.balance-preview');
-  const balance=caseBalance(k);
+  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
   const email=(client?.email||'').trim();
@@ -971,17 +980,20 @@ function renderCasePayments(k){
     <div class="workspace-head"><div><span class="workspace-kicker">PAGOS</span><h3>Historial de pagos</h3></div><button type="button" class="primary" id="workspaceAddPayment">+ Agregar pago</button></div>
     <section class="case-pricing-config">
       <div class="case-pricing-config-head">
-        <div><span class="workspace-kicker">CONFIGURAR PRECIOS</span><h4>Precio estándar y descuento Cash/Zelle</h4></div>
+        <div><span class="workspace-kicker">CONFIGURAR PRECIOS</span><h4>Precio estándar y precios por método</h4></div>
         <button type="button" class="secondary" id="togglePricingConfig">Editar precios</button>
       </div>
       <div class="case-pricing-summary">
-        <div><span>Precio estándar</span><strong>${money(k.serviceTotal)}</strong></div>
-        <div><span>Descuento Cash/Zelle</span><strong>${money(caseCashDiscount(k))}</strong></div>
-        <div><span>Precio Cash/Zelle</span><strong>${money(caseCashPrice(k))}</strong></div>
+        <div><span>Precio estándar</span><strong>${money(caseStandardPrice(k))}</strong></div>
+        <div><span>Cash</span><strong>${money(caseCashPrice(k))}</strong></div>
+        <div><span>Zelle</span><strong>${money(caseZellePrice(k))}</strong></div>
+        <div><span>Tarjeta / Stripe</span><strong>${money(caseCardPrice(k))}</strong></div>
       </div>
       <div class="case-pricing-editor" id="casePricingEditor" hidden>
-        <label>Precio estándar<input type="number" min="0" step="0.01" id="caseStandardPrice" value="${Number(k.serviceTotal||0).toFixed(2)}"></label>
-        <label>Descuento Cash / Zelle<input type="number" min="0" step="0.01" id="caseCashDiscount" value="${Number(k.cashZelleDiscount||0).toFixed(2)}"></label>
+        <label>Precio estándar<input type="number" min="0" step="0.01" id="caseStandardPrice" value="${Number(caseStandardPrice(k)).toFixed(2)}"></label>
+        <label>Precio Cash<input type="number" min="0" step="0.01" id="caseCashPrice" value="${Number(caseCashPrice(k)).toFixed(2)}"></label>
+        <label>Precio Zelle<input type="number" min="0" step="0.01" id="caseZellePrice" value="${Number(caseZellePrice(k)).toFixed(2)}"></label>
+        <label>Precio Tarjeta / Stripe<input type="number" min="0" step="0.01" id="caseCardPrice" value="${Number(caseCardPrice(k)).toFixed(2)}"></label>
         <div class="pricing-preview" id="casePricingLivePreview"></div>
         <div class="case-pricing-actions">
           <button type="button" class="primary" id="saveCasePricing">Guardar precios</button>
@@ -990,14 +1002,13 @@ function renderCasePayments(k){
       </div>
     </section>
     <div class="finance-snapshot">
-      <div><span>Precio estándar</span><strong>${money(k.serviceTotal)}</strong></div>
-      <div><span>Cash / Zelle</span><strong>${money(caseCashPrice(k))}</strong></div>
+      <div><span>Precio estándar</span><strong>${money(caseStandardPrice(k))}</strong></div>
+      <div><span>Cash</span><strong>${money(caseCashPrice(k))}</strong></div>
+      <div><span>Zelle</span><strong>${money(caseZellePrice(k))}</strong></div>
+      <div><span>Tarjeta</span><strong>${money(caseCardPrice(k))}</strong></div>
       <div><span>Cobrado</span><strong>${money(caseCollected(k.id))}</strong></div>
       <div><span>Saldo estándar</span><strong>${money(caseBalance(k))}</strong></div>
-    </div>
-    ${caseCashDiscount(k)>0?'<div class="cash-discount-note">Descuento Cash/Zelle disponible: <strong>'+money(caseCashDiscount(k))+'</strong> · Pago total por Cash/Zelle: <strong>'+money(caseCashPayoff(k))+'</strong></div>':''}
-    <div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th></tr></thead><tbody>
-      ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
+    </div>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
     </tbody></table></div>
     ${balanceReminderHTML(k)}`;
 
@@ -1006,31 +1017,38 @@ function renderCasePayments(k){
   const toggle=$('#togglePricingConfig');
   const editor=$('#casePricingEditor');
   const standardInput=$('#caseStandardPrice');
-  const discountInput=$('#caseCashDiscount');
+  const cashInput=$('#caseCashPrice');
+  const zelleInput=$('#caseZellePrice');
+  const cardInput=$('#caseCardPrice');
   const preview=$('#casePricingLivePreview');
   const saveBtn=$('#saveCasePricing');
   const priceStatus=$('#casePricingStatus');
 
   const refreshPricingEditor=()=>{
     const standard=Math.max(0,Number(standardInput?.value||0));
-    const discount=Math.max(0,Number(discountInput?.value||0));
-    const capped=Math.min(discount,standard);
-    const cash=Math.max(standard-capped,0);
-    if(preview) preview.innerHTML='<span>Precio estándar</span><strong>'+money(standard)+'</strong><span>Cash / Zelle</span><strong>'+money(cash)+'</strong>';
+    const cash=Math.max(0,Number(cashInput?.value||standard));
+    const zelle=Math.max(0,Number(zelleInput?.value||cash));
+    const card=Math.max(0,Number(cardInput?.value||standard));
+    if(preview) preview.innerHTML=
+      '<span>Precio estándar</span><strong>'+money(standard)+'</strong>'+
+      '<span>Cash</span><strong>'+money(cash)+'</strong>'+
+      '<span>Zelle</span><strong>'+money(zelle)+'</strong>'+
+      '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
   };
   if(toggle && editor) toggle.onclick=()=>{editor.hidden=!editor.hidden;toggle.textContent=editor.hidden?'Editar precios':'Ocultar';refreshPricingEditor();};
-  standardInput?.addEventListener('input',refreshPricingEditor);
-  discountInput?.addEventListener('input',refreshPricingEditor);
+  [standardInput,cashInput,zelleInput,cardInput].forEach(el=>el?.addEventListener('input',refreshPricingEditor));
   if(saveBtn) saveBtn.onclick=()=>{
     const standard=Math.max(0,Number(standardInput?.value||0));
-    const discount=Math.max(0,Number(discountInput?.value||0));
+    const cash=Math.max(0,Number(cashInput?.value||0));
+    const zelle=Math.max(0,Number(zelleInput?.value||0));
+    const card=Math.max(0,Number(cardInput?.value||0));
     const collected=caseCollected(k.id);
     if(!Number.isFinite(standard) || standard<=0){
       if(priceStatus) priceStatus.textContent='Ingresa un precio estándar mayor que $0.00.';
       return;
     }
-    if(discount>standard){
-      if(priceStatus) priceStatus.textContent='El descuento no puede ser mayor que el precio estándar.';
+    if([cash,zelle,card].some(v=>!Number.isFinite(v)||v<=0)){
+      if(priceStatus) priceStatus.textContent='Todos los precios deben ser mayores que $0.00.';
       return;
     }
     if(standard<collected){
@@ -1038,14 +1056,16 @@ function renderCasePayments(k){
       return;
     }
     k.serviceTotal=standard;
-    k.cashZelleDiscount=discount;
+    k.cashPrice=cash;
+    k.zellePrice=zelle;
+    k.cardPrice=card;
     // Any existing balance link may now have the wrong ceiling; invalidate it.
     k.balancePaymentLink='';
     k.balancePaymentLinkAmount=0;
     k.balancePaymentLinkMode='';
     k.balancePaymentLinkCreatedAt='';
     save();
-    logCaseEvent(k.id,'Precios actualizados · estándar '+money(standard)+' · descuento Cash/Zelle '+money(discount),'payment');
+    logCaseEvent(k.id,'Precios actualizados · estándar '+money(standard)+' · Cash '+money(cash)+' · Zelle '+money(zelle)+' · Tarjeta '+money(card),'payment');
     renderCasePayments(k);
     renderCaseSummarySnapshot(k);
     renderCommunicationHistory(k);
@@ -1104,18 +1124,24 @@ function openModal(kind,values={}){
   }
   if(actualKind==='case'){
     const totalPriceInput=fields.querySelector('[name="serviceTotal"]');
-    const cashDiscountInput=fields.querySelector('[name="cashZelleDiscount"]');
-    if(cashDiscountInput){
-      cashDiscountInput.insertAdjacentHTML('afterend','<div class="pricing-preview" id="pricingPreview"></div>');
+    const cashPriceInput=fields.querySelector('[name="cashPrice"]');
+    const zellePriceInput=fields.querySelector('[name="zellePrice"]');
+    const cardPriceInput=fields.querySelector('[name="cardPrice"]');
+    if(cardPriceInput){
+      cardPriceInput.insertAdjacentHTML('afterend','<div class="pricing-preview" id="pricingPreview"></div>');
       const refreshPricingPreview=()=>{
         const standard=Math.max(0,Number(totalPriceInput?.value||0));
-        const discount=Math.max(0,Math.min(Number(cashDiscountInput.value||0),standard));
-        const cashPrice=Math.max(standard-discount,0);
+        const cash=Math.max(0,Number(cashPriceInput?.value||standard));
+        const zelle=Math.max(0,Number(zellePriceInput?.value||cash));
+        const card=Math.max(0,Number(cardPriceInput?.value||standard));
         const box=fields.querySelector('#pricingPreview');
-        if(box) box.innerHTML='<span>Precio estándar</span><strong>'+money(standard)+'</strong><span>Cash / Zelle</span><strong>'+money(cashPrice)+'</strong>';
+        if(box) box.innerHTML=
+          '<span>Precio estándar</span><strong>'+money(standard)+'</strong>'+
+          '<span>Cash</span><strong>'+money(cash)+'</strong>'+
+          '<span>Zelle</span><strong>'+money(zelle)+'</strong>'+
+          '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
       };
-      totalPriceInput?.addEventListener('input',refreshPricingPreview);
-      cashDiscountInput.addEventListener('input',refreshPricingPreview);
+      [totalPriceInput,cashPriceInput,zellePriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
       refreshPricingPreview();
     }
     const invoiceInput=fields.querySelector('[name="invoiceNumber"]');
@@ -1156,15 +1182,16 @@ function openModal(kind,values={}){
         const k=caseById(Number(caseSelect?.value||0));
         const box=form.querySelector('#paymentDiscountHelper');
         if(!box || !k){ if(box) box.innerHTML=''; return; }
-        const discount=caseCashDiscount(k);
-        const payoff=caseCashPayoff(k);
-        const isCashZelle=['Cash','Zelle'].includes(methodSelect.value);
-        if(isCashZelle && discount>0){
-          box.innerHTML='<span>Liquidación Cash/Zelle con descuento:</span><strong>'+money(payoff)+'</strong><button type="button" class="secondary" id="useCashPayoff">Usar este monto</button>';
+        const isCash=methodSelect.value==='Cash';
+        const isZelle=methodSelect.value==='Zelle';
+        const discount=isCash?caseCashDiscount(k):(isZelle?caseZelleDiscount(k):0);
+        const payoff=isCash?caseCashPayoff(k):(isZelle?caseZellePayoff(k):caseBalance(k));
+        if((isCash||isZelle) && discount>0){
+          box.innerHTML='<span>Liquidación '+methodSelect.value+' con precio especial:</span><strong>'+money(payoff)+'</strong><button type="button" class="secondary" id="useCashPayoff">Usar este monto</button>';
           const btn=box.querySelector('#useCashPayoff');
           if(btn) btn.onclick=()=>{ if(amountInput) amountInput.value=payoff.toFixed(2); };
         }else if(discount>0){
-          box.innerHTML='<small>Este caso tiene '+money(discount)+' de descuento disponible para liquidación por Cash/Zelle.</small>';
+          box.innerHTML='<small>Este caso tiene precios especiales para Cash/Zelle.</small>';
         }else{
           box.innerHTML='';
         }
@@ -1184,7 +1211,7 @@ function openModal(kind,values={}){
         if(suggested>0 && (!totalInput.value || Number(totalInput.value)===0)) totalInput.value=suggested;
       });
     }
-    ['clientId','service','status','deadline','receiptNumber','aNumber','serviceTotal','cashZelleDiscount','initialPayment','stripePaymentLink'].forEach(name=>{
+    ['clientId','service','status','deadline','receiptNumber','aNumber','serviceTotal','cashPrice','zellePrice','cardPrice','initialPayment','stripePaymentLink'].forEach(name=>{
       const el=form.querySelector('[name="'+name+'"]');
       if(el) el.addEventListener('input',refreshClientNotification);
       if(el) el.addEventListener('change',refreshClientNotification);
@@ -1348,7 +1375,9 @@ form.addEventListener('submit',async e=>{
       receiptNumber:f.receiptNumber||'',
       aNumber:f.aNumber||'',
       serviceTotal:Number(f.serviceTotal||0),
-      cashZelleDiscount:Math.max(0,Number(f.cashZelleDiscount||0)),
+      cashPrice:Number(f.cashPrice||f.serviceTotal||0),
+      zellePrice:Number(f.zellePrice||f.cashPrice||f.serviceTotal||0),
+      cardPrice:Number(f.cardPrice||f.serviceTotal||0),
       initialPayment:Number(f.initialPayment||0),
       invoiceNumber:f.invoiceNumber||nextInvoiceNumber(),
       stripePaymentLink:f.stripePaymentLink||''
@@ -1378,7 +1407,9 @@ form.addEventListener('submit',async e=>{
         receiptNumber:f.receiptNumber!==undefined?f.receiptNumber:(current.receiptNumber||''),
         aNumber:f.aNumber!==undefined?f.aNumber:(current.aNumber||''),
         serviceTotal:Number(current.serviceTotal||0),
-        cashZelleDiscount:Number(current.cashZelleDiscount||0),
+        cashPrice:Number(current.cashPrice ?? caseCashPrice(current)),
+        zellePrice:Number(current.zellePrice ?? caseZellePrice(current)),
+        cardPrice:Number(current.cardPrice ?? caseCardPrice(current)),
         initialPayment:Number(current.initialPayment||0),
         invoiceNumber:current.invoiceNumber||nextInvoiceNumber(),
         stripePaymentLink:current.stripePaymentLink||'',
@@ -1406,9 +1437,10 @@ form.addEventListener('submit',async e=>{
       const balance=caseBalance(k);
       const amount=Number(f.amount||0);
       const method=f.method||'';
-      const isCashZelle=['Cash','Zelle'].includes(method);
-      const discountAvailable=caseCashDiscount(k);
-      const discountedPayoff=Math.max(balance-discountAvailable,0);
+      const isCash=method==='Cash';
+      const isZelle=method==='Zelle';
+      const discountAvailable=isCash?caseCashDiscount(k):(isZelle?caseZelleDiscount(k):0);
+      const discountedPayoff=isCash?caseCashPayoff(k):(isZelle?caseZellePayoff(k):balance);
       let discountCredit=0;
       if(amount<=0){
         alert('Ingresa un monto mayor a $0.');
@@ -1418,7 +1450,7 @@ form.addEventListener('submit',async e=>{
         alert('El pago no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
         return;
       }
-      if(isCashZelle && discountAvailable>0 && Math.abs(amount-discountedPayoff)<0.01){
+      if((isCash||isZelle) && discountAvailable>0 && Math.abs(amount-discountedPayoff)<0.01){
         discountCredit=Math.min(discountAvailable,balance-amount);
       }
       data.payments.push({
