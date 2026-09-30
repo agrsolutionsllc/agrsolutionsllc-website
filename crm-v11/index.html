@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>AGR CRM · Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=20260930-40" />
+</head>
+<body>
+  <div class="demo-banner">DEMO DE PRUEBA · No ingresar información real o sensible de clientes</div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">AGR</div>
+        <div>
+          <strong>AGR CRM</strong>
+          <span>Solutions LLC</span>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <button class="nav-item active" data-view="dashboard">⌂ <span>Dashboard</span></button>
+        <button class="nav-item" data-view="clients">◉ <span>Clientes</span></button>
+        <button class="nav-item" data-view="cases">▣ <span>Casos & trámites</span></button>
+        <button class="nav-item" data-view="services">≡ <span>Servicios</span></button>
+        <button class="nav-item" data-view="payments">$ <span>Pagos</span></button>
+        <button class="nav-item" data-view="appointments">◫ <span>Citas</span></button>
+        <button class="nav-item" data-view="tasks">✓ <span>Tareas</span></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>Modo prototipo</span>
+        <small>Solo datos de prueba</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AGR SOLUTIONS LLC</p>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="top-actions">
+          <div class="global-search-wrap">
+            <input id="globalSearch" type="search" placeholder="Buscar cliente, factura, receipt, A-Number...">
+            <div id="globalSearchResults" class="global-search-results" hidden></div>
+          </div>
+          <div class="user-chip">AR</div>
+        </div>
+      </header>
+
+      <section class="view active" id="view-dashboard">
+        <div class="stats-grid">
+          <article class="stat-card"><span>Clientes activos</span><strong id="statClients">0</strong><small>Base de prueba</small></article>
+          <article class="stat-card"><span>Casos abiertos</span><strong id="statCases">0</strong><small>En seguimiento</small></article>
+          <article class="stat-card"><span>Saldo pendiente</span><strong id="statBalance">$0</strong><small>Por cobrar</small></article>
+          <article class="stat-card"><span>Próximas citas</span><strong id="statAppointments">0</strong><small>Agenda de prueba</small></article>
+          <article class="stat-card"><span>Urgentes hoy</span><strong id="statTasks">0</strong><small>Tareas vencidas o para hoy</small></article>
+        </div>
+
+        <article class="panel attention-panel">
+          <div class="panel-head">
+            <div><p class="eyebrow">PRIORIDADES</p><h2>Lo que necesita tu atención</h2></div>
+            <button class="primary" data-open="task">+ Nueva tarea</button>
+          </div>
+          <div id="dashboardAlerts" class="dashboard-alerts"></div>
+        </article>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">CASOS</p><h2>Seguimiento reciente</h2></div>
+              <button class="text-btn" data-jump="cases">Ver todos →</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Próximo paso</th></tr></thead>
+                <tbody id="recentCases"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">AGENDA</p><h2>Próximas citas</h2></div>
+            </div>
+            <div id="appointmentList" class="appointment-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-clients">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">CLIENTES</p>
+            <h2>Directorio de clientes</h2>
+          </div>
+          <button class="primary" data-open="client">+ Nuevo cliente</button>
+        </div>
+        <div class="panel">
+          <div class="search-row"><input id="clientSearch" type="search" placeholder="Buscar por nombre, teléfono o email"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th></tr></thead>
+              <tbody id="clientsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-cases">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">CASOS & TRÁMITES</p>
+            <h2>Pipeline de trabajo</h2>
+          </div>
+          <button class="primary" data-open="case">+ Nuevo caso</button>
+        </div>
+        <div class="kanban" id="caseBoard"></div>
+      </section>
+
+      <section class="view" id="view-services">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">SERVICIOS</p>
+            <h2>Catálogo interno de servicios</h2>
+          </div>
+          <button class="primary" data-open="service">+ Nuevo servicio</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Servicio</th><th>Categoría</th><th>Precio sugerido</th><th>Activo</th></tr></thead>
+              <tbody id="servicesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-payments">
+        <div class="section-toolbar">
+          <div><p class="eyebrow">PAGOS</p><h2>Facturación y saldos</h2></div>
+          <button class="primary" data-open="payment">+ Registrar pago</button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Servicio</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
+              <tbody id="paymentsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-appointments">
+        <div class="section-toolbar">
+          <div><p class="eyebrow">CITAS</p><h2>Agenda</h2></div>
+          <button class="primary" data-open="appointment">+ Nueva cita</button>
+        </div>
+        <div class="panel"><div id="appointmentsTable" class="appointment-list large"></div></div>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <div class="section-toolbar">
+          <div><p class="eyebrow">TAREAS & RECORDATORIOS</p><h2>Control diario</h2></div>
+          <button class="primary" data-open="task">+ Nueva tarea</button>
+        </div>
+        <div class="panel">
+          <p class="task-help">Usa esta sección para pendientes que no deben olvidarse: revisar casos, responder cartas, llamadas, cobros o cualquier seguimiento.</p>
+          <div id="tasksList" class="tasks-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="recordDialog">
+    <form method="dialog" id="recordForm">
+      <div class="modal-head">
+        <div><p class="eyebrow">NUEVO REGISTRO</p><h2 id="modalTitle">Nuevo cliente</h2></div>
+        <button type="button" class="close-btn" id="closeDialog" aria-label="Cerrar">×</button>
+      </div>
+      <div id="caseWorkspaceTabs" class="case-workspace-tabs" hidden>
+        <button type="button" class="case-tab active" data-case-tab="summary">Resumen</button>
+        <button type="button" class="case-tab" data-case-tab="documents">Requisitos</button>
+        <button type="button" class="case-tab" data-case-tab="payments">Pagos</button>
+        <button type="button" class="case-tab" data-case-tab="history">Historial</button>
+        <button type="button" class="case-tab" data-case-tab="notes">Notas</button>
+        <button type="button" class="case-tab" data-case-tab="communications">Comunicaciones</button>
+      </div>
+
+      <section class="case-pane active" data-case-pane="summary">
+        <div id="formFields" class="form-grid"></div>
+      </section>
+
+      <section class="case-pane" data-case-pane="documents" hidden>
+        <div id="caseDocumentsPane"></div>
+      </section>
+
+      <section class="case-pane" data-case-pane="payments" hidden>
+        <div id="casePaymentsPane"></div>
+      </section>
+
+      <section class="case-pane" data-case-pane="history" hidden>
+        <div id="caseHistoryPane"></div>
+      </section>
+
+      <section class="case-pane" data-case-pane="notes" hidden>
+        <div id="caseNotesPane"></div>
+      </section>
+
+      <section class="case-pane" data-case-pane="communications" hidden>
+      <section id="clientNotificationBox" class="client-notification" hidden>
+        <div class="notification-head">
+          <div>
+            <span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span>
+            <strong>Notificar sobre este caso</strong>
+            <small class="notification-contact"></small>
+          </div>
+        </div>
+        <div class="notification-preview"></div>
+        <div class="notification-actions">
+          <a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+          <a class="notify-btn notify-email">Enviar por correo</a>
+        </div>
+        <small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small>
+      </section>
+      <div id="communicationHistory"></div>
+      </section>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="cancelDialog">Cancelar</button>
+        <button type="submit" value="default" class="primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js?v=20260930-40"></script>
+  <script>
+    document.addEventListener('click', function(e){
+      const btn=e.target.closest('.case-tab');
+      if(!btn) return;
+      e.preventDefault();
+      const tab=btn.getAttribute('data-case-tab');
+      document.querySelectorAll('.case-tab').forEach(function(b){
+        b.classList.toggle('active', b.getAttribute('data-case-tab')===tab);
+      });
+      document.querySelectorAll('[data-case-pane]').forEach(function(p){
+        const active=p.getAttribute('data-case-pane')===tab;
+        p.hidden=!active;
+        p.classList.toggle('active',active);
+      });
+    });
+  </script>
+</body>
+</html>
