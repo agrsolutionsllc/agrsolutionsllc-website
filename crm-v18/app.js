@@ -771,13 +771,13 @@ function buildBalanceReminder(k){
   const name=client?.name||'cliente';
   const balance=caseBalance(k);
   const invoice=k.invoiceNumber?.trim();
-  const paymentLink=(Number(k.balancePaymentLinkAmount||0)===Number(balance) ? (k.balancePaymentLink||'') : '').trim();
+  const paymentLink=(k.balancePaymentLinkMode==='live' && Number(k.balancePaymentLinkAmount||0)===Number(balance) ? (k.balancePaymentLink||'') : '').trim();
   return 'Hola '+name+', le recordamos que actualmente tiene un saldo pendiente de '+money(balance)+' con AGR Solutions LLC'+(invoice?' correspondiente a la referencia '+invoice:'')+'.\n\nPuede realizar su pago por:\n• Cash\n• Zelle\n• Credit / Debit Card'+(paymentLink?'\n\nPara pagar con tarjeta de crédito o débito, utilice este enlace seguro de pago:\n'+paymentLink:'\n\nEl enlace seguro para pago con tarjeta se está preparando desde el CRM.')+'\n\nSi ya realizó este pago, por favor ignore este mensaje o envíenos su comprobante.\n\nGracias,\nAGR Solutions LLC\n294 Tyler Street, East Haven, CT 06512\n203-824-0351';
 }
 async function ensureBalancePaymentLink(k){
   const balance=caseBalance(k);
   if(balance<=0) return '';
-  if(k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(balance)) return k.balancePaymentLink;
+  if(k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(balance)) return k.balancePaymentLink;
   const client=clientById(k.clientId);
   const response=await fetch(STRIPE_BACKEND_URL,{
     method:'POST',
@@ -796,8 +796,10 @@ async function ensureBalancePaymentLink(k){
   if(!response.ok) throw new Error(payload.error||payload.message||('Error '+response.status));
   const url=payload.url||payload.paymentLink||payload.payment_link||'';
   if(!url) throw new Error('Stripe no devolvió un enlace de pago.');
+  if(payload.livemode!==true) throw new Error('Stripe devolvió un enlace de prueba. No se guardó.');
   k.balancePaymentLink=url;
   k.balancePaymentLinkAmount=balance;
+  k.balancePaymentLinkMode='live';
   k.balancePaymentLinkCreatedAt=new Date().toISOString();
   save();
   return url;
@@ -809,7 +811,7 @@ function balanceReminderHTML(k){
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
   const email=(client?.email||'').trim();
-  const hasBalanceLink=Boolean(k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(balance));
+  const hasBalanceLink=Boolean(k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(balance));
   const message=buildBalanceReminder(k);
   const normalized=phone?(phone.length===10?'1'+phone:phone):'';
   const waHref=normalized?'https://wa.me/'+normalized+'?text='+encodeURIComponent(message):'#';
