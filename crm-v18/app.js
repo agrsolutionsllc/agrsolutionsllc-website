@@ -1,7 +1,7 @@
 window.addEventListener('error',function(e){
   const banner=document.querySelector('.demo-banner');
   if(banner){
-    banner.textContent='CRM v15 · Error de carga: '+(e.message||'JavaScript');
+    banner.textContent='CRM v18 · Error de carga: '+(e.message||'JavaScript');
     banner.style.background='#fdecec';
     banner.style.color='#8f2f2f';
   }
