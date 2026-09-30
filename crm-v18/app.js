@@ -741,7 +741,7 @@ function refreshClientNotification(){
   if(mail){
     if(email){
       const subject='Actualización de su caso - AGR Solutions LLC';
-      mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subjectForAmount())+'&body='+encodeURIComponent(message);
+      mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
       mail.target='_blank';
       mail.rel='noopener';
       mail.classList.remove('disabled');
@@ -902,7 +902,7 @@ function balanceReminderHTML(k){
   const normalized=phone?(phone.length===10?'1'+phone:phone):'';
   const waHref=normalized?'https://wa.me/'+normalized+'?text='+encodeURIComponent(message):'#';
   const smsHref=normalized?'sms:+'+normalized+'?body='+encodeURIComponent(message):'#';
-  const subject='Recordatorio de pago · '+(k.invoiceNumber||'AGR')+' · '+money(savedAmount||currentAmount?.()||0);
+  const subject='Recordatorio de pago · '+(k.invoiceNumber||'AGR')+' · '+money(savedAmount);
   const mailHref=email?'https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message):'#';
   return '<section class="balance-reminder">'+
     '<div class="balance-reminder-head"><div><span class="workspace-kicker">RECORDATORIO DE SALDO</span><strong>Saldo pendiente total</strong></div><strong class="balance-amount">'+money(balance)+'</strong></div>'+
@@ -960,7 +960,7 @@ function bindBalanceReminder(k,root){
     if(preview) preview.textContent=message;
     if(wa && !wa.classList.contains('disabled')) wa.href='https://wa.me/'+normalized+'?text='+encodeURIComponent(message);
     if(sms && !sms.classList.contains('disabled')) sms.href='sms:+'+normalized+'?body='+encodeURIComponent(message);
-    if(mail && !mail.classList.contains('disabled')) mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(message);
+    if(mail && !mail.classList.contains('disabled')) mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subjectForAmount())+'&body='+encodeURIComponent(message);
     if(createLink) createLink.textContent=valid?'Crear enlace para pagar '+money(amount):'Ingresa un monto válido';
     if(linkStatus){
       const matches=k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(amount);
