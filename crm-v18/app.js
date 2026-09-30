@@ -586,9 +586,9 @@ function renderClients(filter=''){
     const cases=data.cases.filter(x=>x.clientId===c.id).length;
     const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
     const acctBal=accountBalance(c.id);
-    return `<tr class="clickable-row client-account-row" data-client-account-id="${c.id}"><td><strong>${c.name}</strong><small class="client-type-pill">${c.isCompany?'Empresa':'Cliente'}</small></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta: '+money(acctBal)+'</small>':''}</td></tr>`
+    return `<tr><td><strong>${c.name}</strong><small class="client-type-pill">${c.isCompany?'Empresa':'Cliente'}</small></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta global: '+money(acctBal)+'</small>':''}</td><td><button type="button" class="secondary client-account-btn" data-client-account-id="${c.id}">${c.isCompany?'Cuenta / Factura global':'Cuenta'}</button></td></tr>`
   }).join('');
-  document.querySelectorAll('[data-client-account-id]').forEach(row=>row.onclick=()=>openClientAccount(Number(row.dataset.clientAccountId)));
+  document.querySelectorAll('[data-client-account-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClientAccount(Number(btn.dataset.clientAccountId));});
 }
 
 function renderCases(){
@@ -1544,8 +1544,9 @@ function openClientAccount(clientId){
     <div class="account-actions-bar">
       <button type="button" class="primary" id="addAccountCharge">+ Agregar cargo</button>
       <button type="button" class="secondary" id="addAccountPayment">+ Registrar pago</button>
-      <button type="button" class="secondary" id="generateAccountInvoice" ${pending.length?'':'disabled'}>Generar factura de pendientes</button>
+      <button type="button" class="secondary" id="generateAccountInvoice" ${pending.length?'':'disabled'}>Generar factura global</button>
     </div>
+    <p class="account-global-help">Usa esta cuenta para acumular varios servicios del mismo cliente. Nada se factura hasta que presiones <strong>Generar factura global</strong>.</p>
     <section class="account-entry-box" id="accountEntryBox" hidden></section>
     <div class="account-ledger-grid">
       <section><h3>Cargos / servicios</h3><div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Periodo</th><th>Cant.</th><th>Unitario</th><th>Total</th><th>Estado</th></tr></thead><tbody>
@@ -1560,22 +1561,62 @@ function openClientAccount(clientId){
   const entry=$('#accountEntryBox');
   $('#addAccountCharge').onclick=()=>{
     entry.hidden=false;
-    entry.innerHTML=`<h3>Nuevo cargo</h3><div class="account-entry-grid">
+    entry.innerHTML=`<h3>Agregar servicio a la factura global</h3><div class="account-entry-grid">
       <label>Fecha<input id="acctChargeDate" type="date" value="${todayISO()}"></label>
-      <label>Concepto<input id="acctConcept" type="text" placeholder="Ej. Sales & Use Tax"></label>
+      <label class="full">Servicio
+        <select id="acctServiceSelect">
+          <option value="">Selecciona un servicio</option>
+          ${data.services.filter(s=>s.active!==false).map(s=>`<option value="${esc(s.name)}" data-price="${Number(s.price||0)}">${esc(s.name)}${Number(s.price||0)>0?' · '+money(s.price):''}</option>`).join('')}
+          <option value="__custom">Otro / personalizado</option>
+        </select>
+      </label>
+      <label class="full" id="acctCustomConceptWrap" hidden>Concepto personalizado<input id="acctConcept" type="text" placeholder="Ej. Sales & Use Tax"></label>
       <label>Mes / periodo<input id="acctPeriod" type="text" placeholder="Ej. Enero"></label>
       <label>Cantidad<input id="acctQty" type="number" min="1" step="1" value="1"></label>
       <label>Precio unitario<input id="acctUnit" type="number" min="0" step="0.01" placeholder="20.00"></label>
       <label class="full">Nota<input id="acctNote" type="text" placeholder="Opcional"></label>
-    </div><div class="account-entry-actions"><button class="primary" type="button" id="saveAcctCharge">Guardar cargo</button><button class="ghost" type="button" id="cancelAcctEntry">Cancelar</button></div>`;
-    $('#cancelAcctEntry').onclick=()=>{entry.hidden=true;entry.innerHTML='';};
+    </div><div class="account-entry-actions"><button class="primary" type="button" id="saveAcctCharge">Guardar y agregar otro</button><button class="ghost" type="button" id="finishAcctEntry">Terminar</button></div>`;
+    const serviceSelect=$('#acctServiceSelect');
+    const customWrap=$('#acctCustomConceptWrap');
+    const conceptInput=$('#acctConcept');
+    const unitInput=$('#acctUnit');
+    serviceSelect.onchange=()=>{
+      const opt=serviceSelect.options[serviceSelect.selectedIndex];
+      const custom=serviceSelect.value==='__custom';
+      customWrap.hidden=!custom;
+      if(!custom && serviceSelect.value){
+        if(conceptInput) conceptInput.value=serviceSelect.value;
+        const suggested=Number(opt?.dataset?.price||0);
+        if(suggested>0) unitInput.value=suggested.toFixed(2);
+      }else if(custom && conceptInput){
+        conceptInput.value='';
+        conceptInput.focus();
+      }
+    };
+    $('#finishAcctEntry').onclick=()=>{entry.hidden=true;entry.innerHTML='';};
     $('#saveAcctCharge').onclick=()=>{
-      const concept=$('#acctConcept').value.trim();
+      const selected=$('#acctServiceSelect').value;
+      const concept=(selected==='__custom'?$('#acctConcept').value.trim():selected);
       const unitPrice=Number($('#acctUnit').value||0);
       const quantity=Math.max(1,Number($('#acctQty').value||1));
-      if(!concept||unitPrice<=0){alert('Ingresa concepto y precio unitario.');return;}
+      if(!concept||unitPrice<=0){alert('Selecciona un servicio e ingresa el precio unitario.');return;}
       data.clientAccountCharges.push({id:Date.now(),clientId,date:$('#acctChargeDate').value||todayISO(),concept,period:$('#acctPeriod').value.trim(),quantity,unitPrice,note:$('#acctNote').value.trim(),invoiceId:null});
-      save(); openClientAccount(clientId); renderClients($('#clientSearch')?.value||'');
+      save();
+      renderClients($('#clientSearch')?.value||'');
+      // Keep this screen open so several services can be added to one global invoice.
+      $('#acctPeriod').value='';
+      $('#acctQty').value='1';
+      $('#acctNote').value='';
+      $('#acctServiceSelect').value='';
+      $('#acctUnit').value='';
+      $('#acctCustomConceptWrap').hidden=true;
+      $('#acctConcept').value='';
+      const pendingCount=accountChargesForClient(clientId).filter(x=>!x.invoiceId).length;
+      const flash=document.createElement('div');
+      flash.className='account-save-flash';
+      flash.textContent='✓ Cargo guardado. Pendientes para la factura global: '+pendingCount;
+      entry.prepend(flash);
+      setTimeout(()=>flash.remove(),2200);
     };
   };
   $('#addAccountPayment').onclick=()=>{
