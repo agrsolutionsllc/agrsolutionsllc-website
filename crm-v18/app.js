@@ -433,7 +433,7 @@ function badgeClass(s){
 }
 
 function switchView(view){
-  $('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
+  $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja / Ingresos',appointments:'Citas',tasks:'Tareas'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
