@@ -1032,6 +1032,21 @@ function openModal(kind,values={}){
     setCaseTab('summary');
   }
   if(actualKind==='case'){
+    const totalPriceInput=fields.querySelector('[name="serviceTotal"]');
+    const cashDiscountInput=fields.querySelector('[name="cashZelleDiscount"]');
+    if(cashDiscountInput){
+      cashDiscountInput.insertAdjacentHTML('afterend','<div class="pricing-preview" id="pricingPreview"></div>');
+      const refreshPricingPreview=()=>{
+        const standard=Math.max(0,Number(totalPriceInput?.value||0));
+        const discount=Math.max(0,Math.min(Number(cashDiscountInput.value||0),standard));
+        const cashPrice=Math.max(standard-discount,0);
+        const box=fields.querySelector('#pricingPreview');
+        if(box) box.innerHTML='<span>Precio estándar</span><strong>'+money(standard)+'</strong><span>Cash / Zelle</span><strong>'+money(cashPrice)+'</strong>';
+      };
+      totalPriceInput?.addEventListener('input',refreshPricingPreview);
+      cashDiscountInput.addEventListener('input',refreshPricingPreview);
+      refreshPricingPreview();
+    }
     const invoiceInput=fields.querySelector('[name="invoiceNumber"]');
     if(invoiceInput){
       invoiceInput.readOnly=true;
@@ -1060,6 +1075,34 @@ function openModal(kind,values={}){
 
   dialog.showModal();
   if(kind==='case-edit') renderCaseWorkspace(values);
+  if(actualKind==='payment'){
+    const caseSelect=form.querySelector('[name="caseId"]');
+    const amountInput=form.querySelector('[name="amount"]');
+    const methodSelect=form.querySelector('[name="method"]');
+    if(methodSelect){
+      methodSelect.insertAdjacentHTML('afterend','<div class="payment-discount-helper" id="paymentDiscountHelper"></div>');
+      const refreshPaymentDiscountHelper=()=>{
+        const k=caseById(Number(caseSelect?.value||0));
+        const box=form.querySelector('#paymentDiscountHelper');
+        if(!box || !k){ if(box) box.innerHTML=''; return; }
+        const discount=caseCashDiscount(k);
+        const payoff=caseCashPayoff(k);
+        const isCashZelle=['Cash','Zelle'].includes(methodSelect.value);
+        if(isCashZelle && discount>0){
+          box.innerHTML='<span>Liquidación Cash/Zelle con descuento:</span><strong>'+money(payoff)+'</strong><button type="button" class="secondary" id="useCashPayoff">Usar este monto</button>';
+          const btn=box.querySelector('#useCashPayoff');
+          if(btn) btn.onclick=()=>{ if(amountInput) amountInput.value=payoff.toFixed(2); };
+        }else if(discount>0){
+          box.innerHTML='<small>Este caso tiene '+money(discount)+' de descuento disponible para liquidación por Cash/Zelle.</small>';
+        }else{
+          box.innerHTML='';
+        }
+      };
+      caseSelect?.addEventListener('change',refreshPaymentDiscountHelper);
+      methodSelect.addEventListener('change',refreshPaymentDiscountHelper);
+      refreshPaymentDiscountHelper();
+    }
+  }
   if(actualKind==='case' || actualKind==='caseEdit'){
     const serviceSelect=form.querySelector('[name="service"]');
     const totalInput=form.querySelector('[name="serviceTotal"]');
