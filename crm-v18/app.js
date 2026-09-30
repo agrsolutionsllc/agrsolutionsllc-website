@@ -433,10 +433,11 @@ function badgeClass(s){
 }
 
 function switchView(view){
-  $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
+  $('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja / Ingresos',appointments:'Citas',tasks:'Tareas'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
+  if(view==='cashbook') requestAnimationFrame(()=>renderCashbook());
 }
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
 $$('[data-jump]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.jump)));
@@ -503,9 +504,22 @@ function cashbookTotals(){
   const monthTotal=data.cashbook.filter(x=>String(x.date||'').startsWith(month)).reduce((s,x)=>s+Number(x.amount||0),0);
   return {todayTotal,monthTotal,total};
 }
+function populateCashbookClients(){
+  const clientSelect=$('#cashbookClient');
+  if(!clientSelect) return;
+  const current=clientSelect.value;
+  const options=data.clients
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+    .map(c=>'<option value="'+Number(c.id)+'">'+esc(c.name)+(c.isCompany?' · Empresa':'')+'</option>')
+    .join('');
+  clientSelect.innerHTML='<option value="">Sin cliente vinculado</option>'+options;
+  if(current && data.clients.some(c=>String(c.id)===String(current))) clientSelect.value=current;
+}
 function renderCashbook(){
   const summary=$('#cashbookSummary'), table=$('#cashbookTable'), form=$('#cashbookForm');
   if(!summary||!table||!form) return;
+  populateCashbookClients();
   const t=cashbookTotals();
   summary.innerHTML=`
     <div><span>Hoy</span><strong>${money(t.todayTotal)}</strong></div>
@@ -516,15 +530,6 @@ function renderCashbook(){
   table.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${x.clientId?esc(clientName(x.clientId)):'—'}</td><td><strong>${esc(x.concept||'—')}</strong></td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`).join(''):'<tr><td colspan="7">No hay ingresos rápidos registrados.</td></tr>';
   const dateInput=$('#cashbookDate');
   if(dateInput && !dateInput.value) dateInput.value=todayISO();
-  const clientSelect=$('#cashbookClient');
-  if(clientSelect){
-    const current=clientSelect.value;
-    clientSelect.innerHTML='<option value="">Sin cliente vinculado</option>'+data.clients
-      .slice()
-      .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-      .map(c=>'<option value="'+c.id+'">'+esc(c.name)+(c.isCompany?' · Empresa':'')+'</option>').join('');
-    if(current) clientSelect.value=current;
-  }
 }
 
 function renderDashboardAlerts(){
@@ -1921,6 +1926,11 @@ form.addEventListener('submit',async e=>{
 save();
 render();
 
+const cashbookClientSelect=$('#cashbookClient');
+if(cashbookClientSelect){
+  cashbookClientSelect.addEventListener('focus',populateCashbookClients);
+  cashbookClientSelect.addEventListener('pointerdown',populateCashbookClients);
+}
 const cashbookForm=$('#cashbookForm');
 if(cashbookForm){
   cashbookForm.addEventListener('submit',e=>{
