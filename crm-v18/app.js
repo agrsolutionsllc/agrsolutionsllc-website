@@ -771,14 +771,45 @@ function buildBalanceReminder(k){
   const name=client?.name||'cliente';
   const balance=caseBalance(k);
   const invoice=k.invoiceNumber?.trim();
-  return 'Hola '+name+', le recordamos que actualmente tiene un saldo pendiente de '+money(balance)+' con AGR Solutions LLC'+(invoice?' correspondiente a la referencia '+invoice:'')+'.\n\nPuede realizar su pago por:\n• Cash\n• Zelle\n• Credit / Debit Card\n\nSi desea pagar con tarjeta, puede solicitar su enlace seguro de pago.\n\nSi ya realizó este pago, por favor ignore este mensaje o envíenos su comprobante.\n\nGracias,\nAGR Solutions LLC\n294 Tyler Street, East Haven, CT 06512\n203-824-0351';
+  const paymentLink=(Number(k.balancePaymentLinkAmount||0)===Number(balance) ? (k.balancePaymentLink||'') : '').trim();
+  return 'Hola '+name+', le recordamos que actualmente tiene un saldo pendiente de '+money(balance)+' con AGR Solutions LLC'+(invoice?' correspondiente a la referencia '+invoice:'')+'.\n\nPuede realizar su pago por:\n• Cash\n• Zelle\n• Credit / Debit Card'+(paymentLink?'\n\nPara pagar con tarjeta de crédito o débito, utilice este enlace seguro de pago:\n'+paymentLink:'\n\nEl enlace seguro para pago con tarjeta se está preparando desde el CRM.')+'\n\nSi ya realizó este pago, por favor ignore este mensaje o envíenos su comprobante.\n\nGracias,\nAGR Solutions LLC\n294 Tyler Street, East Haven, CT 06512\n203-824-0351';
 }
+async function ensureBalancePaymentLink(k){
+  const balance=caseBalance(k);
+  if(balance<=0) return '';
+  if(k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(balance)) return k.balancePaymentLink;
+  const client=clientById(k.clientId);
+  const response=await fetch(STRIPE_BACKEND_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      amount:balance,
+      caseId:k.id,
+      clientName:client?.name||'',
+      clientEmail:client?.email||'',
+      service:(k.service||'AGR Solutions LLC')+' · Saldo pendiente',
+      invoiceNumber:k.invoiceNumber||''
+    })
+  });
+  let payload={};
+  try{payload=await response.json();}catch(_){}
+  if(!response.ok) throw new Error(payload.error||payload.message||('Error '+response.status));
+  const url=payload.url||payload.paymentLink||payload.payment_link||'';
+  if(!url) throw new Error('Stripe no devolvió un enlace de pago.');
+  k.balancePaymentLink=url;
+  k.balancePaymentLinkAmount=balance;
+  k.balancePaymentLinkCreatedAt=new Date().toISOString();
+  save();
+  return url;
+}
+
 function balanceReminderHTML(k){
   const balance=caseBalance(k);
   if(balance<=0) return '<div class="balance-reminder paid"><strong>Saldo pagado</strong><span>Este caso no tiene saldo pendiente.</span></div>';
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
   const email=(client?.email||'').trim();
+  const hasBalanceLink=Boolean(k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(balance));
   const message=buildBalanceReminder(k);
   const normalized=phone?(phone.length===10?'1'+phone:phone):'';
   const waHref=normalized?'https://wa.me/'+normalized+'?text='+encodeURIComponent(message):'#';
@@ -788,6 +819,12 @@ function balanceReminderHTML(k){
   return '<section class="balance-reminder">'+
     '<div class="balance-reminder-head"><div><span class="workspace-kicker">RECORDATORIO DE SALDO</span><strong>Enviar solo el saldo pendiente</strong></div><strong class="balance-amount">'+money(balance)+'</strong></div>'+
     '<div class="balance-preview">'+esc(message)+'</div>'+
+    '<div class="balance-card-link-row">'+
+      (hasBalanceLink
+        ? '<a class="balance-card-link" href="'+esc(k.balancePaymentLink)+'" target="_blank" rel="noopener">Abrir enlace de pago con tarjeta ↗</a>'
+        : '<button type="button" class="primary balance-create-link">Crear enlace para pagar '+money(balance)+'</button>')+
+      '<small class="balance-link-status" aria-live="polite">'+(hasBalanceLink?'Enlace Stripe listo para este saldo.':'')+'</small>'+
+    '</div>'+
     '<div class="notification-actions">'+
       '<a class="notify-btn notify-whatsapp balance-wa '+(phone?'':'disabled')+'" href="'+waHref+'" target="_blank" rel="noopener">WhatsApp · saldo</a>'+
       '<a class="notify-btn notify-sms balance-sms '+(phone?'':'disabled')+'" href="'+smsHref+'">SMS · saldo</a>'+
@@ -804,7 +841,26 @@ function bindBalanceReminder(k,root){
   const sms=root.querySelector('.balance-sms');
   const mail=root.querySelector('.balance-mail');
   const copy=root.querySelector('.balance-copy');
+  const createLink=root.querySelector('.balance-create-link');
   const status=root.querySelector('.copy-status');
+  const linkStatus=root.querySelector('.balance-link-status');
+  if(createLink) createLink.onclick=async()=>{
+    const original=createLink.textContent;
+    createLink.disabled=true;
+    createLink.textContent='Creando enlace seguro...';
+    if(linkStatus) linkStatus.textContent='';
+    try{
+      await ensureBalancePaymentLink(k);
+      data.communications.unshift({id:Date.now(),caseId:k.id,channel:'Stripe',action:'Enlace de saldo creado · '+money(caseBalance(k)),at:new Date().toISOString()});
+      save(); logCaseEvent(k.id,'Enlace Stripe creado para saldo de '+money(caseBalance(k)),'payment');
+      renderCasePayments(k);
+      renderCommunicationHistory(k);
+    }catch(err){
+      createLink.disabled=false;
+      createLink.textContent=original;
+      if(linkStatus) linkStatus.textContent='No se pudo crear el enlace: '+err.message;
+    }
+  };
   if(wa && !wa.classList.contains('disabled')) wa.onclick=()=>{
     data.communications.unshift({id:Date.now(),caseId:k.id,channel:'WhatsApp',action:'Recordatorio de saldo abierto · '+money(caseBalance(k)),at:new Date().toISOString()});
     save(); logCaseEvent(k.id,'Recordatorio de saldo por WhatsApp abierto','communication');
