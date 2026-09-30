@@ -11,14 +11,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260930-1501" />
+  <link rel="stylesheet" href="./styles.css?v=20260930-1503" />
 </head>
 <body>
   <div class="demo-banner">DEMO DE PRUEBA · No ingresar información real o sensible de clientes</div>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">AGR</div>
+        <img class="brand-logo" src="../logo-agr.jpeg.jpeg" alt="AGR Solutions LLC">
         <div>
           <strong>AGR CRM</strong>
           <span>Solutions LLC</span>
@@ -49,10 +49,15 @@
         </div>
         <div class="top-actions">
           <div class="global-search-wrap">
-            <input id="globalSearch" type="search" placeholder="Buscar cliente, factura, receipt, A-Number...">
+            <span class="search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+            </span>
+            <input id="globalSearch" type="search" placeholder="Buscar cliente, factura, receipt, A-Number o teléfono...">
             <div id="globalSearchResults" class="global-search-results" hidden></div>
           </div>
-          <div class="user-chip">AR</div>
         </div>
       </header>
 
