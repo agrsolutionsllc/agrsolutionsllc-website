@@ -152,6 +152,99 @@ function ensureCaseDocs(k){
 }
 
 function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0)}
+function casePaymentRowsChronological(k){
+  return data.payments
+    .filter(p=>Number(p.caseId)===Number(k.id))
+    .slice()
+    .sort((a,b)=>{
+      const da=String(a.date||''); const db=String(b.date||'');
+      if(da!==db) return da.localeCompare(db);
+      return Number(a.id||0)-Number(b.id||0);
+    });
+}
+function paymentBalanceAfter(k,paymentId){
+  let remaining=Number(k.serviceTotal||0);
+  for(const p of casePaymentRowsChronological(k)){
+    remaining-=Number(p.amount||0)+Number(p.discountCredit||0);
+    if(String(p.id)===String(paymentId)) return Math.max(remaining,0);
+  }
+  return Math.max(remaining,0);
+}
+function isFinalPayment(k,p){
+  return paymentBalanceAfter(k,p.id)<=0.009;
+}
+function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
+  const client=clientById(k.clientId);
+  const rows=casePaymentRowsChronological(k);
+  const after=paymentBalanceAfter(k,p.id);
+  const paidThrough=rows.filter(x=>{
+    const dx=String(x.date||''); const dp=String(p.date||'');
+    return dx<dp || (dx===dp && Number(x.id||0)<=Number(p.id||0));
+  });
+  const paidTotal=paidThrough.reduce((s,x)=>s+Number(x.amount||0),0);
+  const creditsTotal=paidThrough.reduce((s,x)=>s+Number(x.discountCredit||0),0);
+  const effectivePaid=paidTotal+creditsTotal;
+  const docNo=finalInvoice
+    ? (k.invoiceNumber||('AGR-'+k.id))
+    : ((k.invoiceNumber||('AGR-'+k.id))+'-R'+String(p.id).slice(-4));
+  const paymentsTable=finalInvoice
+    ? `<table><thead><tr><th>Fecha</th><th>Método</th><th>Monto</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.method||'—')}</td><td>${money(Number(x.amount||0))}${Number(x.discountCredit||0)>0?' + '+money(Number(x.discountCredit||0))+' descuento':''}</td></tr>`).join('')}</tbody></table>`
+    : `<table><thead><tr><th>Fecha</th><th>Método</th><th>Pago recibido</th></tr></thead><tbody><tr><td>${esc(p.date||'—')}</td><td>${esc(p.method||'—')}</td><td>${money(Number(p.amount||0))}</td></tr></tbody></table>`;
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>${finalInvoice?'Factura final':'Recibo de pago'} · ${esc(docNo)}</title>
+<style>
+  *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#10264a;margin:0;background:#fff}
+  .sheet{max-width:820px;margin:0 auto;padding:48px}
+  .top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #d9b45b;padding-bottom:22px}
+  .brand h1{margin:0;font-size:26px;letter-spacing:.02em}.brand p{margin:5px 0;color:#5d687b}
+  .doc{text-align:right}.doc h2{margin:0 0 6px;font-size:24px}.paid{display:inline-block;margin-top:8px;padding:6px 11px;border:1px solid #1d7a56;border-radius:999px;color:#1d7a56;font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}.box{padding:16px;border:1px solid #e3e7ee;border-radius:12px}
+  .box span{display:block;color:#6b768a;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}.box strong{font-size:17px}
+  table{width:100%;border-collapse:collapse;margin:24px 0}th,td{text-align:left;padding:12px;border-bottom:1px solid #e3e7ee}th{font-size:12px;text-transform:uppercase;color:#6b768a}
+  .totals{margin-left:auto;max-width:360px}.totals div{display:flex;justify-content:space-between;padding:8px 0}.totals .grand{border-top:2px solid #10264a;margin-top:6px;padding-top:12px;font-size:18px;font-weight:700}
+  .footer{margin-top:42px;padding-top:18px;border-top:1px solid #e3e7ee;color:#6b768a;font-size:12px;line-height:1.6}
+  @media print{.sheet{max-width:none;padding:28px}.no-print{display:none!important}}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="top">
+    <div class="brand"><h1>AGR Solutions LLC</h1><p>294 Tyler Street, East Haven, CT 06512</p><p>203-824-0351 · agrsolutionsllc.com</p></div>
+    <div class="doc"><h2>${finalInvoice?'FACTURA FINAL':'RECIBO DE PAGO'}</h2><div>${esc(docNo)}</div>${finalInvoice?'<span class="paid">PAID IN FULL</span>':''}</div>
+  </div>
+  <div class="grid">
+    <div class="box"><span>Cliente</span><strong>${esc(client?.name||'Cliente')}</strong><br>${client?.email?esc(client.email):''}</div>
+    <div class="box"><span>Servicio</span><strong>${esc(k.service||'Servicio')}</strong><br>Referencia: ${esc(k.invoiceNumber||'—')}</div>
+  </div>
+  ${paymentsTable}
+  <div class="totals">
+    <div><span>Precio del servicio</span><strong>${money(Number(k.serviceTotal||0))}</strong></div>
+    ${finalInvoice?'<div><span>Total recibido</span><strong>'+money(paidTotal)+'</strong></div>':'<div><span>Pago recibido</span><strong>'+money(Number(p.amount||0))+'</strong></div>'}
+    ${creditsTotal>0?'<div><span>Descuento aplicado</span><strong>'+money(creditsTotal)+'</strong></div>':''}
+    <div class="grand"><span>Saldo restante</span><strong>${money(finalInvoice?0:after)}</strong></div>
+  </div>
+  <div class="footer">
+    ${finalInvoice
+      ? 'Esta factura confirma que el balance correspondiente al servicio indicado ha sido pagado en su totalidad.'
+      : 'Este recibo confirma un pago parcial. El saldo restante continúa pendiente hasta completar el total acordado.'}
+    <br>Gracias por confiar en AGR Solutions LLC.
+  </div>
+</div>
+<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));</script>
+</body></html>`;
+}
+function openPaymentDocument(k,p,finalInvoice=false){
+  const w=window.open('','_blank','noopener,noreferrer');
+  if(!w){alert('Permite ventanas emergentes para abrir el documento.');return;}
+  w.document.open();
+  w.document.write(paymentDocumentHTML(k,p,{finalInvoice}));
+  w.document.close();
+}
+
 function todayISO(){return new Date().toISOString().slice(0,10)}
 function taskState(t){
   if(t.done) return 'done';
@@ -1073,14 +1166,20 @@ function renderCasePayments(k){
     </div>
 
     <div class="workspace-table"><table>
-      <thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th><th>Documento</th></tr></thead>
       <tbody>
-        ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
+        ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td><td><button type="button" class="secondary payment-doc-btn" data-payment-doc="${p.id}" data-final="${isFinalPayment(k,p)?'1':'0'}">${isFinalPayment(k,p)?'Factura final':'Recibo'}</button></td></tr>`).join(''):'<tr><td colspan="5">No hay pagos registrados.</td></tr>'}
       </tbody>
     </table></div>
     ${balanceReminderHTML(k)}`;
 
   $('#workspaceAddPayment').onclick=()=>{dialog.close();openModal('payment',{caseId:k.id,date:new Date().toISOString().slice(0,10)});};
+  pane.querySelectorAll('.payment-doc-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      const p=data.payments.find(x=>String(x.id)===String(btn.dataset.paymentDoc));
+      if(p) openPaymentDocument(k,p,btn.dataset.final==='1');
+    };
+  });
 
   const syncBtn=$('#syncStripePayments');
   const syncStatus=$('#stripeSyncStatus');
