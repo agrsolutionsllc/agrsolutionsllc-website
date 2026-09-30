@@ -28,6 +28,7 @@
       <nav class="side-nav">
         <button class="nav-item active" data-view="dashboard">⌂ <span>Dashboard</span></button>
         <button class="nav-item" data-view="clients">◉ <span>Clientes</span></button>
+        <button class="nav-item" data-view="companies">▤ <span>Empresas</span></button>
         <button class="nav-item" data-view="cases">▣ <span>Casos & trámites</span></button>
         <button class="nav-item" data-view="services">≡ <span>Servicios</span></button>
         <button class="nav-item" data-view="payments">$ <span>Pagos</span></button>
@@ -123,6 +124,27 @@
             <table>
               <thead><tr><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th><th>Cuenta</th></tr></thead>
               <tbody id="clientsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="view" id="view-companies">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">EMPRESAS</p>
+            <h2>Clientes empresariales</h2>
+            <p class="section-subtext">Cuentas recurrentes, varios servicios y facturación global.</p>
+          </div>
+          <button class="primary" data-open="client-company">+ Nueva empresa</button>
+        </div>
+        <div class="panel">
+          <div class="search-row"><input id="companySearch" type="search" placeholder="Buscar empresa por nombre, teléfono o email"></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Empresa</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th><th>Cuenta global</th></tr></thead>
+              <tbody id="companiesTable"></tbody>
             </table>
           </div>
         </div>
