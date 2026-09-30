@@ -101,8 +101,13 @@ const $$=s=>[...document.querySelectorAll(s)];
 const clientById=id=>data.clients.find(c=>c.id===Number(id));
 const clientName=id=>clientById(id)?.name||'Cliente';
 const caseById=id=>data.cases.find(c=>c.id===Number(id));
-const casePaid=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
+const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
+const caseDiscountCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.discountCredit||0),0);
+const casePaid=id=>caseCollected(id)+caseDiscountCredits(id);
 const caseBalance=c=>Math.max(Number(c.serviceTotal||0)-casePaid(c.id),0);
+const caseCashDiscount=c=>Math.max(0,Math.min(Number(c.cashZelleDiscount||0),Number(c.serviceTotal||0)));
+const caseCashPrice=c=>Math.max(Number(c.serviceTotal||0)-caseCashDiscount(c),0);
+const caseCashPayoff=c=>Math.max(caseBalance(c)-caseCashDiscount(c),0);
 
 function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function dt(v){return v?new Date(v).toLocaleString('es-US',{dateStyle:'medium',timeStyle:'short'}):'—'}
@@ -508,7 +513,8 @@ const templates={
     ['deadline','Deadline / fecha límite','date',''],
     ['receiptNumber','Receipt Number (cuando se reciba)','text',''],
     ['aNumber','A-Number (opcional)','text',''],
-    ['serviceTotal','Total del servicio','number',''],
+    ['serviceTotal','Precio estándar del servicio','number',''],
+    ['cashZelleDiscount','Descuento Cash / Zelle','number',''],
     ['initialPayment','Pago inicial requerido','number',''],
     ['invoiceNumber','Número de factura','text',''],
     ['stripePaymentLink','Enlace Stripe','url','full']
@@ -609,6 +615,7 @@ function getCaseValuesFromForm(){
     deadline:fd.deadline!==undefined?fd.deadline:(existing?.deadline||''),
     receiptNumber:fd.receiptNumber!==undefined?fd.receiptNumber:(existing?.receiptNumber||''),
     aNumber:fd.aNumber!==undefined?fd.aNumber:(existing?.aNumber||''),
+    cashZelleDiscount:fd.cashZelleDiscount!==undefined?fd.cashZelleDiscount:(existing?.cashZelleDiscount||0),
     initialPayment:fd.initialPayment!==undefined?fd.initialPayment:(existing?.initialPayment||0),
     invoiceNumber:fd.invoiceNumber||existing?.invoiceNumber||'',
     stripePaymentLink:fd.stripePaymentLink||existing?.stripePaymentLink||''
@@ -963,12 +970,14 @@ function renderCasePayments(k){
   pane.innerHTML=`
     <div class="workspace-head"><div><span class="workspace-kicker">PAGOS</span><h3>Historial de pagos</h3></div><button type="button" class="primary" id="workspaceAddPayment">+ Agregar pago</button></div>
     <div class="finance-snapshot">
-      <div><span>Total</span><strong>${money(k.serviceTotal)}</strong></div>
-      <div><span>Pagado</span><strong>${money(casePaid(k.id))}</strong></div>
-      <div><span>Saldo</span><strong>${money(caseBalance(k))}</strong></div>
+      <div><span>Precio estándar</span><strong>${money(k.serviceTotal)}</strong></div>
+      <div><span>Cash / Zelle</span><strong>${money(caseCashPrice(k))}</strong></div>
+      <div><span>Cobrado</span><strong>${money(caseCollected(k.id))}</strong></div>
+      <div><span>Saldo estándar</span><strong>${money(caseBalance(k))}</strong></div>
     </div>
+    ${caseCashDiscount(k)>0?'<div class="cash-discount-note">Descuento Cash/Zelle disponible: <strong>'+money(caseCashDiscount(k))+'</strong> · Pago total por Cash/Zelle: <strong>'+money(caseCashPayoff(k))+'</strong></div>':''}
     <div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th></tr></thead><tbody>
-      ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong></td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
+      ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
     </tbody></table></div>
     ${balanceReminderHTML(k)}`;
   $('#workspaceAddPayment').onclick=()=>{dialog.close();openModal('payment',{caseId:k.id,date:new Date().toISOString().slice(0,10)});};
@@ -1061,7 +1070,7 @@ function openModal(kind,values={}){
         if(suggested>0 && (!totalInput.value || Number(totalInput.value)===0)) totalInput.value=suggested;
       });
     }
-    ['clientId','service','status','deadline','receiptNumber','aNumber','initialPayment','stripePaymentLink'].forEach(name=>{
+    ['clientId','service','status','deadline','receiptNumber','aNumber','serviceTotal','cashZelleDiscount','initialPayment','stripePaymentLink'].forEach(name=>{
       const el=form.querySelector('[name="'+name+'"]');
       if(el) el.addEventListener('input',refreshClientNotification);
       if(el) el.addEventListener('change',refreshClientNotification);
@@ -1225,6 +1234,7 @@ form.addEventListener('submit',async e=>{
       receiptNumber:f.receiptNumber||'',
       aNumber:f.aNumber||'',
       serviceTotal:Number(f.serviceTotal||0),
+      cashZelleDiscount:Math.max(0,Number(f.cashZelleDiscount||0)),
       initialPayment:Number(f.initialPayment||0),
       invoiceNumber:f.invoiceNumber||nextInvoiceNumber(),
       stripePaymentLink:f.stripePaymentLink||''
@@ -1254,6 +1264,7 @@ form.addEventListener('submit',async e=>{
         receiptNumber:f.receiptNumber!==undefined?f.receiptNumber:(current.receiptNumber||''),
         aNumber:f.aNumber!==undefined?f.aNumber:(current.aNumber||''),
         serviceTotal:Number(current.serviceTotal||0),
+        cashZelleDiscount:Number(current.cashZelleDiscount||0),
         initialPayment:Number(current.initialPayment||0),
         invoiceNumber:current.invoiceNumber||nextInvoiceNumber(),
         stripePaymentLink:current.stripePaymentLink||'',
@@ -1280,6 +1291,11 @@ form.addEventListener('submit',async e=>{
     if(k){
       const balance=caseBalance(k);
       const amount=Number(f.amount||0);
+      const method=f.method||'';
+      const isCashZelle=['Cash','Zelle'].includes(method);
+      const discountAvailable=caseCashDiscount(k);
+      const discountedPayoff=Math.max(balance-discountAvailable,0);
+      let discountCredit=0;
       if(amount<=0){
         alert('Ingresa un monto mayor a $0.');
         return;
@@ -1288,16 +1304,20 @@ form.addEventListener('submit',async e=>{
         alert('El pago no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
         return;
       }
+      if(isCashZelle && discountAvailable>0 && Math.abs(amount-discountedPayoff)<0.01){
+        discountCredit=Math.min(discountAvailable,balance-amount);
+      }
       data.payments.push({
         id,
         caseId:Number(f.caseId),
         clientId:k.clientId,
         amount,
-        method:f.method,
+        discountCredit,
+        method,
         date:f.date||new Date().toISOString().slice(0,10),
-        note:f.note||''
+        note:f.note||(discountCredit>0?'Descuento Cash/Zelle aplicado':'')
       });
-      logCaseEvent(k.id,`Pago registrado: ${money(amount)} · ${f.method}`,'payment');
+      logCaseEvent(k.id,`Pago registrado: ${money(amount)} · ${method}${discountCredit>0?' · descuento '+money(discountCredit):''}`,'payment');
     }
   }
 
