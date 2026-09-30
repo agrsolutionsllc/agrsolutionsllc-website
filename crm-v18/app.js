@@ -80,6 +80,9 @@ if(!Array.isArray(data.notes)) data.notes=[];
 if(!Array.isArray(data.history)) data.history=[];
 if(!Array.isArray(data.communications)) data.communications=[];
 if(!Array.isArray(data.tasks)) data.tasks=[];
+if(!Array.isArray(data.clientAccountCharges)) data.clientAccountCharges=[];
+if(!Array.isArray(data.clientAccountPayments)) data.clientAccountPayments=[];
+if(!Array.isArray(data.clientAccountInvoices)) data.clientAccountInvoices=[];
 
 // migrate old prototype statuses if they exist in this browser
 const migration={nuevo:'inicial',pendiente:'evidencia',proceso:'preparacion',completado:'completado'};
@@ -114,6 +117,33 @@ const caseCashDiscount=c=>Math.max(caseStandardPrice(c)-caseCashPrice(c),0);
 const caseZelleDiscount=c=>Math.max(caseStandardPrice(c)-caseZellePrice(c),0);
 const caseCashPayoff=c=>Math.max(caseBalance(c)-caseCashDiscount(c),0);
 const caseZellePayoff=c=>Math.max(caseBalance(c)-caseZelleDiscount(c),0);
+const accountChargesForClient=id=>data.clientAccountCharges.filter(x=>Number(x.clientId)===Number(id));
+const accountPaymentsForClient=id=>data.clientAccountPayments.filter(x=>Number(x.clientId)===Number(id));
+const accountChargeTotal=x=>Number(x.quantity||1)*Number(x.unitPrice||0);
+const accountChargesTotal=id=>accountChargesForClient(id).reduce((s,x)=>s+accountChargeTotal(x),0);
+const accountPaymentsTotal=id=>accountPaymentsForClient(id).reduce((s,x)=>s+Number(x.amount||0),0);
+const accountBalance=id=>Math.max(accountChargesTotal(id)-accountPaymentsTotal(id),0);
+const monthNames={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'};
+function normalizePeriodLabel(v=''){
+  const s=String(v||'').trim();
+  if(!s) return '';
+  const n=Number(s);
+  if(Number.isInteger(n)&&n>=1&&n<=12) return monthNames[n];
+  return s;
+}
+function groupAccountCharges(charges){
+  const map=new Map();
+  for(const c of charges){
+    const key=[String(c.concept||'').trim().toLowerCase(),Number(c.unitPrice||0)].join('|');
+    if(!map.has(key)) map.set(key,{concept:c.concept||'Servicio',unitPrice:Number(c.unitPrice||0),quantity:0,periods:[],total:0});
+    const g=map.get(key);
+    g.quantity+=Number(c.quantity||1);
+    if(c.period) g.periods.push(normalizePeriodLabel(c.period));
+    g.total+=accountChargeTotal(c);
+  }
+  return [...map.values()];
+}
+
 
 function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function dt(v){return v?new Date(v).toLocaleString('es-US',{dateStyle:'medium',timeStyle:'short'}):'—'}
@@ -554,9 +584,11 @@ function renderClients(filter=''){
   const q=filter.toLowerCase();
   $('#clientsTable').innerHTML=data.clients.filter(c=>[c.name,c.phone,c.email].join(' ').toLowerCase().includes(q)).map(c=>{
     const cases=data.cases.filter(x=>x.clientId===c.id).length;
-    const bal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
-    return `<tr><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td>${money(bal)}</td></tr>`
+    const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
+    const acctBal=accountBalance(c.id);
+    return `<tr class="clickable-row client-account-row" data-client-account-id="${c.id}"><td><strong>${c.name}</strong><small class="client-type-pill">${c.isCompany?'Empresa':'Cliente'}</small></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta: '+money(acctBal)+'</small>':''}</td></tr>`
   }).join('');
+  document.querySelectorAll('[data-client-account-id]').forEach(row=>row.onclick=()=>openClientAccount(Number(row.dataset.clientAccountId)));
 }
 
 function renderCases(){
@@ -605,7 +637,7 @@ let editingPaymentId=null;
 let editingServiceId=null;
 
 const templates={
-  client:()=>[['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
+  client:()=>[['name','Nombre / empresa','text','full'],['phone','Teléfono','tel',''],['email','Email','email',''],['isCompany','Tipo de cliente','clientType','']],
   case:()=>[
     ['clientId','Cliente','client',''],
     ['service','Servicio / trámite','serviceSelect','full'],
@@ -650,6 +682,8 @@ function fieldHTML([name,label,type,cls],values={}){
     input=`<select name="${name}" required>${statusOrder.map(s=>`<option value="${s}" ${val===s?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
   } else if(type==='serviceSelect') {
     input=`<select name="${name}" required><option value="">Selecciona un servicio</option>${data.services.filter(s=>s.active!==false || s.name===val).map(s=>`<option value="${s.name}" data-price="${s.price||0}" ${val===s.name?'selected':''}>${s.name}</option>`).join('')}</select>`;
+  } else if(type==='clientType') {
+    input=`<select name="${name}"><option value="false" ${val!==true?'selected':''}>Persona</option><option value="true" ${val===true?'selected':''}>Empresa</option></select>`;
   } else if(type==='activeSelect') {
     input=`<select name="${name}"><option value="true" ${val!==false?'selected':''}>Sí</option><option value="false" ${val===false?'selected':''}>No</option></select>`;
   } else if(type==='caseSelect') {
@@ -1464,6 +1498,115 @@ function openModal(kind,values={}){
   }
 }
 
+
+function accountInvoiceNumber(clientId){
+  const year=new Date().getFullYear();
+  const existing=data.clientAccountInvoices.filter(x=>Number(x.clientId)===Number(clientId)&&String(x.number||'').startsWith('AGR-ACCT-'+year+'-'));
+  return 'AGR-ACCT-'+year+'-'+String(existing.length+1).padStart(4,'0');
+}
+function buildAccountInvoiceHTML(client,charges,payments,invoiceNo){
+  const grouped=groupAccountCharges(charges);
+  const chargesTotal=charges.reduce((s,x)=>s+accountChargeTotal(x),0);
+  const paymentsTotal=payments.reduce((s,x)=>s+Number(x.amount||0),0);
+  const balance=Math.max(chargesTotal-paymentsTotal,0);
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${esc(invoiceNo)}</title><style>
+  body{font-family:Arial,Helvetica,sans-serif;color:#10264a;margin:0}.sheet{max-width:850px;margin:auto;padding:48px}.top{display:flex;justify-content:space-between;border-bottom:2px solid #d9b45b;padding-bottom:18px}.brand h1{margin:0}.muted{color:#6b768a}table{width:100%;border-collapse:collapse;margin-top:24px}th,td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:left}th{font-size:12px;text-transform:uppercase;color:#6b768a}.totals{max-width:360px;margin-left:auto;margin-top:24px}.totals div{display:flex;justify-content:space-between;padding:8px 0}.grand{border-top:2px solid #10264a;font-weight:700;font-size:18px}.footer{margin-top:38px;border-top:1px solid #e5e7eb;padding-top:14px;color:#6b768a;font-size:12px}</style></head><body><div class="sheet">
+  <div class="top"><div class="brand"><h1>AGR Solutions LLC</h1><div class="muted">294 Tyler Street, East Haven, CT 06512<br>203-824-0351 · agrsolutionsllc.com</div></div><div><h2>FACTURA</h2><strong>${esc(invoiceNo)}</strong><div>${new Date().toLocaleDateString('es-US')}</div></div></div>
+  <h3 style="margin-top:28px">${esc(client?.name||'Cliente')}</h3>
+  <div class="muted">${client?.email?esc(client.email):''}${client?.phone?' · '+esc(client.phone):''}</div>
+  <table><thead><tr><th>Concepto</th><th>Periodo</th><th>Cantidad</th><th>Precio unitario</th><th>Total</th></tr></thead><tbody>
+  ${grouped.map(g=>`<tr><td>${esc(g.concept)}</td><td>${esc(g.periods.join(', '))}</td><td>${g.quantity}</td><td>${money(g.unitPrice)}</td><td><strong>${money(g.total)}</strong></td></tr>`).join('')}
+  </tbody></table>
+  <div class="totals"><div><span>Cargos</span><strong>${money(chargesTotal)}</strong></div><div><span>Pagos aplicados</span><strong>${money(paymentsTotal)}</strong></div><div class="grand"><span>Saldo pendiente</span><strong>${money(balance)}</strong></div></div>
+  <div class="footer">Gracias por confiar en AGR Solutions LLC.</div>
+  </div><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));</script></body></html>`;
+}
+function openAccountInvoice(client,charges,payments,invoiceNo){
+  const w=window.open('','_blank'); if(!w){alert('Permite ventanas emergentes para abrir la factura.');return;}
+  try{w.opener=null}catch(_){}
+  w.document.open(); w.document.write(buildAccountInvoiceHTML(client,charges,payments,invoiceNo)); w.document.close();
+}
+function openClientAccount(clientId){
+  const client=clientById(clientId); if(!client) return;
+  const dlg=$('#clientAccountDialog'), body=$('#clientAccountBody'), title=$('#clientAccountTitle');
+  if(!dlg||!body) return;
+  title.textContent=client.name+' · Cuenta';
+  const charges=accountChargesForClient(clientId).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const payments=accountPaymentsForClient(clientId).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const pending=charges.filter(x=>!x.invoiceId);
+  body.innerHTML=`
+    <div class="account-summary-grid">
+      <div><span>Cargos acumulados</span><strong>${money(accountChargesTotal(clientId))}</strong></div>
+      <div><span>Pagos recibidos</span><strong>${money(accountPaymentsTotal(clientId))}</strong></div>
+      <div><span>Saldo pendiente</span><strong>${money(accountBalance(clientId))}</strong></div>
+      <div><span>Sin facturar</span><strong>${money(pending.reduce((s,x)=>s+accountChargeTotal(x),0))}</strong></div>
+    </div>
+    <div class="account-actions-bar">
+      <button type="button" class="primary" id="addAccountCharge">+ Agregar cargo</button>
+      <button type="button" class="secondary" id="addAccountPayment">+ Registrar pago</button>
+      <button type="button" class="secondary" id="generateAccountInvoice" ${pending.length?'':'disabled'}>Generar factura de pendientes</button>
+    </div>
+    <section class="account-entry-box" id="accountEntryBox" hidden></section>
+    <div class="account-ledger-grid">
+      <section><h3>Cargos / servicios</h3><div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Periodo</th><th>Cant.</th><th>Unitario</th><th>Total</th><th>Estado</th></tr></thead><tbody>
+      ${charges.length?charges.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.concept||'—')}</td><td>${esc(normalizePeriodLabel(x.period)||'—')}</td><td>${Number(x.quantity||1)}</td><td>${money(x.unitPrice)}</td><td><strong>${money(accountChargeTotal(x))}</strong></td><td>${x.invoiceId?'Facturado':'Pendiente'}</td></tr>`).join(''):'<tr><td colspan="7">No hay cargos registrados.</td></tr>'}
+      </tbody></table></div></section>
+      <section><h3>Pagos recibidos</h3><div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Método</th><th>Monto</th><th>Nota</th></tr></thead><tbody>
+      ${payments.length?payments.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
+      </tbody></table></div></section>
+    </div>
+    ${data.clientAccountInvoices.filter(x=>Number(x.clientId)===Number(clientId)).length?'<section class="account-invoices"><h3>Facturas generadas</h3>'+data.clientAccountInvoices.filter(x=>Number(x.clientId)===Number(clientId)).map(i=>'<div class="account-invoice-row"><strong>'+esc(i.number)+'</strong><span>'+esc(i.date)+'</span><span>'+money(i.total)+'</span></div>').join('')+'</section>':''}
+  `;
+  const entry=$('#accountEntryBox');
+  $('#addAccountCharge').onclick=()=>{
+    entry.hidden=false;
+    entry.innerHTML=`<h3>Nuevo cargo</h3><div class="account-entry-grid">
+      <label>Fecha<input id="acctChargeDate" type="date" value="${todayISO()}"></label>
+      <label>Concepto<input id="acctConcept" type="text" placeholder="Ej. Sales & Use Tax"></label>
+      <label>Mes / periodo<input id="acctPeriod" type="text" placeholder="Ej. Enero"></label>
+      <label>Cantidad<input id="acctQty" type="number" min="1" step="1" value="1"></label>
+      <label>Precio unitario<input id="acctUnit" type="number" min="0" step="0.01" placeholder="20.00"></label>
+      <label class="full">Nota<input id="acctNote" type="text" placeholder="Opcional"></label>
+    </div><div class="account-entry-actions"><button class="primary" type="button" id="saveAcctCharge">Guardar cargo</button><button class="ghost" type="button" id="cancelAcctEntry">Cancelar</button></div>`;
+    $('#cancelAcctEntry').onclick=()=>{entry.hidden=true;entry.innerHTML='';};
+    $('#saveAcctCharge').onclick=()=>{
+      const concept=$('#acctConcept').value.trim();
+      const unitPrice=Number($('#acctUnit').value||0);
+      const quantity=Math.max(1,Number($('#acctQty').value||1));
+      if(!concept||unitPrice<=0){alert('Ingresa concepto y precio unitario.');return;}
+      data.clientAccountCharges.push({id:Date.now(),clientId,date:$('#acctChargeDate').value||todayISO(),concept,period:$('#acctPeriod').value.trim(),quantity,unitPrice,note:$('#acctNote').value.trim(),invoiceId:null});
+      save(); openClientAccount(clientId); renderClients($('#clientSearch')?.value||'');
+    };
+  };
+  $('#addAccountPayment').onclick=()=>{
+    entry.hidden=false;
+    entry.innerHTML=`<h3>Registrar pago</h3><div class="account-entry-grid">
+      <label>Fecha<input id="acctPayDate" type="date" value="${todayISO()}"></label>
+      <label>Método<select id="acctPayMethod"><option>Cash</option><option>Zelle</option><option>Credit Card</option><option>Debit Card</option><option>Check</option><option>ACH / Bank Transfer</option><option>Other</option></select></label>
+      <label>Monto<input id="acctPayAmount" type="number" min="0.01" step="0.01"></label>
+      <label class="full">Nota<input id="acctPayNote" type="text" placeholder="Referencia / nota"></label>
+    </div><div class="account-entry-actions"><button class="primary" type="button" id="saveAcctPayment">Guardar pago</button><button class="ghost" type="button" id="cancelAcctEntry">Cancelar</button></div>`;
+    $('#cancelAcctEntry').onclick=()=>{entry.hidden=true;entry.innerHTML='';};
+    $('#saveAcctPayment').onclick=()=>{
+      const amount=Number($('#acctPayAmount').value||0); if(amount<=0){alert('Ingresa un monto válido.');return;}
+      data.clientAccountPayments.push({id:Date.now(),clientId,date:$('#acctPayDate').value||todayISO(),method:$('#acctPayMethod').value,amount,note:$('#acctPayNote').value.trim()});
+      save(); openClientAccount(clientId); renderClients($('#clientSearch')?.value||'');
+    };
+  };
+  $('#generateAccountInvoice').onclick=()=>{
+    const pendingNow=accountChargesForClient(clientId).filter(x=>!x.invoiceId);
+    if(!pendingNow.length) return;
+    const invoiceNo=accountInvoiceNumber(clientId);
+    const total=pendingNow.reduce((s,x)=>s+accountChargeTotal(x),0);
+    const invoiceId=Date.now();
+    pendingNow.forEach(x=>x.invoiceId=invoiceId);
+    data.clientAccountInvoices.push({id:invoiceId,clientId,number:invoiceNo,date:todayISO(),chargeIds:pendingNow.map(x=>x.id),total});
+    save();
+    openAccountInvoice(client,pendingNow,accountPaymentsForClient(clientId),invoiceNo);
+    openClientAccount(clientId);
+  };
+  dlg.showModal();
+}
 function bindCaseOpeners(){
   $$('[data-case-id]').forEach(el=>{
     el.onclick=()=>{
@@ -1534,7 +1677,7 @@ form.addEventListener('submit',async e=>{
   const f=Object.fromEntries(new FormData(form));
   const id=Date.now();
 
-  if(mode==='client') data.clients.push({id,name:f.name,phone:f.phone,email:f.email});
+  if(mode==='client') data.clients.push({id,name:f.name,phone:f.phone,email:f.email,isCompany:f.isCompany==='true'});
 
   if(mode==='service') {
     data.services.push({
@@ -1692,3 +1835,6 @@ document.addEventListener('click',e=>{
     const box=$('#globalSearchResults'); if(box) box.hidden=true;
   }
 });
+const clientAccountDialog=$('#clientAccountDialog');
+const closeClientAccount=$('#closeClientAccount');
+if(closeClientAccount) closeClientAccount.onclick=()=>clientAccountDialog?.close();
