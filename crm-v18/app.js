@@ -202,12 +202,12 @@ const casePaid=id=>caseCollected(id)+caseDiscountCredits(id);
 const caseBalance=c=>Math.max(Number(c.serviceTotal||0)-casePaid(c.id),0);
 const caseStandardPrice=c=>Number(c.serviceTotal||0);
 const caseCashPrice=c=>Number(c.cashPrice ?? Math.max(caseStandardPrice(c)-Number(c.cashZelleDiscount||0),0));
-const caseZellePrice=c=>Number(c.zellePrice ?? caseCashPrice(c));
+const caseZellePrice=c=>caseCashPrice(c);
 const caseCardPrice=c=>Number(c.cardPrice ?? caseStandardPrice(c));
 const caseCashDiscount=c=>Math.max(caseStandardPrice(c)-caseCashPrice(c),0);
-const caseZelleDiscount=c=>Math.max(caseStandardPrice(c)-caseZellePrice(c),0);
+const caseZelleDiscount=c=>caseCashDiscount(c);
 const caseCashPayoff=c=>Math.max(caseBalance(c)-caseCashDiscount(c),0);
-const caseZellePayoff=c=>Math.max(caseBalance(c)-caseZelleDiscount(c),0);
+const caseZellePayoff=c=>caseCashPayoff(c);
 const accountChargesForClient=id=>data.clientAccountCharges.filter(x=>Number(x.clientId)===Number(id));
 const accountPaymentsForClient=id=>data.clientAccountPayments.filter(x=>Number(x.clientId)===Number(id));
 const accountChargeTotal=x=>Number(x.quantity||1)*Number(x.unitPrice||0);
@@ -1170,8 +1170,7 @@ const templates={
     ['receiptNumber','Receipt Number (cuando se reciba)','text',''],
     ['aNumber','A-Number (opcional)','text',''],
     ['serviceTotal','Precio estándar del servicio','number',''],
-    ['cashPrice','Precio Cash','number',''],
-    ['zellePrice','Precio Zelle','number',''],
+    ['cashPrice','Precio Cash / Zelle','number',''],
     ['cardPrice','Precio Tarjeta / Stripe','number',''],
     ['initialPayment','Pago inicial requerido','number',''],
     ['invoiceNumber','Número de factura','text',''],
@@ -1276,7 +1275,7 @@ function getCaseValuesFromForm(){
     receiptNumber:fd.receiptNumber!==undefined?fd.receiptNumber:(existing?.receiptNumber||''),
     aNumber:fd.aNumber!==undefined?fd.aNumber:(existing?.aNumber||''),
     cashPrice:fd.cashPrice!==undefined?fd.cashPrice:(existing?.cashPrice ?? caseCashPrice(existing||{})),
-    zellePrice:fd.zellePrice!==undefined?fd.zellePrice:(existing?.zellePrice ?? caseZellePrice(existing||{})),
+    zellePrice:fd.cashPrice!==undefined?fd.cashPrice:(existing?.cashPrice ?? caseCashPrice(existing||{})),
     cardPrice:fd.cardPrice!==undefined?fd.cardPrice:(existing?.cardPrice ?? caseCardPrice(existing||{})),
     initialPayment:fd.initialPayment!==undefined?fd.initialPayment:(existing?.initialPayment||0),
     invoiceNumber:fd.invoiceNumber||existing?.invoiceNumber||'',
@@ -1702,14 +1701,12 @@ function renderCasePayments(k){
       </div>
       <div class="case-pricing-summary">
         <div><span>Precio estándar</span><strong>${money(caseStandardPrice(k))}</strong></div>
-        <div><span>Cash</span><strong>${money(caseCashPrice(k))}</strong></div>
-        <div><span>Zelle</span><strong>${money(caseZellePrice(k))}</strong></div>
+        <div><span>Cash / Zelle</span><strong>${money(caseCashPrice(k))}</strong></div>
         <div><span>Tarjeta / Stripe</span><strong>${money(caseCardPrice(k))}</strong></div>
       </div>
       <div class="case-pricing-editor" id="casePricingEditor" hidden>
         <label>Precio estándar<input type="number" min="0" step="0.01" id="caseStandardPrice" value="${Number(caseStandardPrice(k)).toFixed(2)}"></label>
-        <label>Precio Cash<input type="number" min="0" step="0.01" id="caseCashPrice" value="${Number(caseCashPrice(k)).toFixed(2)}"></label>
-        <label>Precio Zelle<input type="number" min="0" step="0.01" id="caseZellePrice" value="${Number(caseZellePrice(k)).toFixed(2)}"></label>
+        <label>Precio Cash / Zelle<input type="number" min="0" step="0.01" id="caseCashPrice" value="${Number(caseCashPrice(k)).toFixed(2)}"></label>
         <label>Precio Tarjeta / Stripe<input type="number" min="0" step="0.01" id="caseCardPrice" value="${Number(caseCardPrice(k)).toFixed(2)}"></label>
         <div class="pricing-preview" id="casePricingLivePreview"></div>
         <div class="case-pricing-actions">
@@ -1766,7 +1763,6 @@ function renderCasePayments(k){
   const editor=$('#casePricingEditor');
   const standardInput=$('#caseStandardPrice');
   const cashInput=$('#caseCashPrice');
-  const zelleInput=$('#caseZellePrice');
   const cardInput=$('#caseCardPrice');
   const preview=$('#casePricingLivePreview');
   const saveBtn=$('#saveCasePricing');
@@ -1775,7 +1771,6 @@ function renderCasePayments(k){
   const refreshPricingEditor=()=>{
     const standard=Math.max(0,Number(standardInput?.value||0));
     const cash=Math.max(0,Number(cashInput?.value||standard));
-    const zelle=Math.max(0,Number(zelleInput?.value||cash));
     const card=Math.max(0,Number(cardInput?.value||standard));
     if(preview) preview.innerHTML=
       '<span>Precio estándar</span><strong>'+money(standard)+'</strong>'+
@@ -1784,16 +1779,16 @@ function renderCasePayments(k){
       '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
   };
   if(toggle && editor) toggle.onclick=()=>{editor.hidden=!editor.hidden;toggle.textContent=editor.hidden?'Editar precios':'Ocultar';refreshPricingEditor();};
-  [standardInput,cashInput,zelleInput,cardInput].forEach(el=>el?.addEventListener('input',refreshPricingEditor));
+  [standardInput,cashInput,cardInput].forEach(el=>el?.addEventListener('input',refreshPricingEditor));
 
   if(saveBtn) saveBtn.onclick=()=>{
     const standard=Math.max(0,Number(standardInput?.value||0));
     const cash=Math.max(0,Number(cashInput?.value||0));
-    const zelle=Math.max(0,Number(zelleInput?.value||0));
+    const zelle=cash;
     const card=Math.max(0,Number(cardInput?.value||0));
     const collected=caseCollected(k.id);
     if(!Number.isFinite(standard)||standard<=0){if(priceStatus)priceStatus.textContent='Ingresa un precio estándar mayor que $0.00.';return;}
-    if([cash,zelle,card].some(v=>!Number.isFinite(v)||v<=0)){if(priceStatus)priceStatus.textContent='Todos los precios deben ser mayores que $0.00.';return;}
+    if([cash,card].some(v=>!Number.isFinite(v)||v<=0)){if(priceStatus)priceStatus.textContent='Todos los precios deben ser mayores que $0.00.';return;}
     if(standard<collected){if(priceStatus)priceStatus.textContent='El precio estándar no puede ser menor que lo ya cobrado: '+money(collected)+'.';return;}
     k.serviceTotal=standard;
     k.cashPrice=cash;
@@ -2006,14 +2001,12 @@ function openModal(kind,values={}){
   if(actualKind==='case'){
     const totalPriceInput=fields.querySelector('[name="serviceTotal"]');
     const cashPriceInput=fields.querySelector('[name="cashPrice"]');
-    const zellePriceInput=fields.querySelector('[name="zellePrice"]');
     const cardPriceInput=fields.querySelector('[name="cardPrice"]');
     if(cardPriceInput){
       cardPriceInput.insertAdjacentHTML('afterend','<div class="pricing-preview" id="pricingPreview"></div>');
       const refreshPricingPreview=()=>{
         const standard=Math.max(0,Number(totalPriceInput?.value||0));
         const cash=Math.max(0,Number(cashPriceInput?.value||standard));
-        const zelle=Math.max(0,Number(zellePriceInput?.value||cash));
         const card=Math.max(0,Number(cardPriceInput?.value||standard));
         const box=fields.querySelector('#pricingPreview');
         if(box) box.innerHTML=
@@ -2022,7 +2015,7 @@ function openModal(kind,values={}){
           '<span>Zelle</span><strong>'+money(zelle)+'</strong>'+
           '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
       };
-      [totalPriceInput,cashPriceInput,zellePriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
+      [totalPriceInput,cashPriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
       refreshPricingPreview();
     }
     const invoiceInput=fields.querySelector('[name="invoiceNumber"]');
@@ -2122,7 +2115,7 @@ function openModal(kind,values={}){
         if(suggested>0 && (!totalInput.value || Number(totalInput.value)===0)) totalInput.value=suggested;
       });
     }
-    ['clientId','service','status','deadline','receiptNumber','aNumber','serviceTotal','cashPrice','zellePrice','cardPrice','initialPayment','stripePaymentLink'].forEach(name=>{
+    ['clientId','service','status','deadline','receiptNumber','aNumber','serviceTotal','cashPrice','cardPrice','initialPayment','stripePaymentLink'].forEach(name=>{
       const el=form.querySelector('[name="'+name+'"]');
       if(el) el.addEventListener('input',refreshClientNotification);
       if(el) el.addEventListener('change',refreshClientNotification);
@@ -2450,7 +2443,7 @@ form.addEventListener('submit',async e=>{
       aNumber:f.aNumber||'',
       serviceTotal:Number(f.serviceTotal||0),
       cashPrice:Number(f.cashPrice||f.serviceTotal||0),
-      zellePrice:Number(f.zellePrice||f.cashPrice||f.serviceTotal||0),
+      zellePrice:Number(f.cashPrice||f.serviceTotal||0),
       cardPrice:Number(f.cardPrice||f.serviceTotal||0),
       initialPayment:Number(f.initialPayment||0),
       invoiceNumber:f.invoiceNumber||nextInvoiceNumber(),
