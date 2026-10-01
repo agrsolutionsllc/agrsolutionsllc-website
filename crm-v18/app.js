@@ -1962,7 +1962,7 @@ function renderCaseContract(k){
 
 function defaultImmigrationScope(k){
   const service=String(k?.service||'servicio migratorio').trim();
-  return 'AGR Solutions LLC prestará servicios administrativos de preparación documental relacionados con '+service+'. El servicio incluye recopilación y organización de la información proporcionada por el cliente, preparación mecanográfica de formularios o documentos conforme a las respuestas e instrucciones del cliente, checklist de documentos de soporte, organización del paquete y asistencia administrativa con copias, traducciones o envíos cuando estos servicios hayan sido expresamente contratados. El cliente revisará y aprobará el contenido final antes de cualquier firma o presentación.';
+  return 'AGR Solutions LLC prestará servicios administrativos de preparación documental relacionados con '+service+'. El servicio incluye recopilación y organización de la información proporcionada por el cliente, preparación mecanográfica de formularios o documentos conforme a las respuestas e instrucciones del cliente, checklist de documentos de soporte, organización del paquete y asistencia administrativa con copias, traducciones o envíos cuando estos servicios hayan sido expresamente contratados. El cliente revisará y aprobará el contenido final antes de cualquier firma o presentación. Cualquier servicio adicional no descrito en este alcance deberá acordarse por separado.';
 }
 
 function caseContractDraftHTML(k,c){
@@ -2010,7 +2010,6 @@ function caseContractDraftHTML(k,c){
     <h2>2. Alcance del servicio contratado</h2>
     <div class="section">
       <p>${esc(scope)}</p>
-      <p>AGR Solutions LLC no ofrece ni presta representación legal o migratoria, no presenta Form G-28 y no comparece como representante del cliente ante agencias, entrevistas, audiencias o procedimientos. Si durante el trámite surge una cuestión que requiera asesoría, estrategia, análisis o representación legal, el cliente deberá consultar y contratar por separado a un abogado de inmigración o representante acreditado autorizado.</p>
     </div>
 
     <h2>3. Responsabilidades del cliente</h2>
