@@ -964,8 +964,6 @@ function renderTasks(){
   box.querySelectorAll('[data-task-toggle]').forEach(btn=>btn.onclick=()=>{
     const t=data.tasks.find(x=>x.id===Number(btn.dataset.taskToggle)); if(!t) return;
     t.done=!t.done; t.completedAt=t.done?new Date().toISOString():''; save(); render();
-setTimeout(()=>maybeRunAutomaticBackup(),1500);
-setInterval(()=>maybeRunAutomaticBackup(),60*60*1000); 
   });
 }
 function renderGlobalSearch(q=''){
@@ -2343,6 +2341,8 @@ form.addEventListener('submit',async e=>{
 
 save();
 render();
+setTimeout(()=>maybeRunAutomaticBackup(),1500);
+setInterval(()=>maybeRunAutomaticBackup(),60*60*1000);
 
 const cashbookClientSelect=$('#cashbookClient');
 if(cashbookClientSelect){
