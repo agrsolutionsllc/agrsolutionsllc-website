@@ -1774,8 +1774,7 @@ function renderCasePayments(k){
     const card=Math.max(0,Number(cardInput?.value||standard));
     if(preview) preview.innerHTML=
       '<span>Precio estándar</span><strong>'+money(standard)+'</strong>'+
-      '<span>Cash</span><strong>'+money(cash)+'</strong>'+
-      '<span>Zelle</span><strong>'+money(zelle)+'</strong>'+
+      '<span>Cash / Zelle</span><strong>'+money(cash)+'</strong>'+
       '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
   };
   if(toggle && editor) toggle.onclick=()=>{editor.hidden=!editor.hidden;toggle.textContent=editor.hidden?'Editar precios':'Ocultar';refreshPricingEditor();};
@@ -2011,8 +2010,7 @@ function openModal(kind,values={}){
         const box=fields.querySelector('#pricingPreview');
         if(box) box.innerHTML=
           '<span>Precio estándar</span><strong>'+money(standard)+'</strong>'+
-          '<span>Cash</span><strong>'+money(cash)+'</strong>'+
-          '<span>Zelle</span><strong>'+money(zelle)+'</strong>'+
+          '<span>Cash / Zelle</span><strong>'+money(cash)+'</strong>'+
           '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
       };
       [totalPriceInput,cashPriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
