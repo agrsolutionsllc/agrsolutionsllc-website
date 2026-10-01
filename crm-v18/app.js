@@ -1983,7 +1983,7 @@ function openCaseContractDraft(k,c){
 function renderCaseWorkspace(k){
   const tabs=$('#caseWorkspaceTabs'); if(!tabs) return;
   tabs.hidden=false;
-  $('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='contract')renderCaseContract(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
+  $$('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='contract')renderCaseContract(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
   renderCaseSetupCard(k); renderCaseSummarySnapshot(k); renderCaseDocuments(k); renderCasePayments(k); renderCaseContract(k); renderCaseHistory(k); renderCaseNotes(k); renderCommunicationHistory(k); setCaseTab('summary');
   const wa=$('.notify-whatsapp'), mail=$('.notify-email');
   if(wa) wa.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'WhatsApp',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de WhatsApp abierto','communication');renderCommunicationHistory(k);};
