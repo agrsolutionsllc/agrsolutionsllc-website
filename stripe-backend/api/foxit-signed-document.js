@@ -2,7 +2,7 @@ const FOXIT_BASE='https://na1.fusion.foxit.com';
 
 function cors(res){
   res.setHeader('Access-Control-Allow-Origin','https://agrsolutionsllc.com');
-  res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers','Content-Type');
 }
 async function foxitToken(){
@@ -27,9 +27,9 @@ async function foxitToken(){
 export default async function handler(req,res){
   cors(res);
   if(req.method==='OPTIONS') return res.status(204).end();
-  if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
+  if(req.method!=='GET' && req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
   try{
-    const folderId=String(req.body?.folderId||'').trim();
+    const folderId=String(req.method==='GET' ? (req.query?.folderId||'') : (req.body?.folderId||'')).trim();
     if(!folderId) return res.status(400).json({error:'Missing Foxit folder ID.'});
     const token=await foxitToken();
     const url=new URL(FOXIT_BASE+'/esign/api/v1/folders/document/download');
@@ -40,10 +40,12 @@ export default async function handler(req,res){
       const raw=await r.text();
       return res.status(r.status).json({error:raw||('Foxit document download error '+r.status)});
     }
-    const bytes=new Uint8Array(await r.arrayBuffer());
+    const buffer=Buffer.from(await r.arrayBuffer());
     res.setHeader('Content-Type','application/pdf');
     res.setHeader('Content-Disposition','inline; filename="AGR-Signed-Service-Agreement.pdf"');
-    return res.status(200).send(bytes);
+    res.setHeader('Content-Length',String(buffer.length));
+    res.setHeader('Cache-Control','private, no-store');
+    return res.status(200).send(buffer);
   }catch(err){
     return res.status(500).json({error:err?.message||'Unexpected Foxit error'});
   }
