@@ -1868,7 +1868,7 @@ function contractFormRecord(k,c){
   return {
     status:$('#contractStatus')?.value||c.status||'Borrador',
     date:$('#contractDate')?.value||c.date||'',
-    total:Number($('#contractTotal')?.value||c.total||0),
+    total:Number(c.total||caseStandardPrice(k)||0),
     initialPayment:Number($('#contractInitial')?.value||c.initialPayment||0),
     scope:$('#contractScope')?.value?.trim()||c.scope||'',
     terms:$('#contractTerms')?.value?.trim()||c.terms||'',
@@ -1911,8 +1911,7 @@ function renderCaseContract(k){
           </select>
         </label>
         <label>Fecha<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
-        <label>Monto acordado<input id="contractTotal" type="number" min="0" step="0.01" value="${Number(c.total||0)}"></label>
-        <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
+                <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
         <label>Fecha de firma<input id="contractSignedDate" type="date" value="${esc(c.signedDate||'')}"></label>
       </div>
 
@@ -1940,7 +1939,7 @@ function renderCaseContract(k){
   `;
 
   const updatePreview=()=>refreshEmbeddedContractPreview(k,c);
-  ['contractStatus','contractDate','contractTotal','contractInitial','contractScope','contractTerms','contractSignedDate'].forEach(id=>{
+  ['contractStatus','contractDate','contractInitial','contractScope','contractTerms','contractSignedDate'].forEach(id=>{
     $('#'+id)?.addEventListener('input',updatePreview);
     $('#'+id)?.addEventListener('change',updatePreview);
   });
@@ -1972,8 +1971,8 @@ function caseContractDraftHTML(k,c){
   const regularPrice=Number(caseStandardPrice(k)||c.total||0);
   const cashZellePrice=Number(caseCashPrice(k)||regularPrice);
   const cardStripePrice=Number(caseCardPrice(k)||regularPrice);
-  const agreedAmount=Number(c.total||regularPrice);
-  const balance=Math.max(agreedAmount-Number(c.initialPayment||0),0);
+  const selectedBasePrice=regularPrice;
+  const balance=Math.max(selectedBasePrice-Number(c.initialPayment||0),0);
   const scope=(c.scope||'').trim() || defaultImmigrationScope(k);
   const extraTerms=(c.terms||'').trim();
   const statusLabelText=String(c.status||'Borrador').toUpperCase();
@@ -2034,9 +2033,8 @@ function caseContractDraftHTML(k,c){
       <div class="box"><span>Precio regular del servicio</span><strong>${money(regularPrice)}</strong></div>
       <div class="box"><span>Precio Cash / Zelle</span><strong>${money(cashZellePrice)}</strong></div>
       <div class="box"><span>Precio Tarjeta / Stripe</span><strong>${money(cardStripePrice)}</strong></div>
-      <div class="box"><span>Monto acordado para este caso</span><strong>${money(agreedAmount)}</strong></div>
       <div class="box"><span>Pago inicial requerido</span><strong>${money(c.initialPayment)}</strong></div>
-      <div class="box"><span>Saldo inicial estimado</span><strong>${money(balance)}</strong></div>
+      <div class="box"><span>Saldo estimado sobre precio regular</span><strong>${money(balance)}</strong></div>
     </div>
     <div class="notice"><strong>Condiciones de precio.</strong> Los importes anteriores son precios previamente establecidos para los métodos indicados. No se añadirá al momento del cobro una tarifa separada denominada cargo de procesamiento, conveniencia o transacción.</div>
 
