@@ -75,6 +75,7 @@ const STRIPE_BACKEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app
 const STRIPE_SYNC_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/sync-payments';
 const FOXIT_SEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-send-contract';
 const FOXIT_STATUS_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-envelope-status';
+const FOXIT_SIGNED_PDF_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-signed-document';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 if(!data.documents || typeof data.documents!=='object') data.documents={};
@@ -1972,6 +1973,7 @@ async function autoRefreshFoxitContract(k,c){
       save();
       logCaseEvent(k.id,'Contrato completado en Foxit eSign','contract');
       renderCaseContract(k);
+      setTimeout(()=>showSignedFoxitPdf(k,c),250);
       return;
     }
     if(mapped==='Parcialmente firmado'){
@@ -1998,11 +2000,45 @@ function contractFormRecord(k,c){
     signedDate:$('#contractSignedDate')?.value||c.signedDate||''
   };
 }
+async function showSignedFoxitPdf(k,c){
+  const frame=$('#caseContractPreview');
+  if(!frame||!c?.foxitFolderId) return false;
+  try{
+    const response=await fetch(FOXIT_SIGNED_PDF_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({folderId:c.foxitFolderId})
+    });
+    if(!response.ok) return false;
+    const blob=await response.blob();
+    if(c._signedPdfUrl) URL.revokeObjectURL(c._signedPdfUrl);
+    c._signedPdfUrl=URL.createObjectURL(blob);
+    frame.removeAttribute('srcdoc');
+    frame.src=c._signedPdfUrl;
+    const head=document.querySelector('.contract-master-preview-wrap .workspace-head h3');
+    if(head) head.textContent='Contrato final firmado';
+    return true;
+  }catch(err){
+    console.warn('No se pudo cargar el PDF firmado de Foxit:',err);
+    return false;
+  }
+}
 function refreshEmbeddedContractPreview(k,c){
   const frame=$('#caseContractPreview');
   if(!frame) return;
+  if(c?.status==='Firmado' && c?.foxitFolderId){
+    showSignedFoxitPdf(k,c).then(ok=>{
+      if(ok) return;
+      let html=caseContractDraftHTML(k,contractFormRecord(k,c));
+      html=html.replace(/<script>[\s\S]*?<\\\/script>/i,'');
+      frame.removeAttribute('src');
+      frame.srcdoc=html;
+    });
+    return;
+  }
   let html=caseContractDraftHTML(k,contractFormRecord(k,c));
   html=html.replace(/<script>[\s\S]*?<\\\/script>/i,'');
+  frame.removeAttribute('src');
   frame.srcdoc=html;
 }
 function renderCaseContract(k){
