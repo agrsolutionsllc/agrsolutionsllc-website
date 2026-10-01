@@ -1868,7 +1868,7 @@ function contractFormRecord(k,c){
   return {
     status:$('#contractStatus')?.value||c.status||'Borrador',
     date:$('#contractDate')?.value||c.date||'',
-    total:Number(c.total||caseStandardPrice(k)||0),
+    total:Number(c.total||caseCashPrice(k)||caseStandardPrice(k)||0),
     initialPayment:Number($('#contractInitial')?.value||c.initialPayment||0),
     scope:$('#contractScope')?.value?.trim()||c.scope||'',
     terms:$('#contractTerms')?.value?.trim()||c.terms||'',
@@ -1968,11 +1968,9 @@ function defaultImmigrationScope(k){
 
 function caseContractDraftHTML(k,c){
   const client=clientById(k.clientId);
-  const regularPrice=Number(caseStandardPrice(k)||c.total||0);
-  const cashZellePrice=Number(caseCashPrice(k)||regularPrice);
-  const cardStripePrice=Number(caseCardPrice(k)||regularPrice);
-  const selectedBasePrice=regularPrice;
-  const balance=Math.max(selectedBasePrice-Number(c.initialPayment||0),0);
+  const cashZellePrice=Number(caseCashPrice(k)||caseStandardPrice(k)||c.total||0);
+  const cardStripePrice=Number(caseCardPrice(k)||cashZellePrice);
+  const balance=Math.max(cashZellePrice-Number(c.initialPayment||0),0);
   const scope=(c.scope||'').trim() || defaultImmigrationScope(k);
   const extraTerms=(c.terms||'').trim();
   const statusLabelText=String(c.status||'Borrador').toUpperCase();
@@ -2030,11 +2028,10 @@ function caseContractDraftHTML(k,c){
 
     <h2>4. Honorarios y opciones de pago</h2>
     <div class="grid">
-      <div class="box"><span>Precio regular del servicio</span><strong>${money(regularPrice)}</strong></div>
       <div class="box"><span>Precio Cash / Zelle</span><strong>${money(cashZellePrice)}</strong></div>
       <div class="box"><span>Precio Tarjeta / Stripe</span><strong>${money(cardStripePrice)}</strong></div>
       <div class="box"><span>Pago inicial requerido</span><strong>${money(c.initialPayment)}</strong></div>
-      <div class="box"><span>Saldo estimado sobre precio regular</span><strong>${money(balance)}</strong></div>
+      <div class="box"><span>Saldo estimado Cash / Zelle</span><strong>${money(balance)}</strong></div>
     </div>
     <div class="notice"><strong>Condiciones de precio.</strong> Los importes anteriores son precios previamente establecidos para los métodos indicados. No se añadirá al momento del cobro una tarifa separada denominada cargo de procesamiento, conveniencia o transacción.</div>
 
