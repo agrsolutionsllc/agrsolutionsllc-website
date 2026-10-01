@@ -783,3 +783,12 @@ dialog form{max-height:88vh;overflow:auto}
 .backup-help{margin-top:4px}.backup-help h3{margin:2px 0 8px}.backup-help p{color:var(--muted)}
 .danger-safe{background:#0b2348}
 @media(max-width:900px){.backup-grid{grid-template-columns:1fr}.backup-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.backup-auto-card{margin-bottom:18px}
+.backup-auto-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.backup-auto-controls label{display:flex;flex-direction:column;gap:6px;min-width:180px;font-weight:600}
+.backup-auto-controls select{min-height:42px;border:1px solid #dfe5ee;border-radius:10px;padding:0 10px;background:#fff}
+.backup-toggle-row{flex-direction:row!important;align-items:center!important;min-width:auto!important;padding:10px 0}
+.backup-toggle-row input{width:18px;height:18px}
+.backup-auto-info{display:flex;flex-direction:column;gap:4px;margin-top:14px;padding:12px 14px;border:1px solid #e3e7ee;border-radius:12px;background:#fafbfc}
+.backup-auto-info span{color:var(--muted);font-size:.85rem}
