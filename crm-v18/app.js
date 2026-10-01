@@ -1894,8 +1894,8 @@ function renderCaseContract(k){
         <label>Fecha del contrato<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
         <label>Monto acordado<input id="contractTotal" type="number" min="0" step="0.01" value="${Number(c.total||0)}"></label>
         <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
-        <label class="full">Alcance / servicio<textarea id="contractScope" rows="4" placeholder="Describe exactamente qué incluye este servicio.">${esc(c.scope||'')}</textarea></label>
-        <label class="full">Condiciones / notas del contrato<textarea id="contractTerms" rows="6" placeholder="Aquí irá el texto o las condiciones específicas del acuerdo.">${esc(c.terms||'')}</textarea></label>
+        <label class="full">Alcance adicional (opcional)<textarea id="contractScope" rows="4" placeholder="Solo si deseas añadir algo específico a este caso.">${esc(c.scope||'')}</textarea></label>
+        <label class="full">Notas adicionales (opcional)<textarea id="contractTerms" rows="4" placeholder="Observaciones particulares para este cliente o trámite.">${esc(c.terms||'')}</textarea></label>
         <label>Fecha de firma<input id="contractSignedDate" type="date" value="${esc(c.signedDate||'')}"></label>
       </div>
       <div class="contract-actions">
@@ -1933,44 +1933,132 @@ function renderCaseContract(k){
     openCaseContractDraft(k,rec);
   });
 }
+function defaultImmigrationScope(k){
+  const service=String(k?.service||'servicio migratorio').trim();
+  return 'AGR Solutions LLC prestará servicios administrativos de preparación documental relacionados con '+service+'. El servicio incluye recopilación y organización de la información proporcionada por el cliente, preparación mecanográfica de formularios o documentos conforme a las respuestas e instrucciones del cliente, checklist de documentos de soporte, organización del paquete y asistencia administrativa con copias, traducciones o envíos cuando estos servicios hayan sido expresamente contratados. El cliente revisará y aprobará el contenido final antes de cualquier firma o presentación.';
+}
+
 function caseContractDraftHTML(k,c){
   const client=clientById(k.clientId);
   const regularPrice=Number(caseStandardPrice(k)||c.total||0);
   const cashZellePrice=Number(caseCashPrice(k)||regularPrice);
   const cardStripePrice=Number(caseCardPrice(k)||regularPrice);
-  const balance=Math.max(Number(c.total||regularPrice)-Number(c.initialPayment||0),0);
+  const agreedAmount=Number(c.total||regularPrice);
+  const balance=Math.max(agreedAmount-Number(c.initialPayment||0),0);
+  const scope=(c.scope||'').trim() || defaultImmigrationScope(k);
+  const extraTerms=(c.terms||'').trim();
+  const statusLabelText=String(c.status||'Borrador').toUpperCase();
+
   return `<!doctype html><html><head><meta charset="utf-8"><title>Contrato - ${esc(client?.name||'Cliente')}</title>
-  <style>body{font-family:Arial,sans-serif;color:#17223b;margin:0;background:#f5f7fa}.doc{max-width:820px;margin:30px auto;background:#fff;padding:46px;box-shadow:0 6px 24px rgba(0,0,0,.08)}h1{font-size:24px;margin:0 0 6px}h2{font-size:16px;margin:26px 0 8px}.muted{color:#64748b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.box{border:1px solid #dfe5ee;border-radius:10px;padding:12px}.box span{display:block;font-size:12px;color:#64748b;margin-bottom:4px}.section{white-space:pre-wrap;line-height:1.55;border-top:1px solid #e5e7eb;padding-top:12px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:60px}.line{border-top:1px solid #111;padding-top:7px}.draft{display:inline-block;padding:5px 10px;border:1px solid #c9a227;border-radius:999px;font-size:12px;font-weight:700;color:#8a6b00}@media print{body{background:#fff}.doc{box-shadow:none;margin:0;max-width:none}}</style></head>
+  <style>
+    body{font-family:Arial,sans-serif;color:#17223b;margin:0;background:#f5f7fa;font-size:13px}
+    .doc{max-width:820px;margin:24px auto;background:#fff;padding:42px 48px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+    h1{font-size:24px;margin:4px 0 6px} h2{font-size:16px;margin:24px 0 8px;color:#0b2348}
+    p{line-height:1.55;margin:8px 0}.muted{color:#64748b}.small{font-size:11px;color:#64748b}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+    .box{border:1px solid #dfe5ee;border-radius:10px;padding:12px}.box span{display:block;font-size:11px;color:#64748b;margin-bottom:4px}
+    .section{line-height:1.58;border-top:1px solid #e5e7eb;padding-top:10px}
+    .section ol{padding-left:21px}.section li{margin:7px 0}
+    .status{display:inline-block;padding:5px 10px;border:1px solid #c9a227;border-radius:999px;font-size:11px;font-weight:700;color:#8a6b00}
+    .notice{padding:12px 14px;border:1px solid #d8dde6;border-radius:10px;background:#f8fafc;margin:10px 0}
+    .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:55px}.line{border-top:1px solid #111;padding-top:7px}
+    .sign small{display:block;color:#64748b;margin-top:5px}
+    @media print{body{background:#fff}.doc{box-shadow:none;margin:0;max-width:none;padding:28px}.no-print{display:none}}
+  </style></head>
   <body><div class="doc">
-    <div class="draft">BORRADOR</div>
-    <h1>Acuerdo de Servicios Migratorios</h1>
-    <div class="muted">AGR Solutions LLC · 294 Tyler Street, East Haven, CT 06512 · 203-824-0351</div>
+    <div class="status">${esc(statusLabelText)}</div>
+    <h1>Acuerdo General de Servicios de Preparación Documental Migratoria</h1>
+    <div class="muted">AGR Solutions LLC · 294 Tyler Street, East Haven, CT 06512 · 203-824-0351 · agrsolutionsllc.com</div>
+
     <div class="grid">
       <div class="box"><span>Cliente</span><strong>${esc(client?.name||'Cliente')}</strong></div>
       <div class="box"><span>Servicio / trámite</span><strong>${esc(k.service||'')}</strong></div>
       <div class="box"><span>Fecha</span><strong>${esc(c.date||'—')}</strong></div>
       <div class="box"><span>Referencia</span><strong>${esc(k.invoiceNumber||'—')}</strong></div>
     </div>
-    <h2>Honorarios y opciones de pago</h2>
+
+    <h2>1. Naturaleza del servicio</h2>
+    <div class="section">
+      <p>El cliente contrata a AGR Solutions LLC para servicios administrativos y de preparación documental relacionados con el trámite identificado en este acuerdo. AGR Solutions LLC no actúa como abogado, firma de abogados ni representante acreditado ante el Departamento de Justicia, y este acuerdo no crea una relación abogado-cliente.</p>
+      <p>AGR Solutions LLC no proporciona asesoría legal, no determina elegibilidad migratoria, no recomienda estrategias legales y no representa al cliente ante USCIS, el Departamento de Estado, EOIR, tribunales u otras agencias. Cuando una cuestión requiera interpretación o asesoría legal, el cliente deberá consultar con un abogado de inmigración o representante acreditado autorizado.</p>
+    </div>
+
+    <h2>2. Alcance del servicio contratado</h2>
+    <div class="section">
+      <p>${esc(scope)}</p>
+      <p>Salvo que se indique expresamente por escrito, el servicio no incluye representación en entrevistas, audiencias o procedimientos judiciales; comparecencias mediante Form G-28; respuestas legales a Requests for Evidence, Notices of Intent, apelaciones, motions u otros asuntos que requieran criterio o representación legal.</p>
+    </div>
+
+    <h2>3. Responsabilidades del cliente</h2>
+    <div class="section">
+      <ol>
+        <li>Proporcionar información verdadera, completa y actualizada, así como documentos auténticos y legibles.</li>
+        <li>Revisar cuidadosamente todos los formularios, declaraciones y documentos antes de firmarlos o autorizar su presentación.</li>
+        <li>Informar inmediatamente cualquier cambio de domicilio, teléfono, correo electrónico, estado civil, historial migratorio, antecedentes, viajes u otra circunstancia material.</li>
+        <li>Responder oportunamente a las solicitudes de AGR Solutions LLC y entregar los documentos necesarios dentro de los plazos indicados.</li>
+        <li>Conservar acceso a sus propias cuentas gubernamentales, credenciales, notificaciones y documentos originales.</li>
+      </ol>
+    </div>
+
+    <h2>4. Honorarios y opciones de pago</h2>
     <div class="grid">
       <div class="box"><span>Precio regular del servicio</span><strong>${money(regularPrice)}</strong></div>
       <div class="box"><span>Precio Cash / Zelle</span><strong>${money(cashZellePrice)}</strong></div>
       <div class="box"><span>Precio Tarjeta / Stripe</span><strong>${money(cardStripePrice)}</strong></div>
+      <div class="box"><span>Monto acordado para este caso</span><strong>${money(agreedAmount)}</strong></div>
       <div class="box"><span>Pago inicial requerido</span><strong>${money(c.initialPayment)}</strong></div>
-      <div class="box"><span>Saldo sobre monto acordado</span><strong>${money(balance)}</strong></div>
-      <div class="box"><span>Estado</span><strong>${esc(c.status||'Borrador')}</strong></div>
+      <div class="box"><span>Saldo inicial estimado</span><strong>${money(balance)}</strong></div>
     </div>
-    <div class="section"><strong>Condiciones de precio:</strong> Los precios indicados arriba son los precios previamente establecidos para cada método de pago. No se añadirá al momento del cobro un cargo separado denominado tarifa de procesamiento, conveniencia o transacción.</div>
-    <h2>Alcance del servicio</h2>
-    <div class="section">${esc(c.scope||'Pendiente de completar.')}</div>
-    <h2>Condiciones / notas</h2>
-    <div class="section">${esc(c.terms||'Pendiente de completar.')}</div>
+    <div class="notice"><strong>Condiciones de precio.</strong> Los importes anteriores son precios previamente establecidos para los métodos indicados. No se añadirá al momento del cobro una tarifa separada denominada cargo de procesamiento, conveniencia o transacción.</div>
+
+    <h2>5. Costos gubernamentales y de terceros</h2>
+    <div class="section">
+      <p>Los honorarios de AGR Solutions LLC no incluyen automáticamente tarifas de presentación de USCIS, Department of State/NVC, tribunales, biometría, exámenes médicos, traducciones, apostillas, mensajería, copias certificadas, obtención de récords u otros costos de terceros, salvo que el acuerdo, recibo o factura indique expresamente que están incluidos.</p>
+    </div>
+
+    <h2>6. Pagos, trabajo realizado y cancelación</h2>
+    <div class="section">
+      <p>Los pagos realizados se aplicarán al trabajo administrativo efectivamente contratado y realizado. Si el cliente decide detener el servicio, AGR Solutions LLC podrá preparar un resumen del trabajo completado y de los pagos aplicados. Cualquier devolución, crédito o saldo pendiente se determinará conforme al trabajo efectivamente realizado, los costos ya incurridos y cualquier condición específica escrita en este acuerdo o factura.</p>
+    </div>
+
+    <h2>7. No garantía de resultado ni de tiempo</h2>
+    <div class="section">
+      <p>AGR Solutions LLC no controla las decisiones, tiempos de procesamiento, solicitudes adicionales, entrevistas, demoras, rechazos o aprobaciones de ninguna agencia gubernamental. Ningún pago realizado a AGR Solutions LLC garantiza aprobación, beneficio migratorio, fecha de decisión ni resultado específico.</p>
+    </div>
+
+    <h2>8. Comunicaciones y notificaciones</h2>
+    <div class="section">
+      <p>El cliente autoriza comunicaciones administrativas por teléfono, mensaje de texto, WhatsApp y correo electrónico utilizando la información de contacto proporcionada. El cliente es responsable de informar cualquier cambio de contacto y de revisar oportunamente las notificaciones oficiales recibidas de las agencias gubernamentales.</p>
+    </div>
+
+    <h2>9. Documentos, revisión y autorización del cliente</h2>
+    <div class="section">
+      <p>Antes de firmar o presentar cualquier documento, el cliente tendrá la oportunidad y responsabilidad de revisar su contenido. La firma o autorización del cliente confirma que la información fue revisada y que, según su conocimiento, es verdadera y correcta. AGR Solutions LLC no firmará declaraciones, solicitudes o peticiones gubernamentales en nombre del cliente cuando la firma corresponda personalmente al solicitante o peticionario.</p>
+    </div>
+
+    <h2>10. Firma electrónica y copias</h2>
+    <div class="section">
+      <p>El cliente acepta que este acuerdo pueda ser presentado, aceptado y firmado mediante medios electrónicos. Una firma electrónica adoptada voluntariamente por las partes podrá utilizarse para evidenciar su aceptación del acuerdo. Las partes podrán conservar copias electrónicas del documento firmado.</p>
+    </div>
+
+    <h2>11. Acuerdo completo</h2>
+    <div class="section">
+      <p>Este documento, junto con cualquier alcance, factura, recibo o anexo expresamente incorporado al caso, refleja el acuerdo de servicios entre el cliente y AGR Solutions LLC. Cualquier cambio material deberá quedar documentado por escrito.</p>
+      ${extraTerms?'<div class="notice"><strong>Notas adicionales del caso:</strong><br>'+esc(extraTerms)+'</div>':''}
+    </div>
+
+    <h2>12. Reconocimiento del cliente</h2>
+    <div class="section">
+      <p>Al firmar, el cliente reconoce que ha leído este acuerdo, tuvo oportunidad de hacer preguntas sobre los servicios administrativos contratados, entiende el alcance y las limitaciones descritas y acepta los honorarios y condiciones indicados.</p>
+    </div>
+
     <div class="sign">
-      <div class="line">Firma del cliente</div>
-      <div class="line">AGR Solutions LLC</div>
+      <div class="line">Firma del cliente<small>Nombre: ${esc(client?.name||'________________')}</small><small>Fecha: __________________</small></div>
+      <div class="line">AGR Solutions LLC<small>Representante autorizado</small><small>Fecha: __________________</small></div>
     </div>
   </div><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`;
 }
+
 function openCaseContractDraft(k,c){
   const w=window.open('','_blank');
   if(!w){alert('Permite ventanas emergentes para abrir el contrato.');return;}
