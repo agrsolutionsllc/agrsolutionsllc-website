@@ -1991,13 +1991,13 @@ async function autoRefreshFoxitContract(k,c){
 
 function contractFormRecord(k,c){
   return {
-    status:$('#contractStatus')?.value||c.status||'Borrador',
+    status:c.status||'No enviado',
     date:$('#contractDate')?.value||c.date||'',
     total:Number(c.total||caseCashPrice(k)||caseStandardPrice(k)||0),
     initialPayment:Number($('#contractInitial')?.value||c.initialPayment||0),
     scope:$('#contractScope')?.value?.trim()||c.scope||'',
     terms:$('#contractTerms')?.value?.trim()||c.terms||'',
-    signedDate:$('#contractSignedDate')?.value||c.signedDate||''
+    signedDate:c.signedDate||''
   };
 }
 async function showSignedFoxitPdf(k,c){
@@ -2065,13 +2065,13 @@ function renderCaseContract(k){
 
       <div class="contract-quick-grid">
         <label>Estado
-          <select id="contractStatus">
-            ${['No creado','Borrador','Pendiente de firma','Firmado'].map(v=>'<option '+(c.status===v?'selected':'')+'>'+v+'</option>').join('')}
-          </select>
+          <div class="system-field" id="contractStatusDisplay">${esc(c.status||'No enviado')}</div>
         </label>
-        <label>Fecha<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
-                <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
-        <label>Fecha de firma<input id="contractSignedDate" type="date" value="${esc(c.signedDate||'')}"></label>
+        <label>Fecha del contrato<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
+        <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
+        <label>Fecha de firma
+          <div class="system-field" id="contractSignedDateDisplay">${esc(c.signedDate||'Pendiente')}</div>
+        </label>
       </div>
 
       <details class="contract-custom-details">
@@ -2118,7 +2118,7 @@ function renderCaseContract(k){
   `;
 
   const updatePreview=()=>refreshEmbeddedContractPreview(k,c);
-  ['contractStatus','contractDate','contractInitial','contractScope','contractTerms','contractSignedDate'].forEach(id=>{
+  ['contractDate','contractInitial','contractScope','contractTerms'].forEach(id=>{
     $('#'+id)?.addEventListener('input',updatePreview);
     $('#'+id)?.addEventListener('change',updatePreview);
   });
