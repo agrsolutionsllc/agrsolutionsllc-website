@@ -3,6 +3,9 @@
   "functions": {
     "api/create-payment-link.js": {
       "maxDuration": 10
+    },
+    "api/foxit-signed-document.js": {
+      "maxDuration": 10
     }
   }
 }
