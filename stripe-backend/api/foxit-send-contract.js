@@ -15,7 +15,7 @@ async function foxitToken(){
     client_id:clientId,
     client_secret:clientSecret
   });
-  const r=await fetch(FOXIT_BASE+'/oauth/token',{
+  const response=await fetch(FOXIT_BASE+'/oauth/token',{
     method:'POST',
     headers:{
       'Content-Type':'application/x-www-form-urlencoded',
@@ -23,18 +23,21 @@ async function foxitToken(){
     },
     body:body.toString()
   });
-  const raw=await r.text();
+  const raw=await response.text();
   let data;
   try{data=JSON.parse(raw);}catch{data={raw};}
-  if(!r.ok||!data.access_token){
-    throw new Error(data?.error_description||data?.error||data?.message||('Foxit OAuth error '+r.status));
+  if(!response.ok||!data.access_token){
+    throw new Error(data?.error_description||data?.error||data?.message||('Foxit OAuth error '+response.status));
   }
   return data.access_token;
 }
 
 function splitName(name=''){
   const parts=String(name).trim().split(/\s+/).filter(Boolean);
-  return {firstName:parts.shift()||'Client',lastName:parts.join(' ')||'Signer'};
+  return {
+    firstName:parts.shift()||'Client',
+    lastName:parts.join(' ')||'Signer'
+  };
 }
 
 function foxitErrorMessage(data,status){
@@ -50,14 +53,14 @@ export default async function handler(req,res){
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
 
   try{
-    const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount,agrSignerName,agrSignerEmail}=req.body||{};
+    const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount}=req.body||{};
     if(!pdfBase64||!clientEmail) return res.status(400).json({error:'Missing PDF or client email.'});
-    if(!agrSignerName||!agrSignerEmail) return res.status(400).json({error:'Missing AGR signer name or email.'});
-    if(!/^\S+@\S+\.\S+$/.test(String(clientEmail))) return res.status(400).json({error:'Invalid client email.'});
+    if(!/^\S+@\S+\.\S+$/.test(String(clientEmail))){
+      return res.status(400).json({error:'Invalid client email.'});
+    }
 
     const token=await foxitToken();
     const {firstName,lastName}=splitName(clientName);
-    const agr=splitName(agrSignerName);
     const finalPage=Math.max(1,Number(pageCount)||1);
 
     const payload={
@@ -68,27 +71,15 @@ export default async function handler(req,res){
       processTextTags:false,
       processAcroFields:false,
       createEmbeddedSigningSession:false,
-      createExecutedFolder:true,
-      signInSequence:false,
       sendNow:true,
-      parties:[
-        {
-          firstName,
-          lastName,
-          emailId:String(clientEmail),
-          permission:'FILL_FIELDS_AND_SIGN',
-          sequence:1,
-          allowNameChange:'false'
-        },
-        {
-          firstName:agr.firstName,
-          lastName:agr.lastName,
-          emailId:String(agrSignerEmail),
-          permission:'FILL_FIELDS_AND_SIGN',
-          sequence:2,
-          allowNameChange:'false'
-        }
-      ],
+      parties:[{
+        firstName,
+        lastName,
+        emailId:String(clientEmail),
+        permission:'FILL_FIELDS_AND_SIGN',
+        sequence:1,
+        allowNameChange:'false'
+      }],
       fields:[
         {
           type:'signature',
@@ -106,28 +97,11 @@ export default async function handler(req,res){
           name:'Client Date Signed',
           tooltip:'Fecha de firma del cliente',
           dateFormat:'MM-DD-YYYY'
-        },
-        {
-          type:'signature',
-          x:330,y:335,width:230,height:42,
-          documentNumber:1,pageNumber:finalPage,
-          tabOrder:3,party:2,required:true,
-          name:'AGR Signature',
-          tooltip:'Firma de AGR Solutions LLC'
-        },
-        {
-          type:'date',
-          x:330,y:392,width:140,height:28,
-          documentNumber:1,pageNumber:finalPage,
-          tabOrder:4,party:2,required:true,
-          name:'AGR Date Signed',
-          tooltip:'Fecha de firma de AGR',
-          dateFormat:'MM-DD-YYYY'
         }
       ]
     };
 
-    const r=await fetch(FOXIT_BASE+'/esign/api/v1/folders/createfolder',{
+    const response=await fetch(FOXIT_BASE+'/esign/api/v1/folders/createfolder',{
       method:'POST',
       headers:{
         'Authorization':'Bearer '+token,
@@ -137,32 +111,31 @@ export default async function handler(req,res){
       body:JSON.stringify(payload)
     });
 
-    const raw=await r.text();
+    const raw=await response.text();
     let data;
     try{data=JSON.parse(raw);}catch{data=raw;}
 
-    if(!r.ok){
-      return res.status(r.status).json({
-        error:foxitErrorMessage(data,r.status),
-        foxitStatus:r.status,
-        foxitResponse:data
+    if(!response.ok){
+      return res.status(response.status).json({
+        error:foxitErrorMessage(data,response.status),
+        foxitStatus:response.status
       });
     }
 
-    const folder=(data&&typeof data==='object'&&(data.folder||data.data?.folder||data.data||data))||{};
-    const folderId=folder.folderId||data?.folderId||data?.data?.folderId||data?.result?.folderId||null;
-    const folderStatus=folder.folderStatus||data?.folderStatus||data?.data?.folderStatus||data?.result?.folderStatus||'SENT';
+    const folder=(data&&typeof data==='object'&&data.folder)||{};
+    const folderId=folder.folderId||null;
+    const folderStatus=folder.folderStatus||'SENT';
+
     if(!folderId){
       return res.status(502).json({
-        error:'Foxit confirmó la solicitud pero no devolvió un Folder ID. No se marcó el contrato como enviado.',
-        foxitResponseKeys:(data&&typeof data==='object')?Object.keys(data):[],
-        foxitResponse:data
+        error:'Foxit procesó la solicitud pero no devolvió el identificador del sobre.'
       });
     }
+
     return res.status(200).json({
       folderId,
       status:folderStatus,
-      result:data?.result||'sent'
+      result:'sent'
     });
   }catch(err){
     return res.status(500).json({error:err?.message||'Unexpected Foxit error'});
