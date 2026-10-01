@@ -74,3 +74,21 @@ dialog form{padding:24px}
 .large .appointment{grid-template-columns:70px 1fr}
 @media(max-width:1050px){.stats-grid{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}.app-shell{grid-template-columns:82px 1fr}.sidebar{padding-inline:12px}.brand>div:not(.brand-mark),.nav-item span,.sidebar-footer{display:none}.brand{justify-content:center}.nav-item{justify-content:center;font-size:1.1rem}}
 @media(max-width:700px){.app-shell{display:block}.sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:20;display:block;padding:8px 10px}.brand,.sidebar-footer{display:none}.side-nav{margin:0;grid-template-columns:repeat(5,1fr);gap:4px}.nav-item{padding:10px 6px;justify-content:center}.main{padding:22px 16px 90px}.topbar{align-items:flex-start}.top-actions .ghost{display:none}.stats-grid{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(4,270px)}}
+
+.section-note{margin:7px 0 0;color:var(--muted);max-width:720px;font-size:.92rem}
+.tax-filter{display:flex;gap:14px;align-items:end;margin-bottom:16px;padding:16px 18px}
+.tax-filter label{display:grid;gap:6px;font-size:.78rem;font-weight:800;color:#586174;min-width:220px}
+.tax-filter select,.tax-filter input{width:100%;padding:11px 12px;border:1px solid #d8dde6;border-radius:11px;background:#fff;color:var(--ink)}
+.tax-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.65fr);gap:18px}
+.tax-status{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;font-size:.72rem;font-weight:800;white-space:nowrap}
+.tax-status.taxable{background:#fdecec;color:#a53a3a}
+.tax-status.nontaxable{background:#eaf7f1;color:#1d7652}
+.tax-status.review{background:#fff4df;color:#a86617}
+.review-stack{display:grid;gap:11px}
+.review-item{border:1px solid var(--line);border-radius:14px;padding:13px}
+.review-item strong,.review-item span{display:block}
+.review-item span{margin-top:3px;color:var(--muted);font-size:.84rem}
+.tax-disclaimer{margin-top:18px;color:#566072;font-size:.86rem;background:#fffcf4;border-color:#f1dfae}
+.form-hint{font-size:.74rem;color:#8c95a5;font-weight:500}
+@media(max-width:1050px){.tax-layout{grid-template-columns:1fr}}
+@media(max-width:700px){.side-nav{grid-template-columns:repeat(6,1fr)}.tax-filter{display:grid}.tax-filter label{min-width:0}.tax-stats{grid-template-columns:1fr 1fr}}
