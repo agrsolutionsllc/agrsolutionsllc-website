@@ -2123,19 +2123,22 @@ function caseContractDraftHTML(k,c){
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Contrato - ${esc(client?.name||'Cliente')}</title>
   <style>
-    body{font-family:Arial,sans-serif;color:#17223b;margin:0;background:#f5f7fa;font-size:13px}
-    .doc{max-width:820px;margin:24px auto;background:#fff;padding:42px 48px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
-    h1{font-size:24px;margin:4px 0 6px} h2{font-size:16px;margin:24px 0 8px;color:#0b2348}
-    p{line-height:1.55;margin:8px 0}.muted{color:#64748b}.small{font-size:11px;color:#64748b}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
-    .box{border:1px solid #dfe5ee;border-radius:10px;padding:12px}.box span{display:block;font-size:11px;color:#64748b;margin-bottom:4px}
-    .section{line-height:1.58;border-top:1px solid #e5e7eb;padding-top:10px}
-    .section ol{padding-left:21px}.section li{margin:7px 0}
-    .status{display:inline-block;padding:5px 10px;border:1px solid #c9a227;border-radius:999px;font-size:11px;font-weight:700;color:#8a6b00}
-    .notice{padding:12px 14px;border:1px solid #d8dde6;border-radius:10px;background:#f8fafc;margin:10px 0}
-    .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:0;padding-top:150px;page-break-before:always;break-before:page}.line{border-top:1px solid #111;padding-top:7px}
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;color:#17223b;margin:0;background:#f5f7fa;font-size:10.5pt}
+    .doc{max-width:7.5in;margin:14px auto;background:#fff;padding:.38in .48in;box-shadow:0 4px 16px rgba(0,0,0,.06)}
+    h1{font-size:18pt;line-height:1.15;margin:3px 0 5px}
+    h2{font-size:12.5pt;line-height:1.2;margin:17px 0 6px;color:#0b2348;border-bottom:1px solid #e5e7eb;padding-bottom:4px}
+    p{font-size:10.5pt;line-height:1.42;margin:6px 0}.muted{color:#64748b;font-size:9.5pt}.small{font-size:9pt;color:#64748b}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+    .box{border:1px solid #dfe5ee;border-radius:7px;padding:8px 10px;min-height:54px;break-inside:avoid;page-break-inside:avoid}
+    .box span{display:block;font-size:8.5pt;color:#64748b;margin-bottom:3px}.box strong{font-size:10.5pt}
+    .section{font-size:10.5pt;line-height:1.42;border-top:0;padding-top:2px;break-inside:auto}
+    .section ol{padding-left:18px;margin:6px 0}.section li{margin:4px 0}
+    .status{display:inline-block;padding:4px 8px;border:1px solid #c9a227;border-radius:999px;font-size:8.5pt;font-weight:700;color:#8a6b00}
+    .notice{padding:9px 11px;border:1px solid #d8dde6;border-radius:8px;background:#f8fafc;margin:8px 0;font-size:9.5pt;line-height:1.4}
+    .sign-page{page-break-before:always;break-before:page;min-height:9in;padding-top:.35in}.sign-title{text-align:center;margin-bottom:.35in}.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:3.3in}.line{border-top:1px solid #111;padding-top:6px;font-size:10pt;min-width:0}
     .sign small{display:block;color:#64748b;margin-top:5px}
-    @media print{body{background:#fff}.doc{box-shadow:none;margin:0;max-width:none;padding:28px}.no-print{display:none}}
+    @media print{body{background:#fff;font-size:10pt}.doc{box-shadow:none;margin:0;max-width:none;width:auto;padding:.28in .38in}h1{font-size:17pt}h2{font-size:12pt}.grid,.box,.notice{break-inside:avoid;page-break-inside:avoid}.no-print{display:none}}
   </style></head>
   <body><div class="doc">
     <div class="status">${esc(statusLabelText)}</div>
