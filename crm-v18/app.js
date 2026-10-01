@@ -2401,6 +2401,7 @@ form.addEventListener('submit',async e=>{
   e.preventDefault();
   const f=Object.fromEntries(new FormData(form));
   const id=Date.now();
+  let createdImmigrationCase=null;
 
   if(mode==='client'){
     const isCompany=f.isCompany==='true';
@@ -2466,6 +2467,7 @@ form.addEventListener('submit',async e=>{
     data.cases.push(newCase);
     ensureCaseDocs(newCase);
     logCaseEvent(newCase.id,'Caso creado','case');
+    if(isImmigrationCase(newCase)) createdImmigrationCase=newCase;
   }
 
   if(mode==='case-edit'){
@@ -2559,6 +2561,11 @@ form.addEventListener('submit',async e=>{
   form.reset();
   editingCaseId=null;
   editingPaymentId=null;
+  if(createdImmigrationCase){
+    openModal('case-edit',createdImmigrationCase);
+    setCaseTab('contract');
+    renderCaseContract(createdImmigrationCase);
+  }
 });
 
 save();
