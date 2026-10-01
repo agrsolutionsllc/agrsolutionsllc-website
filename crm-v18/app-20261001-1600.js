@@ -1864,6 +1864,24 @@ function caseContractFor(k){
   }
   return data.caseContracts[key];
 }
+function contractFormRecord(k,c){
+  return {
+    status:$('#contractStatus')?.value||c.status||'Borrador',
+    date:$('#contractDate')?.value||c.date||'',
+    total:Number($('#contractTotal')?.value||c.total||0),
+    initialPayment:Number($('#contractInitial')?.value||c.initialPayment||0),
+    scope:$('#contractScope')?.value?.trim()||c.scope||'',
+    terms:$('#contractTerms')?.value?.trim()||c.terms||'',
+    signedDate:$('#contractSignedDate')?.value||c.signedDate||''
+  };
+}
+function refreshEmbeddedContractPreview(k,c){
+  const frame=$('#caseContractPreview');
+  if(!frame) return;
+  let html=caseContractDraftHTML(k,contractFormRecord(k,c));
+  html=html.replace(/<script>[\s\S]*?<\\\/script>/i,'');
+  frame.srcdoc=html;
+}
 function renderCaseContract(k){
   const tab=$('#caseContractTab');
   const pane=$('#caseContractPane');
@@ -1876,63 +1894,74 @@ function renderCaseContract(k){
   }
   const c=caseContractFor(k);
   pane.innerHTML=`
-    <div class="contract-card">
+    <div class="contract-card contract-editor-compact">
       <div class="contract-head">
         <div>
-          <p class="eyebrow">ACUERDO DE SERVICIOS MIGRATORIOS</p>
+          <p class="eyebrow">ACUERDO GENERAL DE SERVICIOS MIGRATORIOS</p>
           <h3>Contrato del caso</h3>
           <small>${esc(clientName(k.clientId))} · ${esc(k.service||'')}</small>
         </div>
         <span class="contract-status">${esc(c.status||'No creado')}</span>
       </div>
-      <div class="contract-grid">
+
+      <div class="contract-quick-grid">
         <label>Estado
           <select id="contractStatus">
             ${['No creado','Borrador','Pendiente de firma','Firmado'].map(v=>'<option '+(c.status===v?'selected':'')+'>'+v+'</option>').join('')}
           </select>
         </label>
-        <label>Fecha del contrato<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
+        <label>Fecha<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
         <label>Monto acordado<input id="contractTotal" type="number" min="0" step="0.01" value="${Number(c.total||0)}"></label>
         <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
-        <label class="full">Alcance adicional (opcional)<textarea id="contractScope" rows="4" placeholder="Solo si deseas añadir algo específico a este caso.">${esc(c.scope||'')}</textarea></label>
-        <label class="full">Notas adicionales (opcional)<textarea id="contractTerms" rows="4" placeholder="Observaciones particulares para este cliente o trámite.">${esc(c.terms||'')}</textarea></label>
         <label>Fecha de firma<input id="contractSignedDate" type="date" value="${esc(c.signedDate||'')}"></label>
       </div>
+
+      <details class="contract-custom-details">
+        <summary>Personalización opcional del caso</summary>
+        <div class="contract-grid contract-extra-grid">
+          <label class="full">Alcance adicional (opcional)<textarea id="contractScope" rows="3" placeholder="Solo si deseas añadir algo específico a este caso.">${esc(c.scope||'')}</textarea></label>
+          <label class="full">Notas adicionales (opcional)<textarea id="contractTerms" rows="3" placeholder="Observaciones particulares para este cliente o trámite.">${esc(c.terms||'')}</textarea></label>
+        </div>
+      </details>
+
       <div class="contract-actions">
         <button type="button" class="primary" id="saveCaseContract">Guardar contrato</button>
-        <button type="button" class="secondary" id="printCaseContract">Vista previa / Imprimir borrador</button>
+        <button type="button" class="secondary" id="refreshCaseContractPreview">Actualizar vista</button>
+        <button type="button" class="secondary" id="printCaseContract">Imprimir / Guardar PDF</button>
       </div>
-      <small class="contract-note">El CRM guarda los datos del contrato. El texto definitivo debe revisarse antes de usarse como acuerdo final.</small>
+    </div>
+
+    <div class="contract-master-preview-wrap">
+      <div class="workspace-head">
+        <div><span class="workspace-kicker">DOCUMENTO COMPLETO</span><h3>Vista del contrato maestro</h3></div>
+      </div>
+      <iframe id="caseContractPreview" class="case-contract-preview" title="Vista previa del contrato maestro"></iframe>
     </div>
   `;
 
+  const updatePreview=()=>refreshEmbeddedContractPreview(k,c);
+  ['contractStatus','contractDate','contractTotal','contractInitial','contractScope','contractTerms','contractSignedDate'].forEach(id=>{
+    $('#'+id)?.addEventListener('input',updatePreview);
+    $('#'+id)?.addEventListener('change',updatePreview);
+  });
+
   $('#saveCaseContract')?.addEventListener('click',()=>{
     const rec=caseContractFor(k);
-    rec.status=$('#contractStatus')?.value||'No creado';
-    rec.date=$('#contractDate')?.value||'';
-    rec.total=Number($('#contractTotal')?.value||0);
-    rec.initialPayment=Number($('#contractInitial')?.value||0);
-    rec.scope=$('#contractScope')?.value?.trim()||'';
-    rec.terms=$('#contractTerms')?.value?.trim()||'';
-    rec.signedDate=$('#contractSignedDate')?.value||'';
+    Object.assign(rec,contractFormRecord(k,c));
     save();
     logCaseEvent(k.id,'Contrato migratorio actualizado · '+rec.status,'contract');
     renderCaseContract(k);
   });
 
+  $('#refreshCaseContractPreview')?.addEventListener('click',updatePreview);
+
   $('#printCaseContract')?.addEventListener('click',()=>{
-    const rec={
-      status:$('#contractStatus')?.value||c.status||'Borrador',
-      date:$('#contractDate')?.value||c.date||'',
-      total:Number($('#contractTotal')?.value||c.total||0),
-      initialPayment:Number($('#contractInitial')?.value||c.initialPayment||0),
-      scope:$('#contractScope')?.value?.trim()||c.scope||'',
-      terms:$('#contractTerms')?.value?.trim()||c.terms||'',
-      signedDate:$('#contractSignedDate')?.value||c.signedDate||''
-    };
-    openCaseContractDraft(k,rec);
+    openCaseContractDraft(k,contractFormRecord(k,c));
   });
+
+  updatePreview();
 }
+
 function defaultImmigrationScope(k){
   const service=String(k?.service||'servicio migratorio').trim();
   return 'AGR Solutions LLC prestará servicios administrativos de preparación documental relacionados con '+service+'. El servicio incluye recopilación y organización de la información proporcionada por el cliente, preparación mecanográfica de formularios o documentos conforme a las respuestas e instrucciones del cliente, checklist de documentos de soporte, organización del paquete y asistencia administrativa con copias, traducciones o envíos cuando estos servicios hayan sido expresamente contratados. El cliente revisará y aprobará el contenido final antes de cualquier firma o presentación.';
