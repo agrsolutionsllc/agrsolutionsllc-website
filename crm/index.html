@@ -27,6 +27,7 @@
         <button class="nav-item" data-view="cases">▣ <span>Casos & trámites</span></button>
         <button class="nav-item" data-view="payments">$ <span>Pagos</span></button>
         <button class="nav-item" data-view="appointments">◫ <span>Citas</span></button>
+        <button class="nav-item" data-view="salestax">%</span><span>Sales & Use Tax</span></button>
       </nav>
 
       <div class="sidebar-footer">
@@ -129,6 +130,57 @@
           <button class="primary" data-open="appointment">+ Nueva cita</button>
         </div>
         <div class="panel"><div id="appointmentsTable" class="appointment-list large"></div></div>
+      </section>
+
+      <section class="view" id="view-salestax">
+        <div class="section-toolbar">
+          <div>
+            <p class="eyebrow">CONNECTICUT · OS-114</p>
+            <h2>Sales & Use Tax</h2>
+            <p class="section-note">Registra cada trabajo con preguntas simples. El sistema clasifica los casos para revisión antes de preparar la declaración.</p>
+          </div>
+          <button class="primary" data-open="taxjob">+ Registrar trabajo</button>
+        </div>
+
+        <div class="tax-filter panel">
+          <label>Empresa / cliente
+            <select id="taxClientFilter"></select>
+          </label>
+          <label>Mes
+            <input id="taxMonthFilter" type="month" value="2026-10">
+          </label>
+        </div>
+
+        <div class="stats-grid tax-stats">
+          <article class="stat-card"><span>Trabajos registrados</span><strong id="taxStatJobs">0</strong><small>En el mes seleccionado</small></article>
+          <article class="stat-card"><span>Total registrado</span><strong id="taxStatGross">$0</strong><small>Antes de clasificar</small></article>
+          <article class="stat-card"><span>Posible taxable</span><strong id="taxStatTaxable">$0</strong><small>Requiere revisión final</small></article>
+          <article class="stat-card"><span>Sales Tax cobrado</span><strong id="taxStatCollected">$0</strong><small>Reportado por el cliente</small></article>
+        </div>
+
+        <div class="tax-layout">
+          <article class="panel">
+            <div class="panel-head">
+              <div><p class="eyebrow">TRABAJOS</p><h2>Actividad del mes</h2></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Fecha</th><th>Trabajo</th><th>Propiedad</th><th>Total</th><th>Clasificación</th><th>Tax cobrado</th></tr></thead>
+                <tbody id="taxJobsTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel tax-review">
+            <div class="panel-head"><div><p class="eyebrow">CONTROL AGR</p><h2>Revisión mensual</h2></div></div>
+            <div id="taxReviewBox"></div>
+          </article>
+        </div>
+
+        <article class="panel tax-disclaimer">
+          <strong>Importante:</strong> La clasificación es una ayuda administrativa, no una presentación automática ante DRS.
+          Los casos amarillos deben revisarse antes de completar el OS-114.
+        </article>
       </section>
     </main>
   </div>
