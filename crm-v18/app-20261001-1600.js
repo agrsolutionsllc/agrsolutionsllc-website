@@ -2175,7 +2175,6 @@ function caseContractDraftHTML(k,c){
   const cardStripePrice=Number(caseCardPrice(k)||cashZellePrice);
   const scope=(c.scope||'').trim() || defaultImmigrationScope(k);
   const extraTerms=(c.terms||'').trim();
-  const statusLabelText=String(c.status||'Borrador').toUpperCase();
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>Contrato - ${esc(client?.name||'Cliente')}</title>
   <style>
@@ -2197,7 +2196,6 @@ function caseContractDraftHTML(k,c){
     @media print{body{background:#fff;font-size:10pt}.doc{box-shadow:none;margin:0;max-width:none;width:auto;padding:.28in .38in}h1{font-size:17pt}h2{font-size:12pt}.grid,.box,.notice{break-inside:avoid;page-break-inside:avoid}.no-print{display:none}}
   </style></head>
   <body><div class="doc">
-    <div class="status">${esc(statusLabelText)}</div>
     <h1>Acuerdo General de Servicios de Preparación Documental Migratoria</h1>
     <div class="muted">AGR Solutions LLC · 294 Tyler Street, East Haven, CT 06512 · 203-824-0351 · agrsolutionsllc.com</div>
 
