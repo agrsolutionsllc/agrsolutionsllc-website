@@ -2004,17 +2004,9 @@ async function showSignedFoxitPdf(k,c){
   const frame=$('#caseContractPreview');
   if(!frame||!c?.foxitFolderId) return false;
   try{
-    const response=await fetch(FOXIT_SIGNED_PDF_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({folderId:c.foxitFolderId})
-    });
-    if(!response.ok) return false;
-    const blob=await response.blob();
-    if(c._signedPdfUrl) URL.revokeObjectURL(c._signedPdfUrl);
-    c._signedPdfUrl=URL.createObjectURL(blob);
+    const url=FOXIT_SIGNED_PDF_URL+'?folderId='+encodeURIComponent(c.foxitFolderId)+'&t='+Date.now();
     frame.removeAttribute('srcdoc');
-    frame.src=c._signedPdfUrl;
+    frame.src=url;
     const head=document.querySelector('.contract-master-preview-wrap .workspace-head h3');
     if(head) head.textContent='Contrato final firmado';
     return true;
