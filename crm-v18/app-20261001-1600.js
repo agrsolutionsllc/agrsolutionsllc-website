@@ -2345,6 +2345,30 @@ function renderCaseWorkspace(k){
   if(wa) wa.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'WhatsApp',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de WhatsApp abierto','communication');renderCommunicationHistory(k);};
   if(mail) mail.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'Correo',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de correo abierto','communication');renderCommunicationHistory(k);};
 }
+function deleteCaseFromCRM(caseId){
+  const id=Number(caseId);
+  const k=caseById(id);
+  if(!k) return false;
+  const client=clientName(k.clientId);
+  const ok=window.confirm(
+    '¿Eliminar este caso?\n\n'+client+' — '+(k.service||'Caso')+
+    '\n\nSe eliminarán del CRM sus pagos, requisitos, notas, historial, comunicaciones, contrato y tareas vinculadas. Esta acción no elimina documentos o transacciones que ya existan fuera del CRM (por ejemplo, Foxit o Stripe).'
+  );
+  if(!ok) return false;
+
+  data.cases=data.cases.filter(x=>Number(x.id)!==id);
+  data.payments=data.payments.filter(x=>Number(x.caseId)!==id);
+  data.notes=data.notes.filter(x=>Number(x.caseId)!==id);
+  data.history=data.history.filter(x=>Number(x.caseId)!==id);
+  data.communications=data.communications.filter(x=>Number(x.caseId)!==id);
+  data.tasks=data.tasks.filter(x=>Number(x.caseId)!==id);
+  if(data.documents && typeof data.documents==='object') delete data.documents[String(id)];
+  if(data.caseContracts && typeof data.caseContracts==='object') delete data.caseContracts[String(id)];
+  save();
+  render();
+  return true;
+}
+
 function openModal(kind,values={}){
   mode=kind;
   editingCaseId=kind==='case-edit'?values.id:null;
@@ -2356,6 +2380,22 @@ function openModal(kind,values={}){
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   const workspaceTabs=$('#caseWorkspaceTabs');
   if(workspaceTabs) workspaceTabs.hidden=kind!=='case-edit';
+  const modalActions=form.querySelector('.modal-actions');
+  modalActions?.querySelector('#deleteCaseButton')?.remove();
+  if(kind==='case-edit' && modalActions){
+    const del=document.createElement('button');
+    del.type='button';
+    del.id='deleteCaseButton';
+    del.className='danger';
+    del.textContent='Eliminar caso';
+    del.onclick=()=>{
+      if(deleteCaseFromCRM(values.id)){
+        dialog.close();
+        editingCaseId=null;
+      }
+    };
+    modalActions.insertBefore(del,modalActions.firstElementChild);
+  }
   if(kind!=='case-edit') {
     setCaseTab('summary');
   }
