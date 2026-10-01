@@ -85,6 +85,7 @@ if(!Array.isArray(data.clientAccountPayments)) data.clientAccountPayments=[];
 if(!Array.isArray(data.clientAccountInvoices)) data.clientAccountInvoices=[];
 if(!Array.isArray(data.cashbook)) data.cashbook=[];
 if(!Array.isArray(data.expenses)) data.expenses=[];
+if(!data.caseContracts || typeof data.caseContracts!=='object') data.caseContracts={};
 
 // migrate old prototype statuses if they exist in this browser
 const migration={nuevo:'inicial',pendiente:'evidencia',proceso:'preparacion',completado:'completado'};
@@ -1850,11 +1851,140 @@ function renderCommunicationHistory(k){
   box.innerHTML=balanceReminderHTML(k)+`<div class="communication-log"><h4>Actividad de comunicaciones</h4>${rows.length?rows.map(x=>`<div><strong>${esc(x.channel)}</strong><span>${esc(x.action)}</span><small>${dt(x.at)}</small></div>`).join(''):'<p class="empty-state">Todavía no hay actividad.</p>'}</div>`;
   bindBalanceReminder(k,box);
 }
+function isImmigrationCase(k){
+  const s=String(k?.service||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return /inmigr|uscis|nvc|consular|visa|asilo|daca|ciudadania|naturaliz|residenc|green card|permiso de trabajo|ead|foia|sij|vawa|perdon|waiver|i-130|i-485|i-765|i-589|i-360|i-601|i-601a|n-400|i-90|i-821d|u visa|t visa/.test(s);
+}
+function caseContractFor(k){
+  const key=String(k.id);
+  if(!data.caseContracts[key]){
+    data.caseContracts[key]={
+      status:'No creado',
+      date:'',
+      total:Number(k.serviceTotal||0),
+      initialPayment:Number(k.initialPayment||0),
+      scope:'',
+      terms:'',
+      signedDate:''
+    };
+  }
+  return data.caseContracts[key];
+}
+function renderCaseContract(k){
+  const tab=$('#caseContractTab');
+  const pane=$('#caseContractPane');
+  if(!tab||!pane) return;
+  const eligible=isImmigrationCase(k);
+  tab.hidden=!eligible;
+  if(!eligible){
+    pane.innerHTML='';
+    return;
+  }
+  const c=caseContractFor(k);
+  pane.innerHTML=`
+    <div class="contract-card">
+      <div class="contract-head">
+        <div>
+          <p class="eyebrow">ACUERDO DE SERVICIOS MIGRATORIOS</p>
+          <h3>Contrato del caso</h3>
+          <small>${esc(clientName(k.clientId))} · ${esc(k.service||'')}</small>
+        </div>
+        <span class="contract-status">${esc(c.status||'No creado')}</span>
+      </div>
+      <div class="contract-grid">
+        <label>Estado
+          <select id="contractStatus">
+            ${['No creado','Borrador','Pendiente de firma','Firmado'].map(v=>'<option '+(c.status===v?'selected':'')+'>'+v+'</option>').join('')}
+          </select>
+        </label>
+        <label>Fecha del contrato<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
+        <label>Monto acordado<input id="contractTotal" type="number" min="0" step="0.01" value="${Number(c.total||0)}"></label>
+        <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
+        <label class="full">Alcance / servicio<textarea id="contractScope" rows="4" placeholder="Describe exactamente qué incluye este servicio.">${esc(c.scope||'')}</textarea></label>
+        <label class="full">Condiciones / notas del contrato<textarea id="contractTerms" rows="6" placeholder="Aquí irá el texto o las condiciones específicas del acuerdo.">${esc(c.terms||'')}</textarea></label>
+        <label>Fecha de firma<input id="contractSignedDate" type="date" value="${esc(c.signedDate||'')}"></label>
+      </div>
+      <div class="contract-actions">
+        <button type="button" class="primary" id="saveCaseContract">Guardar contrato</button>
+        <button type="button" class="secondary" id="printCaseContract">Vista previa / Imprimir borrador</button>
+      </div>
+      <small class="contract-note">El CRM guarda los datos del contrato. El texto definitivo debe revisarse antes de usarse como acuerdo final.</small>
+    </div>
+  `;
+
+  $('#saveCaseContract')?.addEventListener('click',()=>{
+    const rec=caseContractFor(k);
+    rec.status=$('#contractStatus')?.value||'No creado';
+    rec.date=$('#contractDate')?.value||'';
+    rec.total=Number($('#contractTotal')?.value||0);
+    rec.initialPayment=Number($('#contractInitial')?.value||0);
+    rec.scope=$('#contractScope')?.value?.trim()||'';
+    rec.terms=$('#contractTerms')?.value?.trim()||'';
+    rec.signedDate=$('#contractSignedDate')?.value||'';
+    save();
+    logCaseEvent(k.id,'Contrato migratorio actualizado · '+rec.status,'contract');
+    renderCaseContract(k);
+  });
+
+  $('#printCaseContract')?.addEventListener('click',()=>{
+    const rec={
+      status:$('#contractStatus')?.value||c.status||'Borrador',
+      date:$('#contractDate')?.value||c.date||'',
+      total:Number($('#contractTotal')?.value||c.total||0),
+      initialPayment:Number($('#contractInitial')?.value||c.initialPayment||0),
+      scope:$('#contractScope')?.value?.trim()||c.scope||'',
+      terms:$('#contractTerms')?.value?.trim()||c.terms||'',
+      signedDate:$('#contractSignedDate')?.value||c.signedDate||''
+    };
+    openCaseContractDraft(k,rec);
+  });
+}
+function caseContractDraftHTML(k,c){
+  const client=clientById(k.clientId);
+  const balance=Math.max(Number(c.total||0)-Number(c.initialPayment||0),0);
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Contrato - ${esc(client?.name||'Cliente')}</title>
+  <style>body{font-family:Arial,sans-serif;color:#17223b;margin:0;background:#f5f7fa}.doc{max-width:820px;margin:30px auto;background:#fff;padding:46px;box-shadow:0 6px 24px rgba(0,0,0,.08)}h1{font-size:24px;margin:0 0 6px}h2{font-size:16px;margin:26px 0 8px}.muted{color:#64748b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.box{border:1px solid #dfe5ee;border-radius:10px;padding:12px}.box span{display:block;font-size:12px;color:#64748b;margin-bottom:4px}.section{white-space:pre-wrap;line-height:1.55;border-top:1px solid #e5e7eb;padding-top:12px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:60px}.line{border-top:1px solid #111;padding-top:7px}.draft{display:inline-block;padding:5px 10px;border:1px solid #c9a227;border-radius:999px;font-size:12px;font-weight:700;color:#8a6b00}@media print{body{background:#fff}.doc{box-shadow:none;margin:0;max-width:none}}</style></head>
+  <body><div class="doc">
+    <div class="draft">BORRADOR</div>
+    <h1>Acuerdo de Servicios Migratorios</h1>
+    <div class="muted">AGR Solutions LLC · 294 Tyler Street, East Haven, CT 06512 · 203-824-0351</div>
+    <div class="grid">
+      <div class="box"><span>Cliente</span><strong>${esc(client?.name||'Cliente')}</strong></div>
+      <div class="box"><span>Servicio / trámite</span><strong>${esc(k.service||'')}</strong></div>
+      <div class="box"><span>Fecha</span><strong>${esc(c.date||'—')}</strong></div>
+      <div class="box"><span>Referencia</span><strong>${esc(k.invoiceNumber||'—')}</strong></div>
+    </div>
+    <h2>Honorarios</h2>
+    <div class="grid">
+      <div class="box"><span>Monto acordado</span><strong>${money(c.total)}</strong></div>
+      <div class="box"><span>Pago inicial</span><strong>${money(c.initialPayment)}</strong></div>
+      <div class="box"><span>Saldo</span><strong>${money(balance)}</strong></div>
+      <div class="box"><span>Estado</span><strong>${esc(c.status||'Borrador')}</strong></div>
+    </div>
+    <h2>Alcance del servicio</h2>
+    <div class="section">${esc(c.scope||'Pendiente de completar.')}</div>
+    <h2>Condiciones / notas</h2>
+    <div class="section">${esc(c.terms||'Pendiente de completar.')}</div>
+    <div class="sign">
+      <div class="line">Firma del cliente</div>
+      <div class="line">AGR Solutions LLC</div>
+    </div>
+  </div><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`;
+}
+function openCaseContractDraft(k,c){
+  const w=window.open('','_blank');
+  if(!w){alert('Permite ventanas emergentes para abrir el contrato.');return;}
+  try{w.opener=null;}catch(_){}
+  w.document.open();
+  w.document.write(caseContractDraftHTML(k,c));
+  w.document.close();
+}
+
 function renderCaseWorkspace(k){
   const tabs=$('#caseWorkspaceTabs'); if(!tabs) return;
   tabs.hidden=false;
-  $$('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
-  renderCaseSetupCard(k); renderCaseSummarySnapshot(k); renderCaseDocuments(k); renderCasePayments(k); renderCaseHistory(k); renderCaseNotes(k); renderCommunicationHistory(k); setCaseTab('summary');
+  $('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='contract')renderCaseContract(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
+  renderCaseSetupCard(k); renderCaseSummarySnapshot(k); renderCaseDocuments(k); renderCasePayments(k); renderCaseContract(k); renderCaseHistory(k); renderCaseNotes(k); renderCommunicationHistory(k); setCaseTab('summary');
   const wa=$('.notify-whatsapp'), mail=$('.notify-email');
   if(wa) wa.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'WhatsApp',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de WhatsApp abierto','communication');renderCommunicationHistory(k);};
   if(mail) mail.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'Correo',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de correo abierto','communication');renderCommunicationHistory(k);};
