@@ -1871,23 +1871,44 @@ async function contractPdfForFoxit(k,c){
   const doc=frame?.contentDocument;
   const source=doc?.querySelector('.doc');
   if(!source) throw new Error('No se pudo leer la vista del contrato.');
-  const clone=source.cloneNode(true);
-  clone.style.boxShadow='none';
-  clone.style.margin='0';
-  clone.style.maxWidth='none';
+
+  // Generate directly from the iframe element so computed contract styles are preserved.
+  // Cloning it into the CRM document caused the first page to start too low and stripped styles.
+  const prev={
+    margin:source.style.margin,
+    boxShadow:source.style.boxShadow,
+    maxWidth:source.style.maxWidth,
+    width:source.style.width,
+    padding:source.style.padding
+  };
+  source.style.margin='0';
+  source.style.boxShadow='none';
+  source.style.maxWidth='none';
+  source.style.width='7.5in';
+  source.style.padding='0.35in 0.45in';
+
   const options={
-    margin:[0.2,0.2,0.2,0.2],
+    margin:[18,18,18,18],
     filename:(k.invoiceNumber||('AGR-'+k.id))+'-Service-Agreement.pdf',
     image:{type:'jpeg',quality:0.98},
-    html2canvas:{scale:1.5,useCORS:true,backgroundColor:'#ffffff'},
+    html2canvas:{scale:1.6,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
     jsPDF:{unit:'pt',format:'letter',orientation:'portrait'},
-    pagebreak:{mode:['css','legacy']}
+    pagebreak:{mode:['css','legacy'],avoid:['.grid','.box']}
   };
-  const worker=html2pdf().set(options).from(clone).toPdf();
-  const pdf=await worker.get('pdf');
-  const pageCount=pdf.internal.getNumberOfPages();
-  const dataUri=pdf.output('datauristring');
-  return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount};
+
+  try{
+    const worker=html2pdf().set(options).from(source).toPdf();
+    const pdf=await worker.get('pdf');
+    const pageCount=pdf.internal.getNumberOfPages();
+    const dataUri=pdf.output('datauristring');
+    return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount};
+  }finally{
+    source.style.margin=prev.margin;
+    source.style.boxShadow=prev.boxShadow;
+    source.style.maxWidth=prev.maxWidth;
+    source.style.width=prev.width;
+    source.style.padding=prev.padding;
+  }
 }
 function foxitStatusLabel(status=''){
   const s=String(status||'').toUpperCase();
