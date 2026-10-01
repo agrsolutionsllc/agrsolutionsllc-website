@@ -2015,7 +2015,7 @@ function caseContractDraftHTML(k,c){
     <h2>2. Alcance del servicio contratado</h2>
     <div class="section">
       <p>${esc(scope)}</p>
-      <p>Salvo que se indique expresamente por escrito, el servicio no incluye representación en entrevistas, audiencias o procedimientos judiciales; comparecencias mediante Form G-28; respuestas legales a Requests for Evidence, Notices of Intent, apelaciones, motions u otros asuntos que requieran criterio o representación legal.</p>
+      <p>AGR Solutions LLC no ofrece ni presta representación legal o migratoria. AGR Solutions LLC no comparece como representante del cliente en entrevistas, audiencias o procedimientos; no presenta Form G-28; y no brinda respuestas, estrategias, argumentos ni análisis legales para Requests for Evidence, Notices of Intent, apelaciones, motions u otros asuntos que requieran criterio o representación legal. Si el caso requiere cualquiera de estos servicios, el cliente deberá consultar y contratar por separado a un abogado de inmigración o representante acreditado autorizado.</p>
     </div>
 
     <h2>3. Responsabilidades del cliente</h2>
