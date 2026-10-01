@@ -520,6 +520,108 @@ function badgeClass(s){
   return 'nuevo';
 }
 
+const autoBackupSettingsKey='agr-crm-auto-backup-settings-v1';
+const autoBackupDBName='agr-crm-backup-handles';
+const autoBackupStore='handles';
+
+function getAutoBackupSettings(){
+  try{return JSON.parse(localStorage.getItem(autoBackupSettingsKey)||'{}')||{};}catch{return {};}
+}
+function setAutoBackupSettings(patch){
+  const next={...getAutoBackupSettings(),...patch};
+  localStorage.setItem(autoBackupSettingsKey,JSON.stringify(next));
+  return next;
+}
+function openAutoBackupDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(autoBackupDBName,1);
+    req.onupgradeneeded=()=>req.result.createObjectStore(autoBackupStore);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function saveAutoBackupHandle(handle){
+  const db=await openAutoBackupDB();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction(autoBackupStore,'readwrite');
+    tx.objectStore(autoBackupStore).put(handle,'directory');
+    tx.oncomplete=()=>resolve();
+    tx.onerror=()=>reject(tx.error);
+  });
+  db.close();
+}
+async function getAutoBackupHandle(){
+  const db=await openAutoBackupDB();
+  const value=await new Promise((resolve,reject)=>{
+    const tx=db.transaction(autoBackupStore,'readonly');
+    const req=tx.objectStore(autoBackupStore).get('directory');
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>reject(req.error);
+  });
+  db.close();
+  return value;
+}
+async function ensureDirectoryPermission(handle,ask=false){
+  if(!handle) return false;
+  const opts={mode:'readwrite'};
+  if(await handle.queryPermission(opts)==='granted') return true;
+  if(ask && await handle.requestPermission(opts)==='granted') return true;
+  return false;
+}
+async function writeBackupToDirectory(handle){
+  const payload=crmBackupPayload();
+  const name='AGR-CRM-AUTO-'+backupFileStamp()+'.json';
+  const fileHandle=await handle.getFileHandle(name,{create:true});
+  const writable=await fileHandle.createWritable();
+  await writable.write(JSON.stringify(payload,null,2));
+  await writable.close();
+  setAutoBackupSettings({lastRun:Date.now(),lastFile:name});
+  return name;
+}
+function autoBackupIsDue(settings=getAutoBackupSettings()){
+  if(!settings.enabled) return false;
+  const days=Math.max(1,Number(settings.frequencyDays||7));
+  const last=Number(settings.lastRun||0);
+  return !last || Date.now()-last >= days*86400000;
+}
+async function renderAutoBackupSettings(){
+  const settings=getAutoBackupSettings();
+  const enabled=$('#autoBackupEnabled');
+  const freq=$('#autoBackupFrequency');
+  const folder=$('#autoBackupFolderLabel');
+  const last=$('#autoBackupLastRun');
+  if(enabled) enabled.checked=!!settings.enabled;
+  if(freq) freq.value=String(settings.frequencyDays||7);
+  let handle=null;
+  try{handle=await getAutoBackupHandle();}catch{}
+  if(folder) folder.textContent=handle?'Carpeta: '+handle.name:'Carpeta no configurada';
+  if(last){
+    last.textContent=settings.lastRun
+      ? 'Último backup automático: '+new Date(settings.lastRun).toLocaleString('es-US')+(settings.lastFile?' · '+settings.lastFile:'')
+      : 'Aún no hay backup automático.';
+  }
+}
+async function maybeRunAutomaticBackup(){
+  const settings=getAutoBackupSettings();
+  if(!autoBackupIsDue(settings)) return;
+  let handle=null;
+  try{handle=await getAutoBackupHandle();}catch{}
+  if(!handle) return;
+  const status=$('#autoBackupStatus');
+  try{
+    const allowed=await ensureDirectoryPermission(handle,false);
+    if(!allowed){
+      if(status) status.textContent='Backup pendiente: vuelve a autorizar la carpeta cuando entres a Backup.';
+      return;
+    }
+    const name=await writeBackupToDirectory(handle);
+    if(status) status.textContent='✓ Backup automático guardado: '+name;
+    await renderAutoBackupSettings();
+  }catch(err){
+    if(status) status.textContent='No se pudo guardar el backup automático: '+err.message;
+  }
+}
+
 function backupFileStamp(){
   const d=new Date();
   const p=n=>String(n).padStart(2,'0');
@@ -621,6 +723,7 @@ function validateCRMBackupPayload(payload){
   return restored;
 }
 function renderBackup(){
+  renderAutoBackupSettings();
   const box=$('#backupSummary');
   if(!box) return;
   const counts={
@@ -860,7 +963,9 @@ function renderTasks(){
   }).join(''):'<p class="empty-state">No hay tareas registradas.</p>';
   box.querySelectorAll('[data-task-toggle]').forEach(btn=>btn.onclick=()=>{
     const t=data.tasks.find(x=>x.id===Number(btn.dataset.taskToggle)); if(!t) return;
-    t.done=!t.done; t.completedAt=t.done?new Date().toISOString():''; save(); render(); 
+    t.done=!t.done; t.completedAt=t.done?new Date().toISOString():''; save(); render();
+setTimeout(()=>maybeRunAutomaticBackup(),1500);
+setInterval(()=>maybeRunAutomaticBackup(),60*60*1000); 
   });
 }
 function renderGlobalSearch(q=''){
@@ -2302,6 +2407,56 @@ if(downloadFullCRMBtn){
     }
   });
 }
+
+const autoBackupEnabled=$('#autoBackupEnabled');
+const autoBackupFrequency=$('#autoBackupFrequency');
+const chooseAutoBackupFolder=$('#chooseAutoBackupFolder');
+const runAutoBackupNow=$('#runAutoBackupNow');
+
+autoBackupEnabled?.addEventListener('change',()=>{
+  setAutoBackupSettings({enabled:autoBackupEnabled.checked});
+  renderAutoBackupSettings();
+});
+autoBackupFrequency?.addEventListener('change',()=>{
+  setAutoBackupSettings({frequencyDays:Number(autoBackupFrequency.value||7)});
+  renderAutoBackupSettings();
+});
+chooseAutoBackupFolder?.addEventListener('click',async()=>{
+  const status=$('#autoBackupStatus');
+  if(!window.showDirectoryPicker){
+    if(status) status.textContent='Este navegador no permite elegir una carpeta directamente. Usa Chrome o Edge actualizado.';
+    return;
+  }
+  try{
+    const handle=await window.showDirectoryPicker({mode:'readwrite'});
+    if(!(await ensureDirectoryPermission(handle,true))) throw new Error('No se concedió permiso para escribir en la carpeta.');
+    await saveAutoBackupHandle(handle);
+    setAutoBackupSettings({folderName:handle.name});
+    if(status) status.textContent='✓ Carpeta configurada correctamente.';
+    await renderAutoBackupSettings();
+  }catch(err){
+    if(err?.name!=='AbortError' && status) status.textContent='No se pudo configurar la carpeta: '+err.message;
+  }
+});
+runAutoBackupNow?.addEventListener('click',async()=>{
+  const status=$('#autoBackupStatus');
+  try{
+    const handle=await getAutoBackupHandle();
+    if(!handle){
+      if(status) status.textContent='Primero elige una carpeta de backup.';
+      return;
+    }
+    if(!(await ensureDirectoryPermission(handle,true))){
+      if(status) status.textContent='Necesitas autorizar nuevamente la carpeta.';
+      return;
+    }
+    const name=await writeBackupToDirectory(handle);
+    if(status) status.textContent='✓ Copia guardada: '+name;
+    await renderAutoBackupSettings();
+  }catch(err){
+    if(status) status.textContent='No se pudo guardar la copia: '+err.message;
+  }
+});
 
 const downloadBackupBtn=$('#downloadBackup');
 if(downloadBackupBtn){
