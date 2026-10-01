@@ -88,6 +88,7 @@ if(!Array.isArray(data.clientAccountInvoices)) data.clientAccountInvoices=[];
 if(!Array.isArray(data.cashbook)) data.cashbook=[];
 if(!Array.isArray(data.expenses)) data.expenses=[];
 if(!data.caseContracts || typeof data.caseContracts!=='object') data.caseContracts={};
+if(!data.esignSettings || typeof data.esignSettings!=='object') data.esignSettings={agrSignerName:'',agrSignerEmail:''};
 
 // migrate old prototype statuses if they exist in this browser
 const migration={nuevo:'inicial',pendiente:'evidencia',proceso:'preparacion',completado:'completado'};
@@ -1921,6 +1922,9 @@ function foxitStatusLabel(status=''){
 async function sendContractToFoxit(k,c){
   const client=clientById(k.clientId);
   if(!client?.email) throw new Error('Este cliente no tiene email registrado. Añade un email antes de enviar a firma.');
+  const agrSignerName=$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'';
+  const agrSignerEmail=$('#agrSignerEmail')?.value?.trim()||data.esignSettings?.agrSignerEmail||'';
+  if(!agrSignerName||!agrSignerEmail) throw new Error('Configura el nombre y email del firmante de AGR antes de enviar a Foxit.');
   const {pdfBase64,pageCount}=await contractPdfForFoxit(k,c);
   const response=await fetch(FOXIT_SEND_URL,{
     method:'POST',
@@ -1932,7 +1936,9 @@ async function sendContractToFoxit(k,c){
       clientName:client.name||'Cliente',
       clientEmail:client.email,
       service:k.service||'Servicio migratorio',
-      invoiceNumber:k.invoiceNumber||''
+      invoiceNumber:k.invoiceNumber||'',
+      agrSignerName,
+      agrSignerEmail
     })
   });
   const result=await response.json().catch(()=>({}));
@@ -2010,6 +2016,19 @@ function renderCaseContract(k){
         </div>
       </details>
 
+      <details class="contract-custom-details contract-esign-settings">
+        <summary>Firma electrónica de AGR</summary>
+        <div class="contract-quick-grid contract-esign-grid">
+          <label>Nombre del firmante AGR
+            <input id="agrSignerName" type="text" value="${esc(data.esignSettings?.agrSignerName||'')}" placeholder="Ej. Ariana Reinoso">
+          </label>
+          <label>Email del firmante AGR
+            <input id="agrSignerEmail" type="email" value="${esc(data.esignSettings?.agrSignerEmail||'')}" placeholder="Email que recibirá la solicitud de firma">
+          </label>
+        </div>
+        <small class="contract-note">Se guarda para próximos contratos. Foxit enviará la firma del cliente primero y después la de AGR.</small>
+      </details>
+
       <div class="contract-actions">
         <button type="button" class="primary" id="saveCaseContract">Guardar contrato</button>
         <button type="button" class="secondary" id="refreshCaseContractPreview">Actualizar vista</button>
@@ -2041,6 +2060,10 @@ function renderCaseContract(k){
   $('#saveCaseContract')?.addEventListener('click',()=>{
     const rec=caseContractFor(k);
     Object.assign(rec,contractFormRecord(k,c));
+    data.esignSettings={
+      agrSignerName:$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'',
+      agrSignerEmail:$('#agrSignerEmail')?.value?.trim()||data.esignSettings?.agrSignerEmail||''
+    };
     save();
     logCaseEvent(k.id,'Contrato migratorio actualizado · '+rec.status,'contract');
     renderCaseContract(k);
@@ -2224,9 +2247,15 @@ function caseContractDraftHTML(k,c){
       <p>Al firmar, el cliente reconoce que ha leído este acuerdo, tuvo oportunidad de hacer preguntas sobre los servicios administrativos contratados, entiende el alcance y las limitaciones descritas y acepta los honorarios y condiciones indicados.</p>
     </div>
 
-    <div class="sign">
-      <div class="line">Firma del cliente<small>Nombre: ${esc(client?.name||'________________')}</small><small>Fecha: __________________</small></div>
-      <div class="line">AGR Solutions LLC<small>Representante autorizado</small><small>Fecha: __________________</small></div>
+    <div class="sign-page">
+      <div class="sign-title">
+        <h2>Aceptación y firmas</h2>
+        <p>Ambas partes firman electrónicamente este acuerdo.</p>
+      </div>
+      <div class="sign">
+        <div class="line">Firma del cliente<small>Nombre: ${esc(client?.name||'________________')}</small><small>Fecha: __________________</small></div>
+        <div class="line">AGR Solutions LLC<small>Representante autorizado: ${esc(data.esignSettings?.agrSignerName||'________________')}</small><small>Fecha: __________________</small></div>
+      </div>
     </div>
   </div></body></html>`;
 }
