@@ -1935,7 +1935,10 @@ function renderCaseContract(k){
 }
 function caseContractDraftHTML(k,c){
   const client=clientById(k.clientId);
-  const balance=Math.max(Number(c.total||0)-Number(c.initialPayment||0),0);
+  const regularPrice=Number(caseStandardPrice(k)||c.total||0);
+  const cashZellePrice=Number(caseCashPrice(k)||regularPrice);
+  const cardStripePrice=Number(caseCardPrice(k)||regularPrice);
+  const balance=Math.max(Number(c.total||regularPrice)-Number(c.initialPayment||0),0);
   return `<!doctype html><html><head><meta charset="utf-8"><title>Contrato - ${esc(client?.name||'Cliente')}</title>
   <style>body{font-family:Arial,sans-serif;color:#17223b;margin:0;background:#f5f7fa}.doc{max-width:820px;margin:30px auto;background:#fff;padding:46px;box-shadow:0 6px 24px rgba(0,0,0,.08)}h1{font-size:24px;margin:0 0 6px}h2{font-size:16px;margin:26px 0 8px}.muted{color:#64748b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.box{border:1px solid #dfe5ee;border-radius:10px;padding:12px}.box span{display:block;font-size:12px;color:#64748b;margin-bottom:4px}.section{white-space:pre-wrap;line-height:1.55;border-top:1px solid #e5e7eb;padding-top:12px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:60px}.line{border-top:1px solid #111;padding-top:7px}.draft{display:inline-block;padding:5px 10px;border:1px solid #c9a227;border-radius:999px;font-size:12px;font-weight:700;color:#8a6b00}@media print{body{background:#fff}.doc{box-shadow:none;margin:0;max-width:none}}</style></head>
   <body><div class="doc">
@@ -1948,13 +1951,16 @@ function caseContractDraftHTML(k,c){
       <div class="box"><span>Fecha</span><strong>${esc(c.date||'—')}</strong></div>
       <div class="box"><span>Referencia</span><strong>${esc(k.invoiceNumber||'—')}</strong></div>
     </div>
-    <h2>Honorarios</h2>
+    <h2>Honorarios y opciones de pago</h2>
     <div class="grid">
-      <div class="box"><span>Monto acordado</span><strong>${money(c.total)}</strong></div>
-      <div class="box"><span>Pago inicial</span><strong>${money(c.initialPayment)}</strong></div>
-      <div class="box"><span>Saldo</span><strong>${money(balance)}</strong></div>
+      <div class="box"><span>Precio regular del servicio</span><strong>${money(regularPrice)}</strong></div>
+      <div class="box"><span>Precio Cash / Zelle</span><strong>${money(cashZellePrice)}</strong></div>
+      <div class="box"><span>Precio Tarjeta / Stripe</span><strong>${money(cardStripePrice)}</strong></div>
+      <div class="box"><span>Pago inicial requerido</span><strong>${money(c.initialPayment)}</strong></div>
+      <div class="box"><span>Saldo sobre monto acordado</span><strong>${money(balance)}</strong></div>
       <div class="box"><span>Estado</span><strong>${esc(c.status||'Borrador')}</strong></div>
     </div>
+    <div class="section"><strong>Condiciones de precio:</strong> Los precios indicados arriba son los precios previamente establecidos para cada método de pago. No se añadirá al momento del cobro un cargo separado denominado tarifa de procesamiento, conveniencia o transacción.</div>
     <h2>Alcance del servicio</h2>
     <div class="section">${esc(c.scope||'Pendiente de completar.')}</div>
     <h2>Condiciones / notas</h2>
