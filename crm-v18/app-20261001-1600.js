@@ -1086,6 +1086,25 @@ function renderGlobalSearch(q=''){
     box.hidden=true; const k=caseById(Number(el.dataset.searchId)); if(k) openModal('case-edit',k);
   });
 }
+function deleteClientRecord(clientId){
+  const id=Number(clientId);
+  const client=clientById(id);
+  if(!client) return;
+  const hasCases=data.cases.some(x=>Number(x.clientId)===id);
+  const hasAccount=data.clientAccountCharges.some(x=>Number(x.clientId)===id) ||
+    data.clientAccountPayments.some(x=>Number(x.clientId)===id) ||
+    data.clientAccountInvoices.some(x=>Number(x.clientId)===id);
+  const hasCash=data.cashbook.some(x=>Number(x.clientId)===id) || data.expenses.some(x=>Number(x.clientId)===id);
+  if(hasCases||hasAccount||hasCash){
+    alert('No se puede eliminar todavía a '+client.name+'. Primero elimina o desvincula sus casos o movimientos.');
+    return;
+  }
+  if(!window.confirm('¿Eliminar '+(client.isCompany?'empresa':'cliente')+'?\n\n'+client.name+'\n\nEsta acción no se puede deshacer.')) return;
+  data.clients=data.clients.filter(x=>Number(x.id)!==id);
+  save();
+  render();
+}
+
 function renderClients(filter=''){
   const q=filter.toLowerCase();
   const table=$('#clientsTable');
@@ -1097,8 +1116,9 @@ function renderClients(filter=''){
     .map(c=>{
       const cases=data.cases.filter(x=>x.clientId===c.id).length;
       const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
-      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal)}</strong></td></tr>`
-    }).join('')||'<tr><td colspan="6">No hay clientes personales registrados.</td></tr>';
+      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal)}</strong></td><td><button type="button" class="danger" data-delete-client-id="${c.id}">Eliminar</button></td></tr>`
+    }).join('')||'<tr><td colspan="7">No hay clientes personales registrados.</td></tr>';
+  table.querySelectorAll('[data-delete-client-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();deleteClientRecord(Number(btn.dataset.deleteClientId));});
 }
 function renderCompanies(filter=''){
   const q=filter.toLowerCase();
