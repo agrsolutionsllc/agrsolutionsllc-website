@@ -2078,7 +2078,7 @@ function caseContractDraftHTML(k,c){
       <div class="line">Firma del cliente<small>Nombre: ${esc(client?.name||'________________')}</small><small>Fecha: __________________</small></div>
       <div class="line">AGR Solutions LLC<small>Representante autorizado</small><small>Fecha: __________________</small></div>
     </div>
-  </div><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`;
+  </div></body></html>`;
 }
 
 function openCaseContractDraft(k,c){
