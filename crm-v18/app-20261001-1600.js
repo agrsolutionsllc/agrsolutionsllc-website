@@ -1132,9 +1132,10 @@ function renderCompanies(filter=''){
       const cases=data.cases.filter(x=>x.clientId===c.id).length;
       const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
       const acctBal=accountBalance(c.id);
-      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta global: '+money(acctBal)+'</small>':''}</td><td><button type="button" class="primary client-account-btn" data-company-account-id="${c.id}">Cuenta / Factura global</button></td></tr>`
+      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal+acctBal)}</strong>${acctBal>0?'<small class="account-balance-note">Cuenta global: '+money(acctBal)+'</small>':''}</td><td><button type="button" class="primary client-account-btn" data-company-account-id="${c.id}">Cuenta / Factura global</button> <button type="button" class="danger" data-delete-client-id="${c.id}">Eliminar</button></td></tr>`
     }).join('')||'<tr><td colspan="7">No hay empresas registradas.</td></tr>';
   table.querySelectorAll('[data-company-account-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClientAccount(Number(btn.dataset.companyAccountId));});
+  table.querySelectorAll('[data-delete-client-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();deleteClientRecord(Number(btn.dataset.deleteClientId));});
 }
 
 function renderCases(){
