@@ -2136,13 +2136,20 @@ function renderCaseContract(k){
     $('#'+id)?.addEventListener('change',updatePreview);
   });
 
+  function persistAgrSignerSettings(){
+    const name=$('#agrSignerName')?.value?.trim()||'AGR Solutions LLC';
+    const email=$('#agrSignerEmail')?.value?.trim()||'';
+    data.esignSettings={agrSignerName:name,agrSignerEmail:email};
+    save();
+  }
+  $('#agrSignerName')?.addEventListener('change',persistAgrSignerSettings);
+  $('#agrSignerEmail')?.addEventListener('change',persistAgrSignerSettings);
+  $('#agrSignerEmail')?.addEventListener('blur',persistAgrSignerSettings);
+
   $('#saveCaseContract')?.addEventListener('click',()=>{
     const rec=caseContractFor(k);
     Object.assign(rec,contractFormRecord(k,c));
-    data.esignSettings={
-      agrSignerName:$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'',
-      agrSignerEmail:$('#agrSignerEmail')?.value?.trim()||data.esignSettings?.agrSignerEmail||''
-    };
+    persistAgrSignerSettings();
     save();
     logCaseEvent(k.id,'Contrato migratorio actualizado · '+rec.status,'contract');
     renderCaseContract(k);
