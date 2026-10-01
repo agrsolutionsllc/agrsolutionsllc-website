@@ -68,6 +68,8 @@ export default async function handler(req,res){
       processTextTags:false,
       processAcroFields:false,
       createEmbeddedSigningSession:false,
+      createExecutedFolder:true,
+      signInSequence:false,
       sendNow:true,
       parties:[
         {
@@ -90,7 +92,7 @@ export default async function handler(req,res){
       fields:[
         {
           type:'signature',
-          x:55,y:610,width:230,height:42,
+          x:55,y:335,width:230,height:42,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:1,party:1,required:true,
           name:'Client Signature',
@@ -98,7 +100,7 @@ export default async function handler(req,res){
         },
         {
           type:'date',
-          x:55,y:665,width:140,height:28,
+          x:55,y:392,width:140,height:28,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:2,party:1,required:true,
           name:'Client Date Signed',
@@ -107,7 +109,7 @@ export default async function handler(req,res){
         },
         {
           type:'signature',
-          x:330,y:610,width:230,height:42,
+          x:330,y:335,width:230,height:42,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:3,party:2,required:true,
           name:'AGR Signature',
@@ -115,7 +117,7 @@ export default async function handler(req,res){
         },
         {
           type:'date',
-          x:330,y:665,width:140,height:28,
+          x:330,y:392,width:140,height:28,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:4,party:2,required:true,
           name:'AGR Date Signed',
