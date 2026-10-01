@@ -834,3 +834,6 @@ dialog form{max-height:88vh;overflow:auto}
 .case-contract-preview{width:100%;height:1100px;border:1px solid #dfe5ee;border-radius:14px;background:#fff}
 @media(max-width:1000px){.contract-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.case-contract-preview{height:950px}}
 @media(max-width:620px){.contract-quick-grid{grid-template-columns:1fr}.case-contract-preview{height:800px}}
+
+.contract-foxit-status{margin-top:12px;padding:10px 12px;border:1px solid #dfe5ee;border-radius:10px;background:#f8fafc;color:#586174;font-size:.88rem}
+.contract-foxit-status strong{color:#0b2348}
