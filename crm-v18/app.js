@@ -84,6 +84,7 @@ if(!Array.isArray(data.clientAccountCharges)) data.clientAccountCharges=[];
 if(!Array.isArray(data.clientAccountPayments)) data.clientAccountPayments=[];
 if(!Array.isArray(data.clientAccountInvoices)) data.clientAccountInvoices=[];
 if(!Array.isArray(data.cashbook)) data.cashbook=[];
+if(!Array.isArray(data.expenses)) data.expenses=[];
 
 // migrate old prototype statuses if they exist in this browser
 const migration={nuevo:'inicial',pendiente:'evidencia',proceso:'preparacion',completado:'completado'};
@@ -639,6 +640,7 @@ function crmBackupPayload(){
       cases:data.cases?.length||0,
       payments:data.payments?.length||0,
       cashbook:data.cashbook?.length||0,
+      expenses:data.expenses?.length||0,
       appointments:data.appointments?.length||0,
       tasks:data.tasks?.length||0
     },
@@ -731,19 +733,21 @@ function renderBackup(){
     empresas:data.clients.filter(c=>c.isCompany).length,
     casos:data.cases.length,
     pagos:data.payments.length,
-    caja:data.cashbook.length
+    caja:data.cashbook.length,
+    egresos:data.expenses.length
   };
   box.innerHTML=
     '<div><span>Clientes</span><strong>'+counts.clientes+'</strong></div>'+
     '<div><span>Empresas</span><strong>'+counts.empresas+'</strong></div>'+
     '<div><span>Casos</span><strong>'+counts.casos+'</strong></div>'+
     '<div><span>Pagos</span><strong>'+counts.pagos+'</strong></div>'+
-    '<div><span>Caja</span><strong>'+counts.caja+'</strong></div>';
+    '<div><span>Ingresos</span><strong>'+counts.caja+'</strong></div>'+
+    '<div><span>Egresos</span><strong>'+counts.egresos+'</strong></div>';
 }
 function switchView(view){
   $$('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja / Ingresos',appointments:'Citas',tasks:'Tareas',backup:'Backup'};
+  const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja',appointments:'Citas',tasks:'Tareas',backup:'Backup'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
   if(view==='cashbook') requestAnimationFrame(()=>renderCashbook());
   if(view==='backup') requestAnimationFrame(()=>renderBackup());
@@ -800,6 +804,7 @@ function render(){
   renderServices();
   renderPayments();
   renderCashbook();
+  renderExpenses();
   renderBackup();
   bindCaseOpeners();
 }
@@ -898,6 +903,93 @@ function renderCashbook(){
   const dateInput=$('#cashbookDate');
   if(dateInput && !dateInput.value) dateInput.value=todayISO();
   ensureCashbookItemRow();
+}
+
+function expenseTotals(){
+  const today=todayISO();
+  const month=today.slice(0,7);
+  const total=data.expenses.reduce((s,x)=>s+Number(x.amount||0),0);
+  const todayTotal=data.expenses.filter(x=>x.date===today).reduce((s,x)=>s+Number(x.amount||0),0);
+  const monthTotal=data.expenses.filter(x=>String(x.date||'').startsWith(month)).reduce((s,x)=>s+Number(x.amount||0),0);
+  return {todayTotal,monthTotal,total};
+}
+function expenseItemRowHTML(item={}){
+  const qty=Math.max(1,Number(item.quantity||1));
+  const unit=Math.max(0,Number(item.unitPrice||0));
+  return `<div class="cashbook-item-row expense-item-row">
+    <input class="expense-item-service" type="text" placeholder="Ej. Envío USPS" value="${esc(item.service||'')}">
+    <input class="expense-item-subservice" type="text" placeholder="Ej. Priority Mail / Cliente X" value="${esc(item.subservice||'')}">
+    <input class="expense-item-qty" type="number" min="1" step="1" value="${qty}">
+    <input class="expense-item-unit" type="number" min="0" step="0.01" value="${unit||''}" placeholder="0.00">
+    <strong class="expense-item-total">${money(qty*unit)}</strong>
+    <button type="button" class="cashbook-remove-item expense-remove-item" aria-label="Eliminar">×</button>
+  </div>`;
+}
+function getExpenseItems(){
+  return [...document.querySelectorAll('.expense-item-row')].map(row=>({
+    service:row.querySelector('.expense-item-service')?.value?.trim()||'',
+    subservice:row.querySelector('.expense-item-subservice')?.value?.trim()||'',
+    quantity:Math.max(1,Number(row.querySelector('.expense-item-qty')?.value||1)),
+    unitPrice:Math.max(0,Number(row.querySelector('.expense-item-unit')?.value||0))
+  })).filter(x=>x.service && x.unitPrice>0);
+}
+function refreshExpenseItems(){
+  document.querySelectorAll('.expense-item-row').forEach(row=>{
+    const qty=Math.max(1,Number(row.querySelector('.expense-item-qty')?.value||1));
+    const unit=Math.max(0,Number(row.querySelector('.expense-item-unit')?.value||0));
+    const total=row.querySelector('.expense-item-total');
+    if(total) total.textContent=money(qty*unit);
+  });
+  const grand=getExpenseItems().reduce((s,x)=>s+x.quantity*x.unitPrice,0);
+  const box=$('#expenseGrandTotal');
+  if(box) box.textContent=money(grand);
+}
+function bindExpenseItems(){
+  const wrap=$('#expenseItems');
+  if(!wrap) return;
+  wrap.querySelectorAll('.expense-item-qty,.expense-item-unit').forEach(el=>el.oninput=refreshExpenseItems);
+  wrap.querySelectorAll('.expense-remove-item').forEach(btn=>btn.onclick=()=>{
+    const rows=wrap.querySelectorAll('.expense-item-row');
+    if(rows.length<=1){
+      const row=btn.closest('.expense-item-row');
+      row.querySelectorAll('input').forEach(input=>input.value=input.classList.contains('expense-item-qty')?'1':'');
+    }else{
+      btn.closest('.expense-item-row')?.remove();
+    }
+    refreshExpenseItems();
+  });
+}
+function ensureExpenseItemRow(){
+  const wrap=$('#expenseItems');
+  if(!wrap) return;
+  if(!wrap.querySelector('.expense-item-row')) wrap.innerHTML=expenseItemRowHTML();
+  bindExpenseItems();
+  refreshExpenseItems();
+}
+function renderExpenses(){
+  const summary=$('#expenseSummary'), table=$('#expenseTable'), form=$('#expenseForm');
+  if(!summary||!table||!form) return;
+  const t=expenseTotals();
+  summary.innerHTML=`
+    <div><span>Hoy</span><strong>${money(t.todayTotal)}</strong></div>
+    <div><span>Este mes</span><strong>${money(t.monthTotal)}</strong></div>
+    <div><span>Total registrado</span><strong>${money(t.total)}</strong></div>
+  `;
+  const rows=[...data.expenses].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.id||0)-Number(a.id||0));
+  table.innerHTML=rows.length?rows.map(x=>{
+    const items=Array.isArray(x.items)&&x.items.length?x.items:[{service:x.concept||'Gasto',subservice:'',quantity:1,unitPrice:Number(x.amount||0)}];
+    const detail=items.map(i=>esc(i.service)+(i.subservice?' · '+esc(i.subservice):'')+' · '+Number(i.quantity||1)+' × '+money(i.unitPrice||0)).join('<br>');
+    return `<tr><td>${esc(x.date||'—')}</td><td>${esc(x.payee||'—')}</td><td>${detail}</td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`;
+  }).join(''):'<tr><td colspan="7">No hay egresos registrados.</td></tr>';
+  const dateInput=$('#expenseDate');
+  if(dateInput && !dateInput.value) dateInput.value=todayISO();
+  ensureExpenseItemRow();
+}
+function switchCashTab(tab){
+  document.querySelectorAll('[data-cash-tab]').forEach(btn=>btn.classList.toggle('active',btn.dataset.cashTab===tab));
+  document.querySelectorAll('[data-cash-pane]').forEach(pane=>pane.classList.toggle('active',pane.dataset.cashPane===tab));
+  if(tab==='expense') requestAnimationFrame(()=>renderExpenses());
+  else requestAnimationFrame(()=>renderCashbook());
 }
 
 function renderDashboardAlerts(){
@@ -2388,6 +2480,48 @@ if(cashbookForm){
     renderCashbook();
   });
 }
+document.querySelectorAll('[data-cash-tab]').forEach(btn=>btn.addEventListener('click',()=>switchCashTab(btn.dataset.cashTab)));
+
+const addExpenseItem=$('#addExpenseItem');
+if(addExpenseItem){
+  addExpenseItem.onclick=()=>{
+    const wrap=$('#expenseItems');
+    if(!wrap) return;
+    wrap.insertAdjacentHTML('beforeend',expenseItemRowHTML());
+    bindExpenseItems();
+    refreshExpenseItems();
+  };
+}
+const expenseForm=$('#expenseForm');
+if(expenseForm){
+  expenseForm.addEventListener('submit',e=>{
+    e.preventDefault();
+    const items=getExpenseItems();
+    const amount=items.reduce((s,x)=>s+x.quantity*x.unitPrice,0);
+    if(!items.length || amount<=0){
+      alert('Agrega al menos un gasto con cantidad y valor.');
+      return;
+    }
+    data.expenses.push({
+      id:Date.now(),
+      date:$('#expenseDate')?.value||todayISO(),
+      payee:$('#expensePayee')?.value?.trim()||'',
+      concept:items.length===1?items[0].service:(items.length+' conceptos'),
+      items,
+      category:$('#expenseCategory')?.value||'Otros gastos',
+      method:$('#expenseMethod')?.value||'Cash',
+      amount,
+      note:$('#expenseNote')?.value?.trim()||''
+    });
+    save();
+    expenseForm.reset();
+    $('#expenseDate').value=todayISO();
+    const wrap=$('#expenseItems');
+    if(wrap) wrap.innerHTML=expenseItemRowHTML();
+    renderExpenses();
+  });
+}
+
 const downloadFullCRMBtn=$('#downloadFullCRM');
 if(downloadFullCRMBtn){
   downloadFullCRMBtn.addEventListener('click',async()=>{
