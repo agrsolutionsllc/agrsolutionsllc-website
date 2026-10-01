@@ -73,6 +73,8 @@ const statusLabels={
 const storeKey='agr-crm-demo-v1';
 const STRIPE_BACKEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/create-payment-link';
 const STRIPE_SYNC_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/sync-payments';
+const FOXIT_SEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-send-contract';
+const FOXIT_STATUS_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-envelope-status';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 if(!data.documents || typeof data.documents!=='object') data.documents={};
@@ -1863,6 +1865,71 @@ function caseContractFor(k){
   }
   return data.caseContracts[key];
 }
+async function contractPdfForFoxit(k,c){
+  if(typeof html2pdf!=='function') throw new Error('El generador de PDF no está disponible. Recarga el CRM e intenta nuevamente.');
+  const frame=$('#caseContractPreview');
+  const doc=frame?.contentDocument;
+  const source=doc?.querySelector('.doc');
+  if(!source) throw new Error('No se pudo leer la vista del contrato.');
+  const clone=source.cloneNode(true);
+  clone.style.boxShadow='none';
+  clone.style.margin='0';
+  clone.style.maxWidth='none';
+  const options={
+    margin:[0.2,0.2,0.2,0.2],
+    filename:(k.invoiceNumber||('AGR-'+k.id))+'-Service-Agreement.pdf',
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:1.5,useCORS:true,backgroundColor:'#ffffff'},
+    jsPDF:{unit:'pt',format:'letter',orientation:'portrait'},
+    pagebreak:{mode:['css','legacy']}
+  };
+  const worker=html2pdf().set(options).from(clone).toPdf();
+  const pdf=await worker.get('pdf');
+  const pageCount=pdf.internal.getNumberOfPages();
+  const dataUri=pdf.output('datauristring');
+  return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount};
+}
+function foxitStatusLabel(status=''){
+  const s=String(status||'').toUpperCase();
+  if(/EXECUTED|COMPLETED/.test(s)) return 'Firmado';
+  if(/SIGNED/.test(s)) return 'Firmado';
+  if(/CANCEL|DECLIN/.test(s)) return 'Cancelado';
+  if(/SHARED|SENT|OUT_FOR_SIGNATURE/.test(s)) return 'Pendiente de firma';
+  return status||'Pendiente';
+}
+async function sendContractToFoxit(k,c){
+  const client=clientById(k.clientId);
+  if(!client?.email) throw new Error('Este cliente no tiene email registrado. Añade un email antes de enviar a firma.');
+  const {pdfBase64,pageCount}=await contractPdfForFoxit(k,c);
+  const response=await fetch(FOXIT_SEND_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      pdfBase64,
+      pageCount,
+      caseId:k.id,
+      clientName:client.name||'Cliente',
+      clientEmail:client.email,
+      service:k.service||'Servicio migratorio',
+      invoiceNumber:k.invoiceNumber||''
+    })
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(result.error||'No se pudo enviar el contrato a Foxit.');
+  return result;
+}
+async function refreshFoxitContractStatus(k,c){
+  if(!c.foxitFolderId) throw new Error('Este contrato todavía no ha sido enviado a Foxit.');
+  const response=await fetch(FOXIT_STATUS_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({folderId:c.foxitFolderId})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(result.error||'No se pudo consultar Foxit.');
+  return result;
+}
+
 function contractFormRecord(k,c){
   return {
     status:$('#contractStatus')?.value||c.status||'Borrador',
@@ -1926,6 +1993,13 @@ function renderCaseContract(k){
         <button type="button" class="primary" id="saveCaseContract">Guardar contrato</button>
         <button type="button" class="secondary" id="refreshCaseContractPreview">Actualizar vista</button>
         <button type="button" class="secondary" id="printCaseContract">Imprimir / Guardar PDF</button>
+        <button type="button" class="primary" id="sendCaseContractFoxit">Enviar a Foxit eSign</button>
+        <button type="button" class="secondary" id="checkCaseContractFoxit" ${c.foxitFolderId?'':'hidden'}>Consultar firma</button>
+      </div>
+      <div class="contract-foxit-status" id="contractFoxitStatus">
+        ${c.foxitFolderId
+          ? '<strong>Foxit eSign:</strong> '+esc(foxitStatusLabel(c.foxitStatus||'Pendiente de firma'))+' · Folder '+esc(c.foxitFolderId)
+          : '<strong>Foxit eSign:</strong> Aún no enviado'}
       </div>
     </div>
 
@@ -1957,6 +2031,59 @@ function renderCaseContract(k){
     openCaseContractDraft(k,contractFormRecord(k,c));
   });
 
+  $('#sendCaseContractFoxit')?.addEventListener('click',async()=>{
+    const btn=$('#sendCaseContractFoxit');
+    const status=$('#contractFoxitStatus');
+    const rec=caseContractFor(k);
+    Object.assign(rec,contractFormRecord(k,c));
+    save();
+    btn.disabled=true;
+    const original=btn.textContent;
+    btn.textContent='Preparando y enviando...';
+    if(status) status.textContent='Generando PDF y enviando a Foxit...';
+    try{
+      const result=await sendContractToFoxit(k,rec);
+      rec.foxitFolderId=result.folderId;
+      rec.foxitStatus=result.status||'SENT';
+      rec.foxitSentAt=new Date().toISOString();
+      rec.status='Pendiente de firma';
+      save();
+      logCaseEvent(k.id,'Contrato enviado a Foxit eSign · Folder '+result.folderId,'contract');
+      renderCaseContract(k);
+    }catch(err){
+      if(status) status.textContent='Foxit: '+err.message;
+      alert('No se pudo enviar a Foxit: '+err.message);
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent=original;}
+    }
+  });
+
+  $('#checkCaseContractFoxit')?.addEventListener('click',async()=>{
+    const btn=$('#checkCaseContractFoxit');
+    const status=$('#contractFoxitStatus');
+    const rec=caseContractFor(k);
+    btn.disabled=true;
+    try{
+      const result=await refreshFoxitContractStatus(k,rec);
+      rec.foxitStatus=result.status||'UNKNOWN';
+      const mapped=foxitStatusLabel(rec.foxitStatus);
+      if(mapped==='Firmado'){
+        rec.status='Firmado';
+        rec.signedDate=rec.signedDate||todayISO();
+      }else if(mapped==='Pendiente de firma'){
+        rec.status='Pendiente de firma';
+      }
+      save();
+      logCaseEvent(k.id,'Estado Foxit actualizado · '+mapped,'contract');
+      renderCaseContract(k);
+    }catch(err){
+      if(status) status.textContent='Foxit: '+err.message;
+      alert('No se pudo consultar Foxit: '+err.message);
+    }finally{
+      if(btn) btn.disabled=false;
+    }
+  });
+
   updatePreview();
 }
 
@@ -1985,7 +2112,7 @@ function caseContractDraftHTML(k,c){
     .section ol{padding-left:21px}.section li{margin:7px 0}
     .status{display:inline-block;padding:5px 10px;border:1px solid #c9a227;border-radius:999px;font-size:11px;font-weight:700;color:#8a6b00}
     .notice{padding:12px 14px;border:1px solid #d8dde6;border-radius:10px;background:#f8fafc;margin:10px 0}
-    .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:55px}.line{border-top:1px solid #111;padding-top:7px}
+    .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:0;padding-top:150px;page-break-before:always;break-before:page}.line{border-top:1px solid #111;padding-top:7px}
     .sign small{display:block;color:#64748b;margin-top:5px}
     @media print{body{background:#fff}.doc{box-shadow:none;margin:0;max-width:none;padding:28px}.no-print{display:none}}
   </style></head>
