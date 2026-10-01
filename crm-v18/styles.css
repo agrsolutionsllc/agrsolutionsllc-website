@@ -798,3 +798,16 @@ dialog form{max-height:88vh;overflow:auto}
 .cashbook-tab.active{background:#0b2348;color:#fff;border-color:#0b2348}
 .cashbook-pane{display:none}
 .cashbook-pane.active{display:block}
+
+.contract-card{padding:18px;border:1px solid #e2e8f0;border-radius:16px;background:#fff}
+.contract-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}
+.contract-head h3{margin:2px 0 4px}.contract-head small{color:var(--muted)}
+.contract-status{display:inline-flex;align-items:center;padding:7px 12px;border-radius:999px;background:#f4f6f9;color:#0b2348;font-weight:700;font-size:.8rem}
+.contract-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.contract-grid label{display:flex;flex-direction:column;gap:6px;font-weight:600}
+.contract-grid label.full{grid-column:1/-1}
+.contract-grid input,.contract-grid select,.contract-grid textarea{width:100%;border:1px solid #dfe5ee;border-radius:10px;padding:10px 12px;font:inherit;background:#fff}
+.contract-grid textarea{resize:vertical}
+.contract-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.contract-note{display:block;margin-top:10px;color:var(--muted)}
+@media(max-width:760px){.contract-grid{grid-template-columns:1fr}.contract-grid label.full{grid-column:auto}}
