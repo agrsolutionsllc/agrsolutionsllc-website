@@ -2044,7 +2044,8 @@ function caseContractDraftHTML(k,c){
 
     <h2>7. No garantía de resultado ni de tiempo</h2>
     <div class="section">
-      <p>AGR Solutions LLC no controla las decisiones, tiempos de procesamiento, solicitudes adicionales, entrevistas, demoras, rechazos o aprobaciones de ninguna agencia gubernamental. Ningún pago realizado a AGR Solutions LLC garantiza aprobación, beneficio migratorio, fecha de decisión ni resultado específico.</p>
+      <p>AGR Solutions LLC no controla las decisiones, los tiempos de procesamiento, las solicitudes adicionales, entrevistas, demoras, rechazos o aprobaciones de ninguna agencia gubernamental. Por esta razón, ningún pago realizado a AGR Solutions LLC garantiza una aprobación, beneficio migratorio, fecha de decisión o resultado específico.</p>
+      <p>Sin embargo, AGR Solutions LLC se compromete a realizar los servicios administrativos y de preparación documental contratados con responsabilidad, diligencia, organización y atención a los detalles, utilizando de buena fe los medios razonablemente disponibles dentro del alcance del servicio para presentar un trabajo completo, ordenado y profesional con base en la información y documentación proporcionadas por el cliente.</p>
     </div>
 
     <h2>8. Comunicaciones y notificaciones</h2>
