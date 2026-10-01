@@ -315,6 +315,36 @@
           </article>
         </div>
 
+        <article class="panel backup-auto-card">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">BACKUP AUTOMÁTICO</p>
+              <h2>Guardar copias periódicamente</h2>
+              <p class="section-subtext">Elige una carpeta de tu PC o disco externo. El CRM guardará una copia cuando esté abierto y corresponda según la frecuencia.</p>
+            </div>
+          </div>
+          <div class="backup-auto-controls">
+            <label>Frecuencia
+              <select id="autoBackupFrequency">
+                <option value="1">Todos los días</option>
+                <option value="3">Cada 3 días</option>
+                <option value="7" selected>Semanal</option>
+              </select>
+            </label>
+            <label class="backup-toggle-row">
+              <input type="checkbox" id="autoBackupEnabled">
+              <span>Activar backup automático</span>
+            </label>
+            <button type="button" class="secondary" id="chooseAutoBackupFolder">Elegir carpeta de backup</button>
+            <button type="button" class="ghost" id="runAutoBackupNow">Guardar copia ahora</button>
+          </div>
+          <div class="backup-auto-info">
+            <strong id="autoBackupFolderLabel">Carpeta no configurada</strong>
+            <span id="autoBackupLastRun">Aún no hay backup automático.</span>
+          </div>
+          <small id="autoBackupStatus" class="backup-status" aria-live="polite"></small>
+        </article>
+
         <article class="panel backup-help">
           <p class="eyebrow">RECOMENDACIÓN</p>
           <h3>Cómo guardarlo en tu disco duro externo</h3>
