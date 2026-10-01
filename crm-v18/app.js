@@ -1947,7 +1947,7 @@ async function sendContractToFoxit(k,c){
   if(!client?.email) throw new Error('Este cliente no tiene email registrado. Añade un email antes de enviar a firma.');
   const agrSignerName=$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'';
   const agrSignerEmail=$('#agrSignerEmail')?.value?.trim()||data.esignSettings?.agrSignerEmail||'';
-  if(!agrSignerName||!agrSignerEmail) throw new Error('Configura el nombre y email del firmante de AGR antes de enviar a Foxit.');
+  if(!agrSignerEmail) throw new Error('Agrega una sola vez el email de tu cuenta Foxit en “Firma electrónica de AGR” y pulsa Guardar contrato. Ese email se usará para identificar la firma automática de AGR.');
   const {pdfBase64,pageCount}=await contractPdfForFoxit(k,c);
   const response=await fetch(FOXIT_SEND_URL,{
     method:'POST',
@@ -2099,13 +2099,13 @@ function renderCaseContract(k){
         <summary>Firma electrónica de AGR</summary>
         <div class="contract-quick-grid contract-esign-grid">
           <label>Nombre del firmante AGR
-            <input id="agrSignerName" type="text" value="${esc(data.esignSettings?.agrSignerName||'')}" placeholder="Ej. Ariana Reinoso">
+            <input id="agrSignerName" type="text" value="${esc(data.esignSettings?.agrSignerName||'AGR Solutions LLC')}" placeholder="AGR Solutions LLC">
           </label>
           <label>Email del firmante AGR
             <input id="agrSignerEmail" type="email" value="${esc(data.esignSettings?.agrSignerEmail||'')}" placeholder="Email que recibirá la solicitud de firma">
           </label>
         </div>
-        <small class="contract-note">Se guarda para próximos contratos. Foxit enviará la firma del cliente primero y después la de AGR.</small>
+        <small class="contract-note">Se guarda una sola vez. Foxit usa estos datos para identificar la firma autorizada de AGR; no se enviará una segunda solicitud de firma si la firma automática está disponible en tu cuenta.</small>
       </details>
 
       <div class="contract-actions">
