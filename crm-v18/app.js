@@ -1914,7 +1914,8 @@ async function contractPdfForFoxit(k,c){
 function foxitStatusLabel(status=''){
   const s=String(status||'').toUpperCase();
   if(/EXECUTED|COMPLETED/.test(s)) return 'Firmado';
-  if(/SIGNED/.test(s)) return 'Firmado';
+  if(/PARTIALLY SIGNED/.test(s)) return 'Parcialmente firmado';
+  if(/^SIGNED$/.test(s)) return 'Firmado';
   if(/CANCEL|DECLIN/.test(s)) return 'Cancelado';
   if(/SHARED|SENT|OUT_FOR_SIGNATURE/.test(s)) return 'Pendiente de firma';
   return status||'Pendiente';
@@ -1955,6 +1956,35 @@ async function refreshFoxitContractStatus(k,c){
   const result=await response.json().catch(()=>({}));
   if(!response.ok) throw new Error(result.error||'No se pudo consultar Foxit.');
   return result;
+}
+
+async function autoRefreshFoxitContract(k,c){
+  if(!c?.foxitFolderId || c.status==='Firmado' || c._foxitRefreshing) return;
+  c._foxitRefreshing=true;
+  try{
+    const result=await refreshFoxitContractStatus(k,c);
+    const mapped=foxitStatusLabel(result.status||'');
+    c.foxitStatus=result.status||c.foxitStatus||'';
+    if(mapped==='Firmado'){
+      c.status='Firmado';
+      c.signedDate=c.signedDate||todayISO();
+      c.completedAt=new Date().toISOString();
+      save();
+      logCaseEvent(k.id,'Contrato completado en Foxit eSign','contract');
+      renderCaseContract(k);
+      return;
+    }
+    if(mapped==='Parcialmente firmado'){
+      c.status='Pendiente de firma';
+      save();
+      const box=$('#contractFoxitStatus');
+      if(box) box.innerHTML='<strong>Foxit eSign:</strong> Parcialmente firmado · esperando la firma restante';
+    }
+  }catch(err){
+    console.warn('No se pudo actualizar Foxit automáticamente:',err);
+  }finally{
+    delete c._foxitRefreshing;
+  }
 }
 
 function contractFormRecord(k,c){
@@ -2129,6 +2159,9 @@ function renderCaseContract(k){
   });
 
   updatePreview();
+  if(c.foxitFolderId && c.status!=='Firmado'){
+    setTimeout(()=>autoRefreshFoxitContract(k,c),700);
+  }
 }
 
 function defaultImmigrationScope(k){
@@ -2253,8 +2286,16 @@ function caseContractDraftHTML(k,c){
         <p>Ambas partes firman electrónicamente este acuerdo.</p>
       </div>
       <div class="sign">
-        <div class="line">Firma del cliente<small>Nombre: ${esc(client?.name||'________________')}</small><small>Fecha: __________________</small></div>
-        <div class="line">AGR Solutions LLC<small>Representante autorizado: ${esc(data.esignSettings?.agrSignerName||'________________')}</small><small>Fecha: __________________</small></div>
+        <div class="line">Firma del cliente
+          <small>Nombre: ${esc(client?.name||'________________')}</small>
+          <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
+          <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+        </div>
+        <div class="line">AGR Solutions LLC
+          <small>Representante autorizado: ${esc(data.esignSettings?.agrSignerName||'________________')}</small>
+          <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
+          <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+        </div>
       </div>
     </div>
   </div></body></html>`;
