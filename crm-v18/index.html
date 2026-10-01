@@ -434,6 +434,7 @@
         <button type="button" class="case-tab active" data-case-tab="summary">Resumen</button>
         <button type="button" class="case-tab" data-case-tab="documents">Requisitos</button>
         <button type="button" class="case-tab" data-case-tab="payments">Pagos</button>
+        <button type="button" class="case-tab" id="caseContractTab" data-case-tab="contract" hidden>Contrato</button>
         <button type="button" class="case-tab" data-case-tab="history">Historial</button>
         <button type="button" class="case-tab" data-case-tab="notes">Notas</button>
         <button type="button" class="case-tab" data-case-tab="communications">Comunicaciones</button>
@@ -449,6 +450,10 @@
 
       <section class="case-pane" data-case-pane="payments" hidden>
         <div id="casePaymentsPane"></div>
+      </section>
+
+      <section class="case-pane" data-case-pane="contract" hidden>
+        <div id="caseContractPane"></div>
       </section>
 
       <section class="case-pane" data-case-pane="history" hidden>
