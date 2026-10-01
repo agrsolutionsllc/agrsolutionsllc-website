@@ -1443,7 +1443,6 @@ function renderCaseSummarySnapshot(k){
     <div id="caseSummarySnapshot" class="case-summary-snapshot full">
       <div><span>Total</span><strong>${money(k.serviceTotal||0)}</strong></div>
       <div><span>Pagado</span><strong>${money(casePaid(k.id))}</strong></div>
-      <div><span>Saldo</span><strong>${money(caseBalance(k))}</strong></div>
       <div><span>Deadline</span><strong class="deadline-pill ${info.className}">${esc(info.label)}</strong></div>
     </div>`);
 }
@@ -1718,7 +1717,7 @@ function renderCasePayments(k){
 
     <div class="finance-snapshot finance-snapshot-compact">
       <div><span>Cobrado</span><strong>${money(caseCollected(k.id))}</strong></div>
-      <div><span>Saldo pendiente</span><strong>${money(caseBalance(k))}</strong></div>
+      
     </div>
 
     <div class="workspace-table"><table>
@@ -1970,7 +1969,6 @@ function caseContractDraftHTML(k,c){
   const client=clientById(k.clientId);
   const cashZellePrice=Number(caseCashPrice(k)||caseStandardPrice(k)||c.total||0);
   const cardStripePrice=Number(caseCardPrice(k)||cashZellePrice);
-  const balance=Math.max(cashZellePrice-Number(c.initialPayment||0),0);
   const scope=(c.scope||'').trim() || defaultImmigrationScope(k);
   const extraTerms=(c.terms||'').trim();
   const statusLabelText=String(c.status||'Borrador').toUpperCase();
@@ -2031,7 +2029,6 @@ function caseContractDraftHTML(k,c){
       <div class="box"><span>Precio Cash / Zelle</span><strong>${money(cashZellePrice)}</strong></div>
       <div class="box"><span>Precio Tarjeta / Stripe</span><strong>${money(cardStripePrice)}</strong></div>
       <div class="box"><span>Pago inicial requerido</span><strong>${money(c.initialPayment)}</strong></div>
-      <div class="box"><span>Saldo estimado Cash / Zelle</span><strong>${money(balance)}</strong></div>
     </div>
     <div class="notice"><strong>Condiciones de precio.</strong> Los importes anteriores son precios previamente establecidos para los métodos indicados. No se añadirá al momento del cobro una tarifa separada denominada cargo de procesamiento, conveniencia o transacción.</div>
 
