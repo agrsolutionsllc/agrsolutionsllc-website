@@ -5,11 +5,30 @@ function cors(res){
   res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers','Content-Type');
 }
-function credentials(){
+async function foxitToken(){
   const clientId=process.env.FOXIT_CLIENT_ID||'';
   const clientSecret=process.env.FOXIT_CLIENT_SECRET||'';
   if(!clientId||!clientSecret) throw new Error('Foxit is not configured on the server.');
-  return {clientId,clientSecret};
+  const body=new URLSearchParams({
+    grant_type:'client_credentials',
+    client_id:clientId,
+    client_secret:clientSecret
+  });
+  const r=await fetch(FOXIT_BASE+'/oauth/token',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/x-www-form-urlencoded',
+      'Accept':'application/json'
+    },
+    body:body.toString()
+  });
+  const raw=await r.text();
+  let data;
+  try{data=JSON.parse(raw);}catch{data={raw};}
+  if(!r.ok||!data.access_token){
+    throw new Error(data?.error_description||data?.error||data?.message||('Foxit OAuth error '+r.status));
+  }
+  return data.access_token;
 }
 function foxitErrorMessage(data,status){
   if(!data) return 'Foxit status error '+status;
@@ -24,13 +43,12 @@ export default async function handler(req,res){
   try{
     const folderId=Number(req.body?.folderId||0);
     if(!folderId) return res.status(400).json({error:'Missing Foxit folder ID.'});
-    const {clientId,clientSecret}=credentials();
+    const token=await foxitToken();
     const url=new URL(FOXIT_BASE+'/esign/api/v1/folders/myfolder');
     url.searchParams.set('folderId',String(folderId));
     const r=await fetch(url,{
       headers:{
-        'client_id':clientId,
-        'client_secret':clientSecret,
+        'Authorization':'Bearer '+token,
         'Accept':'application/json'
       }
     });
