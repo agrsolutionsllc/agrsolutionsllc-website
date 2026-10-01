@@ -2172,11 +2172,14 @@ function renderCaseContract(k){
     btn.textContent='Preparando y enviando...';
     if(status) status.textContent='Generando PDF y enviando a Foxit...';
     try{
+      persistAgrSignerSettings();
       const result=await sendContractToFoxit(k,rec);
-      rec.foxitFolderId=result.folderId;
+      if(!result?.folderId) throw new Error('Foxit no devolvió un Folder ID; el contrato no se marcará como enviado.');
+      rec.foxitFolderId=String(result.folderId);
       rec.foxitStatus=result.status||'SENT';
       rec.foxitSentAt=new Date().toISOString();
       rec.status='Pendiente de firma';
+      rec.signedDate='';
       save();
       logCaseEvent(k.id,'Contrato enviado a Foxit eSign · Folder '+result.folderId,'contract');
       renderCaseContract(k);
