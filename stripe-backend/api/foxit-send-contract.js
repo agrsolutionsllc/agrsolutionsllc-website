@@ -6,11 +6,30 @@ function cors(res){
   res.setHeader('Access-Control-Allow-Headers','Content-Type');
 }
 
-function credentials(){
+async function foxitToken(){
   const clientId=process.env.FOXIT_CLIENT_ID||'';
   const clientSecret=process.env.FOXIT_CLIENT_SECRET||'';
   if(!clientId||!clientSecret) throw new Error('Foxit is not configured on the server.');
-  return {clientId,clientSecret};
+  const body=new URLSearchParams({
+    grant_type:'client_credentials',
+    client_id:clientId,
+    client_secret:clientSecret
+  });
+  const r=await fetch(FOXIT_BASE+'/oauth/token',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/x-www-form-urlencoded',
+      'Accept':'application/json'
+    },
+    body:body.toString()
+  });
+  const raw=await r.text();
+  let data;
+  try{data=JSON.parse(raw);}catch{data={raw};}
+  if(!r.ok||!data.access_token){
+    throw new Error(data?.error_description||data?.error||data?.message||('Foxit OAuth error '+r.status));
+  }
+  return data.access_token;
 }
 
 function splitName(name=''){
@@ -35,7 +54,7 @@ export default async function handler(req,res){
     if(!pdfBase64||!clientEmail) return res.status(400).json({error:'Missing PDF or client email.'});
     if(!/^\S+@\S+\.\S+$/.test(String(clientEmail))) return res.status(400).json({error:'Invalid client email.'});
 
-    const {clientId,clientSecret}=credentials();
+    const token=await foxitToken();
     const {firstName,lastName}=splitName(clientName);
     const finalPage=Math.max(1,Number(pageCount)||1);
 
@@ -80,8 +99,7 @@ export default async function handler(req,res){
     const r=await fetch(FOXIT_BASE+'/esign/api/v1/folders/createfolder',{
       method:'POST',
       headers:{
-        'client_id':clientId,
-        'client_secret':clientSecret,
+        'Authorization':'Bearer '+token,
         'Content-Type':'application/json',
         'Accept':'application/json'
       },
