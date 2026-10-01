@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>AGR Accounting CRM · Desarrollo</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><div class="brand-mark">AGR</div><div><strong>AGR Accounting</strong><span>Solutions LLC</span></div></div>
+<nav>
+<button class="nav active" data-view="dashboard">⌂ <span>Dashboard</span></button>
+<button class="nav" data-view="clients">◉ <span>Empresas</span></button>
+<button class="nav" data-view="jobs">▣ <span>Trabajos</span></button>
+<button class="nav" data-view="sales-tax">% <span>Sales & Use Tax</span></button>
+<button class="nav" data-view="expenses">$ <span>Gastos</span></button>
+<button class="nav" data-view="returns">✓ <span>Declaraciones</span></button>
+<button class="nav" data-view="portal">↗ <span>Portal cliente</span></button>
+</nav>
+<div class="side-foot"><strong>CRM CONTABLE</strong><small>Separado del CRM principal</small></div>
+</aside>
+<main>
+<header class="topbar"><div><p class="eyebrow">AGR SOLUTIONS LLC</p><h1 id="pageTitle">Dashboard contable</h1></div><div class="top-actions"><button class="ghost" id="quickJob">+ Registrar trabajo</button><div class="avatar">AR</div></div></header>
+
+<section class="view active" id="view-dashboard">
+<div class="stats">
+<article class="card stat"><span>Empresas activas</span><strong id="statClients">0</strong><small>Clientes contables</small></article>
+<article class="card stat"><span>Ventas del mes</span><strong id="statGross">$0</strong><small>Trabajos registrados</small></article>
+<article class="card stat"><span>Posible taxable</span><strong id="statTaxable">$0</strong><small>Revisión AGR</small></article>
+<article class="card stat"><span>Declaraciones pendientes</span><strong id="statReturns">0</strong><small>Por preparar/presentar</small></article>
+</div>
+<div class="grid two"><article class="card"><div class="card-head"><div><p class="eyebrow">ESTE MES</p><h2>Actividad reciente</h2></div></div><div class="table-wrap"><table><thead><tr><th>Empresa</th><th>Trabajo</th><th>Total</th><th>Clasificación</th></tr></thead><tbody id="recentJobs"></tbody></table></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">CONTROL</p><h2>Alertas</h2></div></div><div id="alerts" class="alerts"></div></article></div>
+</section>
+
+<section class="view" id="view-clients"><div class="toolbar"><div><p class="eyebrow">EMPRESAS</p><h2>Clientes contables</h2></div><button class="primary" data-open="client">+ Nueva empresa</button></div><article class="card"><div class="search"><input id="clientSearch" type="search" placeholder="Buscar empresa, owner o teléfono"></div><div class="table-wrap"><table><thead><tr><th>Empresa</th><th>Owner</th><th>Frecuencia</th><th>Permit</th><th>Estado</th></tr></thead><tbody id="clientsTable"></tbody></table></div></article></section>
+
+<section class="view" id="view-jobs"><div class="toolbar"><div><p class="eyebrow">TRABAJOS</p><h2>Registro de actividad</h2></div><button class="primary" data-open="job">+ Registrar trabajo</button></div><article class="card filters"><label>Empresa<select id="jobClientFilter"></select></label><label>Mes<input id="jobMonthFilter" type="month"></label></article><article class="card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Empresa</th><th>Trabajo</th><th>Propiedad</th><th>Total</th><th>Tax</th><th>Estado</th></tr></thead><tbody id="jobsTable"></tbody></table></div></article></section>
+
+<section class="view" id="view-sales-tax"><div class="toolbar"><div><p class="eyebrow">CONNECTICUT · OS-114</p><h2>Sales & Use Tax</h2><p class="sub">Resumen mensual para preparar la declaración con preguntas simples al cliente.</p></div><button class="primary" data-open="job">+ Registrar trabajo</button></div>
+<article class="card filters"><label>Empresa<select id="taxClientFilter"></select></label><label>Mes<input id="taxMonthFilter" type="month"></label></article>
+<div class="stats"><article class="card stat"><span>Gross receipts</span><strong id="taxGross">$0</strong><small>Total registrado</small></article><article class="card stat"><span>Probable taxable</span><strong id="taxTaxable">$0</strong><small>Revisión final AGR</small></article><article class="card stat"><span>Tax cobrado</span><strong id="taxCollected">$0</strong><small>Según trabajos</small></article><article class="card stat"><span>Casos por revisar</span><strong id="taxReviewCount">0</strong><small>No presentar sin revisar</small></article></div>
+<div class="grid tax-grid"><article class="card"><div class="card-head"><div><p class="eyebrow">ACTIVIDAD</p><h2>Clasificación mensual</h2></div></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Trabajo</th><th>Propiedad</th><th>Total</th><th>Clasificación</th></tr></thead><tbody id="taxTable"></tbody></table></div></article><article class="card"><div class="card-head"><div><p class="eyebrow">CHECKLIST</p><h2>Antes del OS-114</h2></div></div><div id="taxChecklist" class="checklist"></div></article></div>
+<div class="notice"><strong>Control:</strong> el CRM ayuda a clasificar; AGR revisa antes de presentar ante DRS. Casos amarillos = revisión obligatoria.</div></section>
+
+<section class="view" id="view-expenses"><div class="toolbar"><div><p class="eyebrow">GASTOS</p><h2>Compras y posible Use Tax</h2></div><button class="primary" data-open="expense">+ Registrar gasto</button></div><article class="card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Empresa</th><th>Proveedor</th><th>Categoría</th><th>Total</th><th>CT tax pagado</th></tr></thead><tbody id="expensesTable"></tbody></table></div></article></section>
+
+<section class="view" id="view-returns"><div class="toolbar"><div><p class="eyebrow">DECLARACIONES</p><h2>Historial OS-114</h2></div><button class="primary" data-open="return">+ Registrar declaración</button></div><article class="card"><div class="table-wrap"><table><thead><tr><th>Empresa</th><th>Período</th><th>Due date</th><th>Tax due</th><th>Estado</th><th>Confirmation</th></tr></thead><tbody id="returnsTable"></tbody></table></div></article></section>
+
+<section class="view" id="view-portal"><div class="toolbar"><div><p class="eyebrow">PORTAL CLIENTE</p><h2>Registrar trabajo</h2><p class="sub">La versión sencilla que usaría el contratista desde su teléfono.</p></div></div><article class="phone card"><form id="portalForm" class="portal-form"><label>Empresa<select name="clientId" id="portalClient" required></select></label><label>Fecha<input name="date" type="date" required></label><label>¿Cuánto te pagaron?<input name="amount" type="number" min="0" step=".01" required></label><label>¿Dónde hiciste el trabajo?<select name="propertyType" required><option value="">Selecciona</option><option value="owner">Casa donde vive el dueño</option><option value="rental">Propiedad de renta</option><option value="commercial">Negocio / comercial</option><option value="new">Construcción nueva</option><option value="unknown">No sé</option></select></label><label>¿Qué trabajo hiciste?<select name="serviceType" required><option value="">Selecciona</option><option value="painting">Painting</option><option value="roofing">Roofing</option><option value="siding">Siding</option><option value="paving">Paving</option><option value="wallpapering">Wallpapering</option><option value="carpentry">Carpentry</option><option value="plumbing">Plumbing</option><option value="electrical">Electrical</option><option value="flooring">Flooring</option><option value="remodeling">Remodeling</option><option value="landscaping">Landscaping</option><option value="other">Otro</option></select></label><label>Sales Tax cobrado<input name="taxCollected" type="number" min="0" step=".01" value="0"></label><label>Método de pago<select name="paymentMethod"><option>Cash</option><option>Zelle</option><option>Check</option><option>Card</option><option>Other</option></select></label><button class="primary" type="submit">Guardar trabajo</button></form><div id="portalSuccess" class="success hidden">Trabajo guardado ✓ AGR lo revisará para tu declaración mensual.</div></article></section>
+</main>
+</div>
+
+<dialog id="modal"><form method="dialog" id="modalForm"><div class="modal-head"><div><p class="eyebrow">AGR ACCOUNTING</p><h2 id="modalTitle"></h2></div><button value="cancel" class="close">×</button></div><div id="modalFields" class="form-grid"></div><div class="modal-actions"><button value="cancel" class="ghost">Cancelar</button><button type="submit" value="default" class="primary">Guardar</button></div></form></dialog>
+<script src="./app.js"></script>
+</body></html>
