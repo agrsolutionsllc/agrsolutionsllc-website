@@ -792,3 +792,9 @@ dialog form{max-height:88vh;overflow:auto}
 .backup-toggle-row input{width:18px;height:18px}
 .backup-auto-info{display:flex;flex-direction:column;gap:4px;margin-top:14px;padding:12px 14px;border:1px solid #e3e7ee;border-radius:12px;background:#fafbfc}
 .backup-auto-info span{color:var(--muted);font-size:.85rem}
+
+.cashbook-tabs{display:flex;gap:10px;margin:0 0 18px}
+.cashbook-tab{border:1px solid #d9e0ea;background:#fff;color:#0b2348;border-radius:999px;padding:11px 22px;font-weight:700;cursor:pointer}
+.cashbook-tab.active{background:#0b2348;color:#fff;border-color:#0b2348}
+.cashbook-pane{display:none}
+.cashbook-pane.active{display:block}
