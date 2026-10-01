@@ -6,42 +6,36 @@ function cors(res){
   res.setHeader('Access-Control-Allow-Headers','Content-Type');
 }
 
-async function foxitToken(){
+function credentials(){
   const clientId=process.env.FOXIT_CLIENT_ID||'';
   const clientSecret=process.env.FOXIT_CLIENT_SECRET||'';
   if(!clientId||!clientSecret) throw new Error('Foxit is not configured on the server.');
-  const body=new URLSearchParams({
-    grant_type:'client_credentials',
-    client_id:clientId,
-    client_secret:clientSecret
-  });
-  const r=await fetch(FOXIT_BASE+'/oauth/token',{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
-    body:body.toString()
-  });
-  const data=await r.json();
-  if(!r.ok||!data.access_token) throw new Error(data?.error_description||data?.error||'Foxit authentication failed.');
-  return data.access_token;
+  return {clientId,clientSecret};
 }
 
 function splitName(name=''){
   const parts=String(name).trim().split(/\s+/).filter(Boolean);
-  return {
-    firstName:parts.shift()||'Client',
-    lastName:parts.join(' ')||'Signer'
-  };
+  return {firstName:parts.shift()||'Client',lastName:parts.join(' ')||'Signer'};
+}
+
+function foxitErrorMessage(data,status){
+  if(!data) return 'Foxit eSign error '+status;
+  if(typeof data==='string') return data;
+  return data.message||data.error_description||data.error||data.result||
+    (data.errors?JSON.stringify(data.errors):'Foxit eSign error '+status);
 }
 
 export default async function handler(req,res){
   cors(res);
   if(req.method==='OPTIONS') return res.status(204).end();
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
+
   try{
     const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount}=req.body||{};
     if(!pdfBase64||!clientEmail) return res.status(400).json({error:'Missing PDF or client email.'});
     if(!/^\S+@\S+\.\S+$/.test(String(clientEmail))) return res.status(400).json({error:'Invalid client email.'});
-    const token=await foxitToken();
+
+    const {clientId,clientSecret}=credentials();
     const {firstName,lastName}=splitName(clientName);
     const finalPage=Math.max(1,Number(pageCount)||1);
 
@@ -52,6 +46,8 @@ export default async function handler(req,res){
       base64FileString:[String(pdfBase64).replace(/^data:application\/pdf;base64,/, '')],
       processTextTags:false,
       processAcroFields:false,
+      createEmbeddedSigningSession:false,
+      sendNow:true,
       parties:[{
         firstName,
         lastName,
@@ -63,7 +59,7 @@ export default async function handler(req,res){
       fields:[
         {
           type:'signature',
-          x:55,y:220,width:230,height:42,
+          x:55,y:610,width:230,height:42,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:1,party:1,required:true,
           name:'Client Signature',
@@ -71,35 +67,44 @@ export default async function handler(req,res){
         },
         {
           type:'date',
-          x:55,y:285,width:140,height:28,
+          x:55,y:665,width:140,height:28,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:2,party:1,required:true,
           name:'Date Signed',
           tooltip:'Fecha de firma',
           dateFormat:'MM-DD-YYYY'
         }
-      ],
-      createEmbeddedSigningSession:false,
-      sendNow:true,
-      allowAdvancedEmailValidation:true
+      ]
     };
 
     const r=await fetch(FOXIT_BASE+'/esign/api/v1/folders/createfolder',{
       method:'POST',
       headers:{
-        'Authorization':'Bearer '+token,
+        'client_id':clientId,
+        'client_secret':clientSecret,
         'Content-Type':'application/json',
         'Accept':'application/json'
       },
       body:JSON.stringify(payload)
     });
-    const data=await r.json();
-    if(!r.ok) return res.status(r.status).json({error:data?.message||data?.error||data?.result||'Foxit eSign error',details:data});
-    const folder=data.folder||data;
+
+    const raw=await r.text();
+    let data;
+    try{data=JSON.parse(raw);}catch{data=raw;}
+
+    if(!r.ok){
+      return res.status(r.status).json({
+        error:foxitErrorMessage(data,r.status),
+        foxitStatus:r.status,
+        foxitResponse:data
+      });
+    }
+
+    const folder=(data&&typeof data==='object'&&(data.folder||data))||{};
     return res.status(200).json({
-      folderId:folder.folderId||data.folderId||null,
-      status:folder.folderStatus||data.folderStatus||'SENT',
-      result:data.result||'sent'
+      folderId:folder.folderId||null,
+      status:folder.folderStatus||data?.folderStatus||data?.result||'SENT',
+      result:data?.result||'sent'
     });
   }catch(err){
     return res.status(500).json({error:err?.message||'Unexpected Foxit error'});
