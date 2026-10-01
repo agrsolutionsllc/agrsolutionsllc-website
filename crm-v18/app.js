@@ -2432,8 +2432,7 @@ function openModal(kind,values={}){
         const card=Math.max(0,Number(cardPriceInput?.value||standard));
         const box=fields.querySelector('#pricingPreview');
         if(box) box.innerHTML=
-          '<span>Precio estándar</span><strong>'+money(standard)+'</strong>'+
-          '<span>Cash / Zelle</span><strong>'+money(cash)+'</strong>'+
+          '<span>Precio estándar / Cash / Zelle</span><strong>'+money(cash)+'</strong>'+
           '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
       };
       [totalPriceInput,cashPriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
