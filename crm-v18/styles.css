@@ -811,3 +811,14 @@ dialog form{max-height:88vh;overflow:auto}
 .contract-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 .contract-note{display:block;margin-top:10px;color:var(--muted)}
 @media(max-width:760px){.contract-grid{grid-template-columns:1fr}.contract-grid label.full{grid-column:auto}}
+
+
+/* Keep initial payment compact beside the pricing preview */
+.form-grid label:has(input[name="initialPayment"]){
+  align-self:start;
+}
+.form-grid input[name="initialPayment"]{
+  height:46px;
+  min-height:46px;
+  align-self:start;
+}
