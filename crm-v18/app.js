@@ -2437,10 +2437,8 @@ setTimeout(()=>maybeRunAutomaticBackup(),1500);
 setInterval(()=>maybeRunAutomaticBackup(),60*60*1000);
 
 const cashbookClientSelect=$('#cashbookClient');
-if(cashbookClientSelect){
-  cashbookClientSelect.addEventListener('focus',populateCashbookClients);
-  cashbookClientSelect.addEventListener('pointerdown',populateCashbookClients);
-}
+// La lista se carga al renderizar Caja. No reconstruir el select al hacer clic,
+// porque eso cierra el desplegable nativo antes de que Chrome pueda mostrarlo.
 const addCashbookItem=$('#addCashbookItem');
 if(addCashbookItem){
   addCashbookItem.onclick=()=>{
