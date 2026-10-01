@@ -149,10 +149,19 @@ export default async function handler(req,res){
       });
     }
 
-    const folder=(data&&typeof data==='object'&&(data.folder||data))||{};
+    const folder=(data&&typeof data==='object'&&(data.folder||data.data?.folder||data.data||data))||{};
+    const folderId=folder.folderId||data?.folderId||data?.data?.folderId||data?.result?.folderId||null;
+    const folderStatus=folder.folderStatus||data?.folderStatus||data?.data?.folderStatus||data?.result?.folderStatus||'SENT';
+    if(!folderId){
+      return res.status(502).json({
+        error:'Foxit confirmó la solicitud pero no devolvió un Folder ID. No se marcó el contrato como enviado.',
+        foxitResponseKeys:(data&&typeof data==='object')?Object.keys(data):[],
+        foxitResponse:data
+      });
+    }
     return res.status(200).json({
-      folderId:folder.folderId||null,
-      status:folder.folderStatus||data?.folderStatus||data?.result||'SENT',
+      folderId,
+      status:folderStatus,
       result:data?.result||'sent'
     });
   }catch(err){
