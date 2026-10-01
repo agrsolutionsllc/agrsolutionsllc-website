@@ -1,0 +1,107 @@
+const FOXIT_BASE='https://na1.fusion.foxit.com';
+
+function cors(res){
+  res.setHeader('Access-Control-Allow-Origin','https://agrsolutionsllc.com');
+  res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers','Content-Type');
+}
+
+async function foxitToken(){
+  const clientId=process.env.FOXIT_CLIENT_ID||'';
+  const clientSecret=process.env.FOXIT_CLIENT_SECRET||'';
+  if(!clientId||!clientSecret) throw new Error('Foxit is not configured on the server.');
+  const body=new URLSearchParams({
+    grant_type:'client_credentials',
+    client_id:clientId,
+    client_secret:clientSecret
+  });
+  const r=await fetch(FOXIT_BASE+'/oauth/token',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
+    body:body.toString()
+  });
+  const data=await r.json();
+  if(!r.ok||!data.access_token) throw new Error(data?.error_description||data?.error||'Foxit authentication failed.');
+  return data.access_token;
+}
+
+function splitName(name=''){
+  const parts=String(name).trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName:parts.shift()||'Client',
+    lastName:parts.join(' ')||'Signer'
+  };
+}
+
+export default async function handler(req,res){
+  cors(res);
+  if(req.method==='OPTIONS') return res.status(204).end();
+  if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
+  try{
+    const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount}=req.body||{};
+    if(!pdfBase64||!clientEmail) return res.status(400).json({error:'Missing PDF or client email.'});
+    if(!/^\S+@\S+\.\S+$/.test(String(clientEmail))) return res.status(400).json({error:'Invalid client email.'});
+    const token=await foxitToken();
+    const {firstName,lastName}=splitName(clientName);
+    const finalPage=Math.max(1,Number(pageCount)||1);
+
+    const payload={
+      folderName:(invoiceNumber||('AGR-'+caseId))+' - '+(service||'Immigration Service Agreement'),
+      inputType:'base64',
+      fileNames:[(invoiceNumber||('AGR-'+caseId))+'-Service-Agreement.pdf'],
+      base64FileString:[String(pdfBase64).replace(/^data:application\/pdf;base64,/, '')],
+      processTextTags:false,
+      processAcroFields:false,
+      parties:[{
+        firstName,
+        lastName,
+        emailId:String(clientEmail),
+        permission:'FILL_FIELDS_AND_SIGN',
+        sequence:1,
+        allowNameChange:'false'
+      }],
+      fields:[
+        {
+          type:'signature',
+          x:55,y:220,width:230,height:42,
+          documentNumber:1,pageNumber:finalPage,
+          tabOrder:1,party:1,required:true,
+          name:'Client Signature',
+          tooltip:'Firma del cliente'
+        },
+        {
+          type:'date',
+          x:55,y:285,width:140,height:28,
+          documentNumber:1,pageNumber:finalPage,
+          tabOrder:2,party:1,required:true,
+          name:'Date Signed',
+          tooltip:'Fecha de firma',
+          dateFormat:'MM-DD-YYYY'
+        }
+      ],
+      createEmbeddedSigningSession:false,
+      sendNow:true,
+      allowAdvancedEmailValidation:true
+    };
+
+    const r=await fetch(FOXIT_BASE+'/esign/api/v1/folders/createfolder',{
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+token,
+        'Content-Type':'application/json',
+        'Accept':'application/json'
+      },
+      body:JSON.stringify(payload)
+    });
+    const data=await r.json();
+    if(!r.ok) return res.status(r.status).json({error:data?.message||data?.error||data?.result||'Foxit eSign error',details:data});
+    const folder=data.folder||data;
+    return res.status(200).json({
+      folderId:folder.folderId||data.folderId||null,
+      status:folder.folderStatus||data.folderStatus||'SENT',
+      result:data.result||'sent'
+    });
+  }catch(err){
+    return res.status(500).json({error:err?.message||'Unexpected Foxit error'});
+  }
+}
