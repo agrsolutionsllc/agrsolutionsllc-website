@@ -1909,8 +1909,15 @@ async function contractPdfForFoxit(k,c){
   const source=doc?.querySelector('.doc');
   if(!source) throw new Error('No se pudo leer la vista del contrato.');
 
-  // Generate directly from the iframe element so computed contract styles are preserved.
-  // Cloning it into the CRM document caused the first page to start too low and stripped styles.
+  const agrSignatureDataUrl=data.esignSettings?.agrSignatureDataUrl||'';
+  if(!agrSignatureDataUrl) throw new Error('Configura una vez la firma predeterminada de AGR antes de enviar contratos a Foxit.');
+
+  // The on-screen preview keeps the AGR signature visible, but for the PDF sent to Foxit
+  // we temporarily hide the HTML image and stamp it directly into the final PDF page.
+  // This prevents Foxit from re-scaling the original image canvas.
+  const signatureImg=source.querySelector('.agr-signature-img');
+  const prevSignatureDisplay=signatureImg?.style.display||'';
+
   const prev={
     margin:source.style.margin,
     boxShadow:source.style.boxShadow,
@@ -1923,6 +1930,7 @@ async function contractPdfForFoxit(k,c){
   source.style.maxWidth='none';
   source.style.width='7.5in';
   source.style.padding='0.35in 0.45in';
+  if(signatureImg) signatureImg.style.display='none';
 
   const options={
     margin:[18,18,18,18],
@@ -1930,16 +1938,23 @@ async function contractPdfForFoxit(k,c){
     image:{type:'jpeg',quality:0.98},
     html2canvas:{scale:1.6,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
     jsPDF:{unit:'pt',format:'letter',orientation:'portrait'},
-    pagebreak:{mode:['css','legacy'],avoid:['.grid','.box']}
+    pagebreak:{mode:['css','legacy'],avoid:['.grid','.box','.sign-page','.sign','.signature-card']}
   };
 
   try{
     const worker=html2pdf().set(options).from(source).toPdf();
     const pdf=await worker.get('pdf');
     const pageCount=pdf.internal.getNumberOfPages();
+
+    // Stamp AGR's stored signature as a fixed-size PDF image on the same final page
+    // where Foxit places the client's signature. Coordinates are in PDF points.
+    pdf.setPage(pageCount);
+    pdf.addImage(agrSignatureDataUrl,'PNG',350,335,180,56,'AGR_DEFAULT_SIGNATURE','FAST');
+
     const dataUri=pdf.output('datauristring');
     return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount};
   }finally{
+    if(signatureImg) signatureImg.style.display=prevSignatureDisplay;
     source.style.margin=prev.margin;
     source.style.boxShadow=prev.boxShadow;
     source.style.maxWidth=prev.maxWidth;
