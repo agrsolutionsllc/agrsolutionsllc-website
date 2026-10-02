@@ -1912,11 +1912,12 @@ async function contractPdfForFoxit(k,c){
   const agrSignatureDataUrl=data.esignSettings?.agrSignatureDataUrl||'';
   if(!agrSignatureDataUrl) throw new Error('Configura una vez la firma predeterminada de AGR antes de enviar contratos a Foxit.');
 
-  // The on-screen preview keeps the AGR signature visible, but for the PDF sent to Foxit
-  // we temporarily hide the HTML image and stamp it directly into the final PDF page.
-  // This prevents Foxit from re-scaling the original image canvas.
+  // Remove the visible AGR signature node completely while html2pdf renders.
+  // Hiding with CSS was not enough: Foxit could still receive the original oversized raster.
   const signatureImg=source.querySelector('.agr-signature-img');
-  const prevSignatureDisplay=signatureImg?.style.display||'';
+  const signatureParent=signatureImg?.parentNode||null;
+  const signatureNext=signatureImg?.nextSibling||null;
+  if(signatureImg && signatureParent) signatureParent.removeChild(signatureImg);
 
   const prev={
     margin:source.style.margin,
@@ -1930,7 +1931,6 @@ async function contractPdfForFoxit(k,c){
   source.style.maxWidth='none';
   source.style.width='7.5in';
   source.style.padding='0.35in 0.45in';
-  if(signatureImg) signatureImg.style.display='none';
 
   const options={
     margin:[18,18,18,18],
@@ -1942,19 +1942,25 @@ async function contractPdfForFoxit(k,c){
   };
 
   try{
+    // Let layout settle after physically removing the AGR signature image.
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+
     const worker=html2pdf().set(options).from(source).toPdf();
     const pdf=await worker.get('pdf');
     const pageCount=pdf.internal.getNumberOfPages();
 
-    // Stamp AGR's stored signature as a fixed-size PDF image on the same final page
-    // where Foxit places the client's signature. Coordinates are in PDF points.
+    // AGR signature is stamped directly into the PDF at a fixed size.
+    // This is independent of the original image/canvas dimensions.
     pdf.setPage(pageCount);
-    pdf.addImage(agrSignatureDataUrl,'PNG',350,335,180,56,'AGR_DEFAULT_SIGNATURE','FAST');
+    pdf.addImage(agrSignatureDataUrl,'PNG',350,335,150,46,'AGR_DEFAULT_SIGNATURE','FAST');
 
     const dataUri=pdf.output('datauristring');
     return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount};
   }finally{
-    if(signatureImg) signatureImg.style.display=prevSignatureDisplay;
+    if(signatureImg && signatureParent){
+      if(signatureNext) signatureParent.insertBefore(signatureImg,signatureNext);
+      else signatureParent.appendChild(signatureImg);
+    }
     source.style.margin=prev.margin;
     source.style.boxShadow=prev.boxShadow;
     source.style.maxWidth=prev.maxWidth;
