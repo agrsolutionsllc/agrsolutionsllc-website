@@ -2384,8 +2384,8 @@ function caseContractDraftHTML(k,c){
     .sign-title{text-align:center;margin-bottom:.22in}.sign-title h2{border:0;margin:0 0 5px;font-size:15pt}.sign-title p{margin:0;color:#64748b}
     .sign-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:.18in 0 .18in}
     .sign-summary .box{min-height:58px;background:#f8fafc}
-    .acceptance{border:1px solid #d8dde6;border-radius:9px;padding:11px 13px;background:#fff;margin:.08in 0 .24in;font-size:9.6pt;line-height:1.42}
-    .sign{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:.52in;align-items:start}
+    .acceptance{border:1px solid #d8dde6;border-radius:9px;padding:11px 13px;background:#fff;margin:.18in 0 .28in;font-size:9.6pt;line-height:1.42}
+    .sign{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:.34in;align-items:start}
     .signature-card{min-height:170px;padding:0 5px}.signature-slot{height:58px;margin:8px 0 6px;display:flex;align-items:flex-end}.client-signature-slot{border-bottom:1px solid #cbd5e1}.agr-signature-slot{border-bottom:1px solid #cbd5e1}
     .line{border-top:1.4px solid #111;padding-top:7px;font-size:10pt;font-weight:700;min-width:0}
     .sign small{display:block;color:#64748b;margin-top:6px;font-weight:400;line-height:1.3}
@@ -2481,13 +2481,6 @@ function caseContractDraftHTML(k,c){
       <div class="sign-title">
         <h2>Aceptación y firmas</h2>
         <p>Confirmación final del Acuerdo General de Servicios de Preparación Documental Migratoria</p>
-      </div>
-
-      <div class="sign-summary">
-        <div class="box"><span>Cliente</span><strong>${esc(client?.name||'Cliente')}</strong></div>
-        <div class="box"><span>Servicio / trámite</span><strong>${esc(k.service||'')}</strong></div>
-        <div class="box"><span>Referencia</span><strong>${esc(k.invoiceNumber||'—')}</strong></div>
-        <div class="box"><span>Fecha del acuerdo</span><strong>${esc(c.date||'—')}</strong></div>
       </div>
 
       <div class="acceptance">
