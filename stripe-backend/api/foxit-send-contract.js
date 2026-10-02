@@ -83,7 +83,7 @@ export default async function handler(req,res){
       fields:[
         {
           type:'signature',
-          x:55,y:335,width:230,height:42,
+          x:58,y:338,width:205,height:44,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:1,party:1,required:true,
           name:'Client Signature',
@@ -91,7 +91,7 @@ export default async function handler(req,res){
         },
         {
           type:'date',
-          x:55,y:392,width:140,height:28,
+          x:58,y:402,width:118,height:24,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:2,party:1,required:true,
           name:'Client Date Signed',
