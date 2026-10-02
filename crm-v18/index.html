@@ -531,6 +531,11 @@
         p.hidden=!active;
         p.classList.toggle('active',active);
       });
+      const deleteCaseButton=document.getElementById('deleteCaseButton');
+      if(deleteCaseButton){
+        deleteCaseButton.hidden=tab!=='summary';
+        deleteCaseButton.style.display=tab==='summary'?'':'none';
+      }
     });
   </script>
 </body>
