@@ -2176,13 +2176,31 @@ function renderCaseContract(k){
     }
     const reader=new FileReader();
     reader.onload=()=>{
-      data.esignSettings={
-        ...(data.esignSettings||{}),
-        agrSignerName:$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'Ariana G Reinoso',
-        agrSignatureDataUrl:String(reader.result||'')
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        canvas.width=720;
+        canvas.height=220;
+        const ctx=canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        const scale=Math.min((canvas.width-40)/img.naturalWidth,(canvas.height-30)/img.naturalHeight,1);
+        const w=Math.max(1,Math.round(img.naturalWidth*scale));
+        const h=Math.max(1,Math.round(img.naturalHeight*scale));
+        const x=Math.round((canvas.width-w)/2);
+        const y=Math.round((canvas.height-h)/2);
+        ctx.drawImage(img,x,y,w,h);
+
+        data.esignSettings={
+          ...(data.esignSettings||{}),
+          agrSignerName:$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'Ariana G Reinoso',
+          agrSignatureDataUrl:canvas.toDataURL('image/png')
+        };
+        save();
+        renderCaseContract(k);
       };
-      save();
-      renderCaseContract(k);
+      img.onerror=()=>alert('No se pudo procesar la imagen de la firma.');
+      img.src=String(reader.result||'');
     };
     reader.readAsDataURL(file);
   });
@@ -2282,7 +2300,7 @@ function caseContractDraftHTML(k,c){
     .line{border-top:1.4px solid #111;padding-top:7px;font-size:10pt;font-weight:700;min-width:0}
     .sign small{display:block;color:#64748b;margin-top:6px;font-weight:400;line-height:1.3}
     .sign-role{font-size:8.5pt!important;text-transform:uppercase;letter-spacing:.05em;color:#0b2348!important;font-weight:700!important;margin-bottom:7px!important}
-    .agr-signature-img{display:block;max-width:220px;max-height:68px;object-fit:contain;object-position:left bottom;margin:0 0 8px}
+    .agr-signature-img{display:block;width:180px!important;height:56px!important;max-width:180px!important;max-height:56px!important;object-fit:contain!important;object-position:left bottom!important;margin:0 0 8px}
     .agr-signature-placeholder{height:68px;margin-bottom:8px}
     @media print{body{background:#fff;font-size:10pt}.doc{box-shadow:none;margin:0;max-width:none;width:auto;padding:.28in .38in}h1{font-size:17pt}h2{font-size:12pt}.grid,.box,.notice{break-inside:avoid;page-break-inside:avoid}.no-print{display:none}}
   </style></head>
@@ -2398,7 +2416,7 @@ function caseContractDraftHTML(k,c){
         <div class="signature-card">
           <small class="sign-role">AGR Solutions LLC</small>
           ${data.esignSettings?.agrSignatureDataUrl
-            ? '<img class="agr-signature-img" src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma autorizada de AGR">'
+            ? '<img class="agr-signature-img" width="180" height="56" src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma autorizada de AGR">'
             : '<div class="agr-signature-placeholder"></div>'}
           <div class="line">Firma autorizada de AGR
             <small>Representante: ${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}</small>
