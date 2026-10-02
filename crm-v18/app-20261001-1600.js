@@ -1964,66 +1964,47 @@ async function contractPdfForFoxit(k,c){
     pdf.setTextColor(100,116,139);
     pdf.text('Confirmación final del Acuerdo General de Servicios de Preparación Documental Migratoria',left,92);
 
-    pdf.setDrawColor(216,221,230);
-    pdf.setFillColor(248,250,252);
-    const half=(contentW-10)/2;
-    const drawBox=(x,y,label,value)=>{
-      pdf.roundedRect(x,y,half,48,5,5,'FD');
-      pdf.setFont('helvetica','normal');
-      pdf.setFontSize(7.5);
-      pdf.setTextColor(100,116,139);
-      pdf.text(label,x+10,y+15);
-      pdf.setFont('helvetica','bold');
-      pdf.setFontSize(9);
-      pdf.setTextColor(23,34,59);
-      pdf.text(pdf.splitTextToSize(String(value||'—'),half-20),x+10,y+31);
-    };
-    drawBox(left,112,'Cliente',client?.name||'Cliente');
-    drawBox(left+half+10,112,'Servicio / trámite',k.service||'—');
-    drawBox(left,168,'Referencia',k.invoiceNumber||'—');
-    drawBox(left+half+10,168,'Fecha del acuerdo',agreementDate);
-
     pdf.setFillColor(255,255,255);
     pdf.setDrawColor(216,221,230);
-    pdf.roundedRect(left,230,contentW,58,6,6,'FD');
+    pdf.roundedRect(left,118,contentW,58,6,6,'FD');
     pdf.setFont('helvetica','normal');
     pdf.setFontSize(8.5);
     pdf.setTextColor(23,34,59);
     const note='Al firmar electrónicamente, el cliente y AGR Solutions LLC confirman su aceptación de este acuerdo y reconocen que la firma electrónica será utilizada como evidencia de su consentimiento. Cada firmante podrá conservar una copia del documento completado.';
-    pdf.text(pdf.splitTextToSize(note,contentW-24),left+12,248,{lineHeightFactor:1.35});
+    pdf.text(pdf.splitTextToSize(note,contentW-24),left+12,136,{lineHeightFactor:1.35});
 
     pdf.setFont('helvetica','bold');
     pdf.setFontSize(9);
     pdf.setTextColor(11,35,72);
-    pdf.text('CLIENTE',left,326);
-    pdf.text('AGR SOLUTIONS LLC',rightX,326);
+    pdf.text('CLIENTE',left,220);
+    pdf.text('AGR SOLUTIONS LLC',rightX,220);
 
     pdf.setDrawColor(203,213,225);
-    pdf.rect(left,342,colW,62);
-    pdf.rect(rightX,342,colW,62);
+    pdf.rect(left,236,colW,62);
+    pdf.rect(rightX,236,colW,62);
 
-    pdf.addImage(agrSignatureDataUrl,'PNG',rightX+16,350,150,46,'AGR_DEFAULT_SIGNATURE','FAST');
+    pdf.addImage(agrSignatureDataUrl,'PNG',rightX+16,244,150,46,'AGR_DEFAULT_SIGNATURE','FAST');
 
     pdf.setDrawColor(17,24,39);
-    pdf.line(left,416,left+colW,416);
-    pdf.line(rightX,416,rightX+colW,416);
+    pdf.line(left,310,left+colW,310);
+    pdf.line(rightX,310,rightX+colW,310);
 
     pdf.setFont('helvetica','bold');
     pdf.setFontSize(9.5);
     pdf.setTextColor(23,34,59);
-    pdf.text('Firma del cliente',left,432);
-    pdf.text('Firma autorizada de AGR',rightX,432);
+    pdf.text('Firma del cliente',left,326);
+    pdf.text('Firma autorizada de AGR',rightX,326);
 
     pdf.setFont('helvetica','normal');
     pdf.setFontSize(8.2);
     pdf.setTextColor(100,116,139);
-    pdf.text('Nombre: '+(client?.name||'Cliente'),left,450);
-    pdf.text('Firma electrónica mediante Foxit eSign',left,465);
-    pdf.text('Fecha de firma: se completa al firmar',left,480);
+    pdf.text('Nombre: '+(client?.name||'Cliente'),left,344);
+    pdf.text('Firma electrónica mediante Foxit eSign',left,359);
+    pdf.text('Fecha de firma: se completa al firmar',left,374);
 
-    pdf.text('Representante: '+(data.esignSettings?.agrSignerName||'Ariana G Reinoso'),rightX,450);
-    pdf.text('Firma predeterminada de AGR Solutions LLC',rightX,465);
-    pdf.text('Fecha del acuerdo: '+agreementDate,rightX,480);
+    pdf.text('Representante: '+(data.esignSettings?.agrSignerName||'Ariana G Reinoso'),rightX,344);
+    pdf.text('Firma predeterminada de AGR Solutions LLC',rightX,359);
+    pdf.text('Fecha del acuerdo: '+agreementDate,rightX,374);
 
     const dataUri=pdf.output('datauristring');
     return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount,signaturePage:pageCount};
