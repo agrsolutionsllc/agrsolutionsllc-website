@@ -1472,12 +1472,14 @@ function renderCaseSummarySnapshot(k){
     </div>`);
 }
 function setCaseTab(tab){
-  $$('.case-tab').forEach(b=>b.classList.toggle('active',b.dataset.caseTab===tab));
-  $$('[data-case-pane]').forEach(p=>{
+  $('.case-tab').forEach(b=>b.classList.toggle('active',b.dataset.caseTab===tab));
+  $('[data-case-pane]').forEach(p=>{
     const active=p.dataset.casePane===tab;
     p.hidden=!active;
     p.classList.toggle('active',active);
   });
+  const deleteCaseButton=$('#deleteCaseButton');
+  if(deleteCaseButton) deleteCaseButton.hidden=tab!=='summary';
 }
 function renderCaseDocuments(k){
   const pane=$('#caseDocumentsPane');
