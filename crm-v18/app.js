@@ -1916,9 +1916,8 @@ async function contractPdfForFoxit(k,c){
   // Remove the visible AGR signature node completely while html2pdf renders.
   // Hiding with CSS was not enough: Foxit could still receive the original oversized raster.
   const signatureImg=source.querySelector('.agr-signature-img');
-  const signatureParent=signatureImg?.parentNode||null;
-  const signatureNext=signatureImg?.nextSibling||null;
-  if(signatureImg && signatureParent) signatureParent.removeChild(signatureImg);
+  const prevSignatureVisibility=signatureImg?.style.visibility||'';
+  if(signatureImg) signatureImg.style.visibility='hidden';
 
   const prev={
     margin:source.style.margin,
@@ -1953,15 +1952,12 @@ async function contractPdfForFoxit(k,c){
     // AGR signature is stamped directly into the PDF at a fixed size.
     // This is independent of the original image/canvas dimensions.
     pdf.setPage(pageCount);
-    pdf.addImage(agrSignatureDataUrl,'PNG',350,335,150,46,'AGR_DEFAULT_SIGNATURE','FAST');
+    pdf.addImage(agrSignatureDataUrl,'PNG',355,338,145,44,'AGR_DEFAULT_SIGNATURE','FAST');
 
     const dataUri=pdf.output('datauristring');
     return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount};
   }finally{
-    if(signatureImg && signatureParent){
-      if(signatureNext) signatureParent.insertBefore(signatureImg,signatureNext);
-      else signatureParent.appendChild(signatureImg);
-    }
+    if(signatureImg) signatureImg.style.visibility=prevSignatureVisibility;
     source.style.margin=prev.margin;
     source.style.boxShadow=prev.boxShadow;
     source.style.maxWidth=prev.maxWidth;
@@ -2341,11 +2337,11 @@ function caseContractDraftHTML(k,c){
     .sign-summary .box{min-height:58px;background:#f8fafc}
     .acceptance{border:1px solid #d8dde6;border-radius:9px;padding:11px 13px;background:#fff;margin:.08in 0 .24in;font-size:9.6pt;line-height:1.42}
     .sign{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:.72in;align-items:start}
-    .signature-card{min-height:150px;padding:0 5px}
+    .signature-card{min-height:170px;padding:0 5px}.signature-slot{height:58px;margin:8px 0 6px;display:flex;align-items:flex-end}.client-signature-slot{border-bottom:1px solid #cbd5e1}.agr-signature-slot{border-bottom:1px solid #cbd5e1}
     .line{border-top:1.4px solid #111;padding-top:7px;font-size:10pt;font-weight:700;min-width:0}
     .sign small{display:block;color:#64748b;margin-top:6px;font-weight:400;line-height:1.3}
     .sign-role{font-size:8.5pt!important;text-transform:uppercase;letter-spacing:.05em;color:#0b2348!important;font-weight:700!important;margin-bottom:7px!important}
-    .agr-signature-img{display:block;width:180px!important;height:56px!important;max-width:180px!important;max-height:56px!important;object-fit:contain!important;object-position:left bottom!important;margin:0 0 8px}
+    .agr-signature-img{display:block;width:150px!important;height:46px!important;max-width:150px!important;max-height:46px!important;object-fit:contain!important;object-position:left bottom!important;margin:0}
     .agr-signature-placeholder{height:68px;margin-bottom:8px}
     @media print{body{background:#fff;font-size:10pt}.doc{box-shadow:none;margin:0;max-width:none;width:auto;padding:.28in .38in}h1{font-size:17pt}h2{font-size:12pt}.grid,.box,.notice{break-inside:avoid;page-break-inside:avoid}.no-print{display:none}}
   </style></head>
@@ -2452,20 +2448,23 @@ function caseContractDraftHTML(k,c){
       <div class="sign">
         <div class="signature-card">
           <small class="sign-role">Cliente</small>
+          <div class="signature-slot client-signature-slot"></div>
           <div class="line">Firma del cliente
             <small>Nombre: ${esc(client?.name||'________________')}</small>
-            <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
-            <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+            <small>Firma electrónica mediante Foxit eSign</small>
+            <small>Fecha de firma: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'Se completa al firmar'}</small>
           </div>
         </div>
         <div class="signature-card">
           <small class="sign-role">AGR Solutions LLC</small>
-          ${data.esignSettings?.agrSignatureDataUrl
-            ? '<img class="agr-signature-img" width="180" height="56" src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma autorizada de AGR">'
-            : '<div class="agr-signature-placeholder"></div>'}
+          <div class="signature-slot agr-signature-slot">
+            ${data.esignSettings?.agrSignatureDataUrl
+              ? '<img class="agr-signature-img" width="150" height="46" src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma autorizada de AGR">'
+              : ''}
+          </div>
           <div class="line">Firma autorizada de AGR
             <small>Representante: ${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}</small>
-            <small>${data.esignSettings?.agrSignatureDataUrl?'Firma predeterminada aplicada por AGR Solutions LLC':'Firma predeterminada no configurada'}</small>
+            <small>Firma predeterminada de AGR Solutions LLC</small>
             <small>Fecha del acuerdo: ${esc(c.date||'Se asignará al enviar')}</small>
           </div>
         </div>
