@@ -1947,6 +1947,7 @@ async function sendContractToFoxit(k,c){
   if(!client?.email) throw new Error('Este cliente no tiene email registrado. Añade un email antes de enviar a firma.');
   const agrSignerName=$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'AGR Solutions LLC';
   const agrSignerEmail=$('#agrSignerEmail')?.value?.trim()||data.esignSettings?.agrSignerEmail||'';
+  if(!agrSignerEmail) throw new Error('Añade el email del firmante de AGR antes de enviar a Foxit.');
   const {pdfBase64,pageCount}=await contractPdfForFoxit(k,c);
   const response=await fetch(FOXIT_SEND_URL,{
     method:'POST',
@@ -1957,6 +1958,8 @@ async function sendContractToFoxit(k,c){
       caseId:k.id,
       clientName:client.name||'Cliente',
       clientEmail:client.email,
+      agrSignerName,
+      agrSignerEmail,
       service:k.service||'Servicio migratorio',
       invoiceNumber:k.invoiceNumber||''
     })
@@ -2102,7 +2105,7 @@ function renderCaseContract(k){
             <input id="agrSignerEmail" type="email" value="${esc(data.esignSettings?.agrSignerEmail||'')}" placeholder="Email que recibirá la solicitud de firma">
           </label>
         </div>
-        <small class="contract-note">Se guarda una sola vez para identificar a AGR en el contrato. Foxit enviará la solicitud de firma únicamente al cliente.</small>
+        <small class="contract-note">Se guarda una sola vez. Foxit enviará primero al cliente y, cuando el cliente firme, enviará la solicitud al representante autorizado de AGR.</small>
       </details>
 
       <div class="contract-actions">
@@ -2247,8 +2250,16 @@ function caseContractDraftHTML(k,c){
     .section ol{padding-left:18px;margin:6px 0}.section li{margin:4px 0}
     .status{display:inline-block;padding:4px 8px;border:1px solid #c9a227;border-radius:999px;font-size:8.5pt;font-weight:700;color:#8a6b00}
     .notice{padding:9px 11px;border:1px solid #d8dde6;border-radius:8px;background:#f8fafc;margin:8px 0;font-size:9.5pt;line-height:1.4}
-    .sign-page{page-break-before:always;break-before:page;min-height:9in;padding-top:.35in}.sign-title{text-align:center;margin-bottom:.35in}.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:3.3in}.line{border-top:1px solid #111;padding-top:6px;font-size:10pt;min-width:0}
-    .sign small{display:block;color:#64748b;margin-top:5px}
+    .sign-page{page-break-before:always;break-before:page;min-height:9in;padding:.25in .08in 0;break-inside:avoid;page-break-inside:avoid}
+    .sign-title{text-align:center;margin-bottom:.22in}.sign-title h2{border:0;margin:0 0 5px;font-size:15pt}.sign-title p{margin:0;color:#64748b}
+    .sign-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:.18in 0 .18in}
+    .sign-summary .box{min-height:58px;background:#f8fafc}
+    .acceptance{border:1px solid #d8dde6;border-radius:9px;padding:11px 13px;background:#fff;margin:.08in 0 .24in;font-size:9.6pt;line-height:1.42}
+    .sign{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:.72in;align-items:start}
+    .signature-card{min-height:150px;padding:0 5px}
+    .line{border-top:1.4px solid #111;padding-top:7px;font-size:10pt;font-weight:700;min-width:0}
+    .sign small{display:block;color:#64748b;margin-top:6px;font-weight:400;line-height:1.3}
+    .sign-role{font-size:8.5pt!important;text-transform:uppercase;letter-spacing:.05em;color:#0b2348!important;font-weight:700!important;margin-bottom:7px!important}
     @media print{body{background:#fff;font-size:10pt}.doc{box-shadow:none;margin:0;max-width:none;width:auto;padding:.28in .38in}h1{font-size:17pt}h2{font-size:12pt}.grid,.box,.notice{break-inside:avoid;page-break-inside:avoid}.no-print{display:none}}
   </style></head>
   <body><div class="doc">
@@ -2337,18 +2348,36 @@ function caseContractDraftHTML(k,c){
     <div class="sign-page">
       <div class="sign-title">
         <h2>Aceptación y firmas</h2>
-        <p>Ambas partes firman electrónicamente este acuerdo.</p>
+        <p>Confirmación final del Acuerdo General de Servicios de Preparación Documental Migratoria</p>
       </div>
+
+      <div class="sign-summary">
+        <div class="box"><span>Cliente</span><strong>${esc(client?.name||'Cliente')}</strong></div>
+        <div class="box"><span>Servicio / trámite</span><strong>${esc(k.service||'')}</strong></div>
+        <div class="box"><span>Referencia</span><strong>${esc(k.invoiceNumber||'—')}</strong></div>
+        <div class="box"><span>Fecha del acuerdo</span><strong>${esc(c.date||'—')}</strong></div>
+      </div>
+
+      <div class="acceptance">
+        Al firmar electrónicamente, el cliente y AGR Solutions LLC confirman su aceptación de este acuerdo y reconocen que la firma electrónica será utilizada como evidencia de su consentimiento. Cada firmante recibirá y podrá conservar una copia del documento completado.
+      </div>
+
       <div class="sign">
-        <div class="line">Firma del cliente
-          <small>Nombre: ${esc(client?.name||'________________')}</small>
-          <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
-          <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+        <div class="signature-card">
+          <small class="sign-role">Cliente</small>
+          <div class="line">Firma del cliente
+            <small>Nombre: ${esc(client?.name||'________________')}</small>
+            <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
+            <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+          </div>
         </div>
-        <div class="line">AGR Solutions LLC
-          <small>Representante autorizado: ${esc(data.esignSettings?.agrSignerName||'________________')}</small>
-          <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
-          <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+        <div class="signature-card">
+          <small class="sign-role">AGR Solutions LLC</small>
+          <div class="line">Firma del representante autorizado
+            <small>Representante: ${esc(data.esignSettings?.agrSignerName||'________________')}</small>
+            <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
+            <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+          </div>
         </div>
       </div>
     </div>
