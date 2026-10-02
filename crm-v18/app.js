@@ -2445,7 +2445,7 @@ function caseContractDraftHTML(k,c){
           <div class="line">Firma autorizada de AGR
             <small>Representante: ${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}</small>
             <small>${data.esignSettings?.agrSignatureDataUrl?'Firma predeterminada aplicada por AGR Solutions LLC':'Firma predeterminada no configurada'}</small>
-            <small>Fecha del acuerdo: ${esc(c.date||'__________________')}</small>
+            <small>Fecha del acuerdo: ${esc(c.date||'Se asignará al enviar')}</small>
           </div>
         </div>
       </div>
