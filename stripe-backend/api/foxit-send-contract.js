@@ -53,14 +53,22 @@ export default async function handler(req,res){
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
 
   try{
-    const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount}=req.body||{};
+    const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount,agrSignerName,agrSignerEmail}=req.body||{};
     if(!pdfBase64||!clientEmail) return res.status(400).json({error:'Missing PDF or client email.'});
+    if(!agrSignerName||!agrSignerEmail) return res.status(400).json({error:'Falta el nombre o email del firmante de AGR.'});
     if(!/^\S+@\S+\.\S+$/.test(String(clientEmail))){
       return res.status(400).json({error:'Invalid client email.'});
+    }
+    if(!/^\S+@\S+\.\S+$/.test(String(agrSignerEmail))){
+      return res.status(400).json({error:'El email del firmante de AGR no es válido.'});
+    }
+    if(String(clientEmail).trim().toLowerCase()===String(agrSignerEmail).trim().toLowerCase()){
+      return res.status(400).json({error:'El cliente y AGR deben usar emails diferentes para firmar.'});
     }
 
     const token=await foxitToken();
     const {firstName,lastName}=splitName(clientName);
+    const agr=splitName(agrSignerName);
     const finalPage=Math.max(1,Number(pageCount)||1);
 
     const payload={
@@ -71,15 +79,26 @@ export default async function handler(req,res){
       processTextTags:false,
       processAcroFields:false,
       createEmbeddedSigningSession:false,
+      signInSequence:true,
       sendNow:true,
-      parties:[{
-        firstName,
-        lastName,
-        emailId:String(clientEmail),
-        permission:'FILL_FIELDS_AND_SIGN',
-        sequence:1,
-        allowNameChange:'false'
-      }],
+      parties:[
+        {
+          firstName,
+          lastName,
+          emailId:String(clientEmail),
+          permission:'FILL_FIELDS_AND_SIGN',
+          sequence:1,
+          allowNameChange:'false'
+        },
+        {
+          firstName:agr.firstName,
+          lastName:agr.lastName,
+          emailId:String(agrSignerEmail),
+          permission:'FILL_FIELDS_AND_SIGN',
+          sequence:2,
+          allowNameChange:'false'
+        }
+      ],
       fields:[
         {
           type:'signature',
@@ -96,6 +115,23 @@ export default async function handler(req,res){
           tabOrder:2,party:1,required:true,
           name:'Client Date Signed',
           tooltip:'Fecha de firma del cliente',
+          dateFormat:'MM-DD-YYYY'
+        },
+        {
+          type:'signature',
+          x:330,y:335,width:230,height:42,
+          documentNumber:1,pageNumber:finalPage,
+          tabOrder:3,party:2,required:true,
+          name:'AGR Signature',
+          tooltip:'Firma del representante autorizado de AGR Solutions LLC'
+        },
+        {
+          type:'date',
+          x:330,y:392,width:140,height:28,
+          documentNumber:1,pageNumber:finalPage,
+          tabOrder:4,party:2,required:true,
+          name:'AGR Date Signed',
+          tooltip:'Fecha de firma de AGR',
           dateFormat:'MM-DD-YYYY'
         }
       ]
