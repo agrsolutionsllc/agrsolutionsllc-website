@@ -1945,9 +1945,8 @@ function foxitStatusLabel(status=''){
 async function sendContractToFoxit(k,c){
   const client=clientById(k.clientId);
   if(!client?.email) throw new Error('Este cliente no tiene email registrado. Añade un email antes de enviar a firma.');
-  const agrSignerName=$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'AGR Solutions LLC';
-  const agrSignerEmail=$('#agrSignerEmail')?.value?.trim()||data.esignSettings?.agrSignerEmail||'';
-  if(!agrSignerEmail) throw new Error('Añade el email del firmante de AGR antes de enviar a Foxit.');
+  const agrSignatureDataUrl=data.esignSettings?.agrSignatureDataUrl||'';
+  if(!agrSignatureDataUrl) throw new Error('Configura una vez la firma predeterminada de AGR antes de enviar contratos a Foxit.');
   const {pdfBase64,pageCount}=await contractPdfForFoxit(k,c);
   const response=await fetch(FOXIT_SEND_URL,{
     method:'POST',
@@ -1958,8 +1957,6 @@ async function sendContractToFoxit(k,c){
       caseId:k.id,
       clientName:client.name||'Cliente',
       clientEmail:client.email,
-      agrSignerName,
-      agrSignerEmail,
       service:k.service||'Servicio migratorio',
       invoiceNumber:k.invoiceNumber||''
     })
@@ -2096,16 +2093,21 @@ function renderCaseContract(k){
       </details>
 
       <details class="contract-custom-details contract-esign-settings">
-        <summary>Firma electrónica de AGR</summary>
+        <summary>Firma predeterminada de AGR</summary>
         <div class="contract-quick-grid contract-esign-grid">
           <label>Nombre del firmante AGR
-            <input id="agrSignerName" type="text" value="${esc(data.esignSettings?.agrSignerName||'AGR Solutions LLC')}" placeholder="AGR Solutions LLC">
+            <input id="agrSignerName" type="text" value="${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}" placeholder="Ariana G Reinoso">
           </label>
-          <label>Email del firmante AGR
-            <input id="agrSignerEmail" type="email" value="${esc(data.esignSettings?.agrSignerEmail||'')}" placeholder="Email que recibirá la solicitud de firma">
+          <label>Firma guardada
+            <input id="agrSignatureFile" type="file" accept="image/png,image/jpeg,image/webp">
           </label>
         </div>
-        <small class="contract-note">Se guarda una sola vez. Foxit enviará primero al cliente y, cuando el cliente firme, enviará la solicitud al representante autorizado de AGR.</small>
+        <div id="agrSignaturePreview" class="contract-signature-preview">
+          ${data.esignSettings?.agrSignatureDataUrl
+            ? '<img src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma predeterminada de AGR"><button type="button" class="secondary" id="removeAgrSignature">Cambiar / eliminar firma</button>'
+            : '<small class="contract-note">Aún no hay una firma guardada. Súbela una sola vez y el CRM la insertará automáticamente en cada contrato.</small>'}
+        </div>
+        <small class="contract-note">Foxit enviará únicamente al cliente. La firma autorizada de AGR quedará incorporada previamente en el PDF, por lo que no recibirás cada contrato para volver a firmarlo.</small>
       </details>
 
       <div class="contract-actions">
@@ -2137,14 +2139,43 @@ function renderCaseContract(k){
   });
 
   function persistAgrSignerSettings(){
-    const name=$('#agrSignerName')?.value?.trim()||'AGR Solutions LLC';
-    const email=$('#agrSignerEmail')?.value?.trim()||'';
-    data.esignSettings={agrSignerName:name,agrSignerEmail:email};
+    const name=$('#agrSignerName')?.value?.trim()||'Ariana G Reinoso';
+    data.esignSettings={
+      ...(data.esignSettings||{}),
+      agrSignerName:name
+    };
     save();
   }
-  $('#agrSignerName')?.addEventListener('change',persistAgrSignerSettings);
-  $('#agrSignerEmail')?.addEventListener('change',persistAgrSignerSettings);
-  $('#agrSignerEmail')?.addEventListener('blur',persistAgrSignerSettings);
+  $('#agrSignerName')?.addEventListener('change',()=>{
+    persistAgrSignerSettings();
+    updatePreview();
+  });
+  $('#agrSignatureFile')?.addEventListener('change',event=>{
+    const file=event.target.files?.[0];
+    if(!file) return;
+    if(!/^image\/(png|jpeg|webp)$/i.test(file.type)){
+      alert('Usa una imagen PNG, JPG o WEBP para la firma.');
+      event.target.value='';
+      return;
+    }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      data.esignSettings={
+        ...(data.esignSettings||{}),
+        agrSignerName:$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'Ariana G Reinoso',
+        agrSignatureDataUrl:String(reader.result||'')
+      };
+      save();
+      renderCaseContract(k);
+    };
+    reader.readAsDataURL(file);
+  });
+  $('#removeAgrSignature')?.addEventListener('click',()=>{
+    if(!data.esignSettings) data.esignSettings={};
+    data.esignSettings.agrSignatureDataUrl='';
+    save();
+    renderCaseContract(k);
+  });
 
   $('#saveCaseContract')?.addEventListener('click',()=>{
     const rec=caseContractFor(k);
@@ -2260,6 +2291,8 @@ function caseContractDraftHTML(k,c){
     .line{border-top:1.4px solid #111;padding-top:7px;font-size:10pt;font-weight:700;min-width:0}
     .sign small{display:block;color:#64748b;margin-top:6px;font-weight:400;line-height:1.3}
     .sign-role{font-size:8.5pt!important;text-transform:uppercase;letter-spacing:.05em;color:#0b2348!important;font-weight:700!important;margin-bottom:7px!important}
+    .agr-signature-img{display:block;max-width:220px;max-height:68px;object-fit:contain;object-position:left bottom;margin:0 0 8px}
+    .agr-signature-placeholder{height:68px;margin-bottom:8px}
     @media print{body{background:#fff;font-size:10pt}.doc{box-shadow:none;margin:0;max-width:none;width:auto;padding:.28in .38in}h1{font-size:17pt}h2{font-size:12pt}.grid,.box,.notice{break-inside:avoid;page-break-inside:avoid}.no-print{display:none}}
   </style></head>
   <body><div class="doc">
@@ -2373,10 +2406,13 @@ function caseContractDraftHTML(k,c){
         </div>
         <div class="signature-card">
           <small class="sign-role">AGR Solutions LLC</small>
-          <div class="line">Firma del representante autorizado
-            <small>Representante: ${esc(data.esignSettings?.agrSignerName||'________________')}</small>
-            <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
-            <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+          ${data.esignSettings?.agrSignatureDataUrl
+            ? '<img class="agr-signature-img" src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma autorizada de AGR">'
+            : '<div class="agr-signature-placeholder"></div>'}
+          <div class="line">Firma autorizada de AGR
+            <small>Representante: ${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}</small>
+            <small>${data.esignSettings?.agrSignatureDataUrl?'Firma predeterminada aplicada por AGR Solutions LLC':'Firma predeterminada no configurada'}</small>
+            <small>Fecha del acuerdo: ${esc(c.date||'__________________')}</small>
           </div>
         </div>
       </div>
