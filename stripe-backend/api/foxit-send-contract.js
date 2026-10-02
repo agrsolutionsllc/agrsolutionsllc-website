@@ -53,7 +53,7 @@ export default async function handler(req,res){
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
 
   try{
-    const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount}=req.body||{};
+    const {pdfBase64,clientName,clientEmail,caseId,service,invoiceNumber,pageCount,signaturePage}=req.body||{};
     if(!pdfBase64||!clientEmail) return res.status(400).json({error:'Missing PDF or client email.'});
     if(!/^\S+@\S+\.\S+$/.test(String(clientEmail))){
       return res.status(400).json({error:'Invalid client email.'});
@@ -61,7 +61,7 @@ export default async function handler(req,res){
 
     const token=await foxitToken();
     const {firstName,lastName}=splitName(clientName);
-    const finalPage=Math.max(1,Number(pageCount)||1);
+    const finalPage=Math.max(1,Number(signaturePage)||Number(pageCount)||1);
 
     const payload={
       folderName:(invoiceNumber||('AGR-'+caseId))+' - '+(service||'Immigration Service Agreement'),
@@ -83,7 +83,7 @@ export default async function handler(req,res){
       fields:[
         {
           type:'signature',
-          x:58,y:338,width:205,height:44,
+          x:54,y:342,width:236,height:62,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:1,party:1,required:true,
           name:'Client Signature',
@@ -91,7 +91,7 @@ export default async function handler(req,res){
         },
         {
           type:'date',
-          x:58,y:402,width:118,height:24,
+          x:54,y:470,width:120,height:20,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:2,party:1,required:true,
           name:'Client Date Signed',
