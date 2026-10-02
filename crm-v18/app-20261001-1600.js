@@ -1204,8 +1204,7 @@ const templates={
     ['deadline','Deadline / fecha límite','date',''],
     ['receiptNumber','Receipt Number (cuando se reciba)','text',''],
     ['aNumber','A-Number (opcional)','text',''],
-    ['serviceTotal','Precio estándar del servicio','number',''],
-    ['cashPrice','Precio Cash / Zelle','number',''],
+    ['serviceTotal','Precio estándar / Cash / Zelle','number',''],
     ['cardPrice','Precio Tarjeta / Stripe','number',''],
     ['initialPayment','Pago inicial requerido','number',''],
     ['invoiceNumber','Número de factura','text',''],
@@ -1309,8 +1308,8 @@ function getCaseValuesFromForm(){
     deadline:fd.deadline!==undefined?fd.deadline:(existing?.deadline||''),
     receiptNumber:fd.receiptNumber!==undefined?fd.receiptNumber:(existing?.receiptNumber||''),
     aNumber:fd.aNumber!==undefined?fd.aNumber:(existing?.aNumber||''),
-    cashPrice:fd.cashPrice!==undefined?fd.cashPrice:(existing?.cashPrice ?? caseCashPrice(existing||{})),
-    zellePrice:fd.cashPrice!==undefined?fd.cashPrice:(existing?.cashPrice ?? caseCashPrice(existing||{})),
+    cashPrice:fd.serviceTotal!==undefined?fd.serviceTotal:(existing?.serviceTotal ?? caseStandardPrice(existing||{})),
+    zellePrice:fd.serviceTotal!==undefined?fd.serviceTotal:(existing?.serviceTotal ?? caseStandardPrice(existing||{})),
     cardPrice:fd.cardPrice!==undefined?fd.cardPrice:(existing?.cardPrice ?? caseCardPrice(existing||{})),
     initialPayment:fd.initialPayment!==undefined?fd.initialPayment:(existing?.initialPayment||0),
     invoiceNumber:fd.invoiceNumber||existing?.invoiceNumber||'',
@@ -2486,20 +2485,18 @@ function openModal(kind,values={}){
   }
   if(actualKind==='case'){
     const totalPriceInput=fields.querySelector('[name="serviceTotal"]');
-    const cashPriceInput=fields.querySelector('[name="cashPrice"]');
     const cardPriceInput=fields.querySelector('[name="cardPrice"]');
     if(cardPriceInput){
       cardPriceInput.insertAdjacentHTML('afterend','<div class="pricing-preview" id="pricingPreview"></div>');
       const refreshPricingPreview=()=>{
         const standard=Math.max(0,Number(totalPriceInput?.value||0));
-        const cash=Math.max(0,Number(cashPriceInput?.value||standard));
         const card=Math.max(0,Number(cardPriceInput?.value||standard));
         const box=fields.querySelector('#pricingPreview');
         if(box) box.innerHTML=
-          '<span>Precio estándar / Cash / Zelle</span><strong>'+money(cash)+'</strong>'+
+          '<span>Precio estándar / Cash / Zelle</span><strong>'+money(standard)+'</strong>'+
           '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
       };
-      [totalPriceInput,cashPriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
+      [totalPriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
       refreshPricingPreview();
     }
     const invoiceInput=fields.querySelector('[name="invoiceNumber"]');
@@ -2599,7 +2596,7 @@ function openModal(kind,values={}){
         if(suggested>0 && (!totalInput.value || Number(totalInput.value)===0)) totalInput.value=suggested;
       });
     }
-    ['clientId','service','status','deadline','receiptNumber','aNumber','serviceTotal','cashPrice','cardPrice','initialPayment','stripePaymentLink'].forEach(name=>{
+    ['clientId','service','status','deadline','receiptNumber','aNumber','serviceTotal','cardPrice','initialPayment','stripePaymentLink'].forEach(name=>{
       const el=form.querySelector('[name="'+name+'"]');
       if(el) el.addEventListener('input',refreshClientNotification);
       if(el) el.addEventListener('change',refreshClientNotification);
@@ -2926,8 +2923,8 @@ form.addEventListener('submit',async e=>{
       receiptNumber:f.receiptNumber||'',
       aNumber:f.aNumber||'',
       serviceTotal:Number(f.serviceTotal||0),
-      cashPrice:Number(f.cashPrice||f.serviceTotal||0),
-      zellePrice:Number(f.cashPrice||f.serviceTotal||0),
+      cashPrice:Number(f.serviceTotal||0),
+      zellePrice:Number(f.serviceTotal||0),
       cardPrice:Number(f.cardPrice||f.serviceTotal||0),
       initialPayment:Number(f.initialPayment||0),
       invoiceNumber:f.invoiceNumber||nextInvoiceNumber(),
