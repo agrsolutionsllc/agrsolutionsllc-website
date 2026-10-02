@@ -1907,29 +1907,29 @@ async function contractPdfForFoxit(k,c){
   const frame=$('#caseContractPreview');
   const doc=frame?.contentDocument;
   const source=doc?.querySelector('.doc');
-  if(!source) throw new Error('No se pudo leer la vista del contrato.');
+  const signPage=source?.querySelector('.sign-page');
+  if(!source||!signPage) throw new Error('No se pudo leer la vista del contrato.');
 
   const agrSignatureDataUrl=data.esignSettings?.agrSignatureDataUrl||'';
   if(!agrSignatureDataUrl) throw new Error('Configura una vez la firma predeterminada de AGR antes de enviar contratos a Foxit.');
 
-  // Remove the visible AGR signature node completely while html2pdf renders.
-  // Hiding with CSS was not enough: Foxit could still receive the original oversized raster.
-  const signatureImg=source.querySelector('.agr-signature-img');
-  const prevSignatureVisibility=signatureImg?.style.visibility||'';
-  if(signatureImg) signatureImg.style.visibility='hidden';
-
+  const client=clientById(k.clientId);
+  const agreementDate=c.date||todayISO();
   const prev={
     margin:source.style.margin,
     boxShadow:source.style.boxShadow,
     maxWidth:source.style.maxWidth,
     width:source.style.width,
-    padding:source.style.padding
+    padding:source.style.padding,
+    signDisplay:signPage.style.display
   };
+
   source.style.margin='0';
   source.style.boxShadow='none';
   source.style.maxWidth='none';
   source.style.width='7.5in';
   source.style.padding='0.35in 0.45in';
+  signPage.style.display='none';
 
   const options={
     margin:[18,18,18,18],
@@ -1937,26 +1937,98 @@ async function contractPdfForFoxit(k,c){
     image:{type:'jpeg',quality:0.98},
     html2canvas:{scale:1.6,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
     jsPDF:{unit:'pt',format:'letter',orientation:'portrait'},
-    pagebreak:{mode:['css','legacy'],avoid:['.grid','.box','.sign-page','.sign','.signature-card']}
+    pagebreak:{mode:['css','legacy'],avoid:['.grid','.box']}
   };
 
   try{
-    // Let layout settle after physically removing the AGR signature image.
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-
     const worker=html2pdf().set(options).from(source).toPdf();
     const pdf=await worker.get('pdf');
+
+    pdf.addPage('letter','portrait');
     const pageCount=pdf.internal.getNumberOfPages();
 
-    // AGR signature is stamped directly into the PDF at a fixed size.
-    // This is independent of the original image/canvas dimensions.
-    pdf.setPage(pageCount);
-    pdf.addImage(agrSignatureDataUrl,'PNG',355,338,145,44,'AGR_DEFAULT_SIGNATURE','FAST');
+    const left=54;
+    const contentW=504;
+    const gap=32;
+    const colW=(contentW-gap)/2;
+    const rightX=left+colW+gap;
+
+    pdf.setTextColor(23,34,59);
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(18);
+    pdf.text('Aceptación y firmas',left,72);
+
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(100,116,139);
+    pdf.text('Confirmación final del Acuerdo General de Servicios de Preparación Documental Migratoria',left,92);
+
+    pdf.setDrawColor(216,221,230);
+    pdf.setFillColor(248,250,252);
+    const half=(contentW-10)/2;
+    const drawBox=(x,y,label,value)=>{
+      pdf.roundedRect(x,y,half,48,5,5,'FD');
+      pdf.setFont('helvetica','normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(100,116,139);
+      pdf.text(label,x+10,y+15);
+      pdf.setFont('helvetica','bold');
+      pdf.setFontSize(9);
+      pdf.setTextColor(23,34,59);
+      pdf.text(pdf.splitTextToSize(String(value||'—'),half-20),x+10,y+31);
+    };
+    drawBox(left,112,'Cliente',client?.name||'Cliente');
+    drawBox(left+half+10,112,'Servicio / trámite',k.service||'—');
+    drawBox(left,168,'Referencia',k.invoiceNumber||'—');
+    drawBox(left+half+10,168,'Fecha del acuerdo',agreementDate);
+
+    pdf.setFillColor(255,255,255);
+    pdf.setDrawColor(216,221,230);
+    pdf.roundedRect(left,230,contentW,58,6,6,'FD');
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(23,34,59);
+    const note='Al firmar electrónicamente, el cliente y AGR Solutions LLC confirman su aceptación de este acuerdo y reconocen que la firma electrónica será utilizada como evidencia de su consentimiento. Cada firmante podrá conservar una copia del documento completado.';
+    pdf.text(pdf.splitTextToSize(note,contentW-24),left+12,248,{lineHeightFactor:1.35});
+
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(9);
+    pdf.setTextColor(11,35,72);
+    pdf.text('CLIENTE',left,326);
+    pdf.text('AGR SOLUTIONS LLC',rightX,326);
+
+    pdf.setDrawColor(203,213,225);
+    pdf.rect(left,342,colW,62);
+    pdf.rect(rightX,342,colW,62);
+
+    pdf.addImage(agrSignatureDataUrl,'PNG',rightX+16,350,150,46,'AGR_DEFAULT_SIGNATURE','FAST');
+
+    pdf.setDrawColor(17,24,39);
+    pdf.line(left,416,left+colW,416);
+    pdf.line(rightX,416,rightX+colW,416);
+
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(23,34,59);
+    pdf.text('Firma del cliente',left,432);
+    pdf.text('Firma autorizada de AGR',rightX,432);
+
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(8.2);
+    pdf.setTextColor(100,116,139);
+    pdf.text('Nombre: '+(client?.name||'Cliente'),left,450);
+    pdf.text('Firma electrónica mediante Foxit eSign',left,465);
+    pdf.text('Fecha de firma: se completa al firmar',left,480);
+
+    pdf.text('Representante: '+(data.esignSettings?.agrSignerName||'Ariana G Reinoso'),rightX,450);
+    pdf.text('Firma predeterminada de AGR Solutions LLC',rightX,465);
+    pdf.text('Fecha del acuerdo: '+agreementDate,rightX,480);
 
     const dataUri=pdf.output('datauristring');
-    return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount};
+    return {pdfBase64:String(dataUri).split(',')[1]||'',pageCount,signaturePage:pageCount};
   }finally{
-    if(signatureImg) signatureImg.style.visibility=prevSignatureVisibility;
+    signPage.style.display=prev.signDisplay;
     source.style.margin=prev.margin;
     source.style.boxShadow=prev.boxShadow;
     source.style.maxWidth=prev.maxWidth;
@@ -1978,13 +2050,14 @@ async function sendContractToFoxit(k,c){
   if(!client?.email) throw new Error('Este cliente no tiene email registrado. Añade un email antes de enviar a firma.');
   const agrSignatureDataUrl=data.esignSettings?.agrSignatureDataUrl||'';
   if(!agrSignatureDataUrl) throw new Error('Configura una vez la firma predeterminada de AGR antes de enviar contratos a Foxit.');
-  const {pdfBase64,pageCount}=await contractPdfForFoxit(k,c);
+  const {pdfBase64,pageCount,signaturePage}=await contractPdfForFoxit(k,c);
   const response=await fetch(FOXIT_SEND_URL,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       pdfBase64,
       pageCount,
+      signaturePage,
       caseId:k.id,
       clientName:client.name||'Cliente',
       clientEmail:client.email,
