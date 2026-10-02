@@ -1960,8 +1960,8 @@ function foxitStatusLabel(status=''){
 async function sendContractToFoxit(k,c){
   const client=clientById(k.clientId);
   if(!client?.email) throw new Error('Este cliente no tiene email registrado. Añade un email antes de enviar a firma.');
-  const agrSignerName=$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'AGR Solutions LLC';
-  const agrSignerEmail=$('#agrSignerEmail')?.value?.trim()||data.esignSettings?.agrSignerEmail||'';
+  const agrSignatureDataUrl=data.esignSettings?.agrSignatureDataUrl||'';
+  if(!agrSignatureDataUrl) throw new Error('Configura una vez la firma predeterminada de AGR antes de enviar contratos a Foxit.');
   const {pdfBase64,pageCount}=await contractPdfForFoxit(k,c);
   const response=await fetch(FOXIT_SEND_URL,{
     method:'POST',
@@ -2108,16 +2108,21 @@ function renderCaseContract(k){
       </details>
 
       <details class="contract-custom-details contract-esign-settings">
-        <summary>Firma electrónica de AGR</summary>
+        <summary>Firma predeterminada de AGR</summary>
         <div class="contract-quick-grid contract-esign-grid">
           <label>Nombre del firmante AGR
-            <input id="agrSignerName" type="text" value="${esc(data.esignSettings?.agrSignerName||'AGR Solutions LLC')}" placeholder="AGR Solutions LLC">
+            <input id="agrSignerName" type="text" value="${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}" placeholder="Ariana G Reinoso">
           </label>
-          <label>Email del firmante AGR
-            <input id="agrSignerEmail" type="email" value="${esc(data.esignSettings?.agrSignerEmail||'')}" placeholder="Email que recibirá la solicitud de firma">
+          <label>Firma guardada
+            <input id="agrSignatureFile" type="file" accept="image/png,image/jpeg,image/webp">
           </label>
         </div>
-        <small class="contract-note">Se guarda una sola vez para identificar a AGR en el contrato. Foxit enviará la solicitud de firma únicamente al cliente.</small>
+        <div id="agrSignaturePreview" class="contract-signature-preview">
+          ${data.esignSettings?.agrSignatureDataUrl
+            ? '<img src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma predeterminada de AGR"><button type="button" class="secondary" id="removeAgrSignature">Cambiar / eliminar firma</button>'
+            : '<small class="contract-note">Aún no hay una firma guardada. Súbela una sola vez y el CRM la insertará automáticamente en cada contrato.</small>'}
+        </div>
+        <small class="contract-note">Foxit enviará únicamente al cliente. La firma autorizada de AGR quedará incorporada previamente en el PDF, por lo que no recibirás cada contrato para volver a firmarlo.</small>
       </details>
 
       <div class="contract-actions">
@@ -2149,14 +2154,43 @@ function renderCaseContract(k){
   });
 
   function persistAgrSignerSettings(){
-    const name=$('#agrSignerName')?.value?.trim()||'AGR Solutions LLC';
-    const email=$('#agrSignerEmail')?.value?.trim()||'';
-    data.esignSettings={agrSignerName:name,agrSignerEmail:email};
+    const name=$('#agrSignerName')?.value?.trim()||'Ariana G Reinoso';
+    data.esignSettings={
+      ...(data.esignSettings||{}),
+      agrSignerName:name
+    };
     save();
   }
-  $('#agrSignerName')?.addEventListener('change',persistAgrSignerSettings);
-  $('#agrSignerEmail')?.addEventListener('change',persistAgrSignerSettings);
-  $('#agrSignerEmail')?.addEventListener('blur',persistAgrSignerSettings);
+  $('#agrSignerName')?.addEventListener('change',()=>{
+    persistAgrSignerSettings();
+    updatePreview();
+  });
+  $('#agrSignatureFile')?.addEventListener('change',event=>{
+    const file=event.target.files?.[0];
+    if(!file) return;
+    if(!/^image\/(png|jpeg|webp)$/i.test(file.type)){
+      alert('Usa una imagen PNG, JPG o WEBP para la firma.');
+      event.target.value='';
+      return;
+    }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      data.esignSettings={
+        ...(data.esignSettings||{}),
+        agrSignerName:$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'Ariana G Reinoso',
+        agrSignatureDataUrl:String(reader.result||'')
+      };
+      save();
+      renderCaseContract(k);
+    };
+    reader.readAsDataURL(file);
+  });
+  $('#removeAgrSignature')?.addEventListener('click',()=>{
+    if(!data.esignSettings) data.esignSettings={};
+    data.esignSettings.agrSignatureDataUrl='';
+    save();
+    renderCaseContract(k);
+  });
 
   $('#saveCaseContract')?.addEventListener('click',()=>{
     const rec=caseContractFor(k);
@@ -2262,8 +2296,18 @@ function caseContractDraftHTML(k,c){
     .section ol{padding-left:18px;margin:6px 0}.section li{margin:4px 0}
     .status{display:inline-block;padding:4px 8px;border:1px solid #c9a227;border-radius:999px;font-size:8.5pt;font-weight:700;color:#8a6b00}
     .notice{padding:9px 11px;border:1px solid #d8dde6;border-radius:8px;background:#f8fafc;margin:8px 0;font-size:9.5pt;line-height:1.4}
-    .sign-page{page-break-before:always;break-before:page;min-height:9in;padding-top:.35in}.sign-title{text-align:center;margin-bottom:.35in}.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:3.3in}.line{border-top:1px solid #111;padding-top:6px;font-size:10pt;min-width:0}
-    .sign small{display:block;color:#64748b;margin-top:5px}
+    .sign-page{page-break-before:always;break-before:page;min-height:0;padding:.25in .08in 0;break-inside:avoid;page-break-inside:avoid}
+    .sign-title{text-align:center;margin-bottom:.22in}.sign-title h2{border:0;margin:0 0 5px;font-size:15pt}.sign-title p{margin:0;color:#64748b}
+    .sign-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:.18in 0 .18in}
+    .sign-summary .box{min-height:58px;background:#f8fafc}
+    .acceptance{border:1px solid #d8dde6;border-radius:9px;padding:11px 13px;background:#fff;margin:.08in 0 .24in;font-size:9.6pt;line-height:1.42}
+    .sign{display:grid;grid-template-columns:1fr 1fr;gap:42px;margin-top:.52in;align-items:start}
+    .signature-card{min-height:150px;padding:0 5px}
+    .line{border-top:1.4px solid #111;padding-top:7px;font-size:10pt;font-weight:700;min-width:0}
+    .sign small{display:block;color:#64748b;margin-top:6px;font-weight:400;line-height:1.3}
+    .sign-role{font-size:8.5pt!important;text-transform:uppercase;letter-spacing:.05em;color:#0b2348!important;font-weight:700!important;margin-bottom:7px!important}
+    .agr-signature-img{display:block;max-width:220px;max-height:68px;object-fit:contain;object-position:left bottom;margin:0 0 8px}
+    .agr-signature-placeholder{height:68px;margin-bottom:8px}
     @media print{body{background:#fff;font-size:10pt}.doc{box-shadow:none;margin:0;max-width:none;width:auto;padding:.28in .38in}h1{font-size:17pt}h2{font-size:12pt}.grid,.box,.notice{break-inside:avoid;page-break-inside:avoid}.no-print{display:none}}
   </style></head>
   <body><div class="doc">
@@ -2352,18 +2396,39 @@ function caseContractDraftHTML(k,c){
     <div class="sign-page">
       <div class="sign-title">
         <h2>Aceptación y firmas</h2>
-        <p>Ambas partes firman electrónicamente este acuerdo.</p>
+        <p>Confirmación final del Acuerdo General de Servicios de Preparación Documental Migratoria</p>
       </div>
+
+      <div class="sign-summary">
+        <div class="box"><span>Cliente</span><strong>${esc(client?.name||'Cliente')}</strong></div>
+        <div class="box"><span>Servicio / trámite</span><strong>${esc(k.service||'')}</strong></div>
+        <div class="box"><span>Referencia</span><strong>${esc(k.invoiceNumber||'—')}</strong></div>
+        <div class="box"><span>Fecha del acuerdo</span><strong>${esc(c.date||'—')}</strong></div>
+      </div>
+
+      <div class="acceptance">
+        Al firmar electrónicamente, el cliente y AGR Solutions LLC confirman su aceptación de este acuerdo y reconocen que la firma electrónica será utilizada como evidencia de su consentimiento. Cada firmante recibirá y podrá conservar una copia del documento completado.
+      </div>
+
       <div class="sign">
-        <div class="line">Firma del cliente
-          <small>Nombre: ${esc(client?.name||'________________')}</small>
-          <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
-          <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+        <div class="signature-card">
+          <small class="sign-role">Cliente</small>
+          <div class="line">Firma del cliente
+            <small>Nombre: ${esc(client?.name||'________________')}</small>
+            <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
+            <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+          </div>
         </div>
-        <div class="line">AGR Solutions LLC
-          <small>Representante autorizado: ${esc(data.esignSettings?.agrSignerName||'________________')}</small>
-          <small>${c.status==='Firmado'?'Firmado electrónicamente mediante Foxit eSign':'Firma electrónica pendiente'}</small>
-          <small>Fecha: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'__________________'}</small>
+        <div class="signature-card">
+          <small class="sign-role">AGR Solutions LLC</small>
+          ${data.esignSettings?.agrSignatureDataUrl
+            ? '<img class="agr-signature-img" src="'+data.esignSettings.agrSignatureDataUrl+'" alt="Firma autorizada de AGR">'
+            : '<div class="agr-signature-placeholder"></div>'}
+          <div class="line">Firma autorizada de AGR
+            <small>Representante: ${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}</small>
+            <small>${data.esignSettings?.agrSignatureDataUrl?'Firma predeterminada aplicada por AGR Solutions LLC':'Firma predeterminada no configurada'}</small>
+            <small>Fecha del acuerdo: ${esc(c.date||'__________________')}</small>
+          </div>
         </div>
       </div>
     </div>
