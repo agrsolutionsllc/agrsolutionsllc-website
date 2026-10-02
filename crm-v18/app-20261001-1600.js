@@ -2025,7 +2025,7 @@ async function autoRefreshFoxitContract(k,c){
 function contractFormRecord(k,c){
   return {
     status:c.status||'No enviado',
-    date:$('#contractDate')?.value||c.date||'',
+    date:c.date||'',
     total:Number(c.total||caseCashPrice(k)||caseStandardPrice(k)||0),
     initialPayment:Number($('#contractInitial')?.value||c.initialPayment||0),
     scope:$('#contractScope')?.value?.trim()||c.scope||'',
@@ -2092,7 +2092,9 @@ function renderCaseContract(k){
         <label>Estado
           <div class="system-field" id="contractStatusDisplay">${esc(c.status||'No enviado')}</div>
         </label>
-        <label>Fecha del contrato<input id="contractDate" type="date" value="${esc(c.date||'')}"></label>
+        <label>Fecha del contrato
+          <div class="system-field" id="contractDateDisplay">${esc(c.date||'Se asignará al enviar')}</div>
+        </label>
         <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
         <label>Fecha de firma
           <div class="system-field" id="contractSignedDateDisplay">${esc(c.signedDate||'Pendiente')}</div>
@@ -2130,7 +2132,7 @@ function renderCaseContract(k){
         <button type="button" class="secondary" id="refreshCaseContractPreview">Actualizar vista</button>
         <button type="button" class="secondary" id="printCaseContract">Imprimir / Guardar PDF</button>
         <button type="button" class="primary" id="sendCaseContractFoxit">Enviar a Foxit eSign</button>
-        <button type="button" class="secondary" id="checkCaseContractFoxit" ${c.foxitFolderId?'':'hidden'}>Consultar firma</button>
+
       </div>
       <div class="contract-foxit-status" id="contractFoxitStatus">
         ${c.foxitFolderId
@@ -2148,7 +2150,7 @@ function renderCaseContract(k){
   `;
 
   const updatePreview=()=>refreshEmbeddedContractPreview(k,c);
-  ['contractDate','contractInitial','contractScope','contractTerms'].forEach(id=>{
+  ['contractInitial','contractScope','contractTerms'].forEach(id=>{
     $('#'+id)?.addEventListener('input',updatePreview);
     $('#'+id)?.addEventListener('change',updatePreview);
   });
@@ -2212,6 +2214,7 @@ function renderCaseContract(k){
     const status=$('#contractFoxitStatus');
     const rec=caseContractFor(k);
     Object.assign(rec,contractFormRecord(k,c));
+    if(!rec.date) rec.date=todayISO();
     save();
     btn.disabled=true;
     const original=btn.textContent;
@@ -2234,32 +2237,6 @@ function renderCaseContract(k){
       alert('No se pudo enviar a Foxit: '+err.message);
     }finally{
       if(btn){btn.disabled=false;btn.textContent=original;}
-    }
-  });
-
-  $('#checkCaseContractFoxit')?.addEventListener('click',async()=>{
-    const btn=$('#checkCaseContractFoxit');
-    const status=$('#contractFoxitStatus');
-    const rec=caseContractFor(k);
-    btn.disabled=true;
-    try{
-      const result=await refreshFoxitContractStatus(k,rec);
-      rec.foxitStatus=result.status||'UNKNOWN';
-      const mapped=foxitStatusLabel(rec.foxitStatus);
-      if(mapped==='Firmado'){
-        rec.status='Firmado';
-        rec.signedDate=rec.signedDate||todayISO();
-      }else if(mapped==='Pendiente de firma'){
-        rec.status='Pendiente de firma';
-      }
-      save();
-      logCaseEvent(k.id,'Estado Foxit actualizado · '+mapped,'contract');
-      renderCaseContract(k);
-    }catch(err){
-      if(status) status.textContent='Foxit: '+err.message;
-      alert('No se pudo consultar Foxit: '+err.message);
-    }finally{
-      if(btn) btn.disabled=false;
     }
   });
 
