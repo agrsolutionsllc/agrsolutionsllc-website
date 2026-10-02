@@ -2219,7 +2219,7 @@ function renderCaseContract(k){
       <div class="contract-actions">
         <button type="button" class="primary" id="saveCaseContract">Guardar contrato</button>
         <button type="button" class="secondary" id="refreshCaseContractPreview">Actualizar vista</button>
-        <button type="button" class="secondary" id="printCaseContract">Imprimir / Guardar PDF</button>
+        <button type="button" class="secondary" id="printCaseContract">Probar PDF · no usa Foxit</button>
         <button type="button" class="primary" id="sendCaseContractFoxit">Enviar a Foxit eSign</button>
 
       </div>
@@ -2312,14 +2312,41 @@ function renderCaseContract(k){
 
   $('#refreshCaseContractPreview')?.addEventListener('click',updatePreview);
 
-  $('#printCaseContract')?.addEventListener('click',()=>{
-    openCaseContractDraft(k,contractFormRecord(k,c));
+  $('#printCaseContract')?.addEventListener('click',async()=>{
+    const btn=$('#printCaseContract');
+    const original=btn?.textContent||'Probar PDF · no usa Foxit';
+    if(btn){btn.disabled=true;btn.textContent='Generando PDF de prueba...';}
+    try{
+      const rec=caseContractFor(k);
+      Object.assign(rec,contractFormRecord(k,c));
+      if(!rec.date) rec.date=todayISO();
+      persistAgrSignerSettings();
+      const {pdfBase64}=await contractPdfForFoxit(k,rec);
+      const bytes=Uint8Array.from(atob(pdfBase64),ch=>ch.charCodeAt(0));
+      const blob=new Blob([bytes],{type:'application/pdf'});
+      const url=URL.createObjectURL(blob);
+      window.open(url,'_blank','noopener');
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }catch(err){
+      alert('No se pudo generar el PDF de prueba: '+err.message);
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent=original;}
+    }
   });
 
   $('#sendCaseContractFoxit')?.addEventListener('click',async()=>{
     const btn=$('#sendCaseContractFoxit');
     const status=$('#contractFoxitStatus');
     const rec=caseContractFor(k);
+
+    if(rec.foxitFolderId && rec.status!=='Firmado'){
+      alert('Este contrato ya fue enviado a Foxit. No se creará otro sobre mientras el envío actual siga pendiente.');
+      return;
+    }
+
+    const confirmed=window.confirm('ENVIAR A FOXIT\n\nEsto creará un sobre real y consumirá 1 sobre de tu plan.\n\nPara revisar diseño usa “Probar PDF · no usa Foxit”.\n\n¿Deseas enviarlo al cliente ahora?');
+    if(!confirmed) return;
+
     Object.assign(rec,contractFormRecord(k,c));
     if(!rec.date) rec.date=todayISO();
     save();
