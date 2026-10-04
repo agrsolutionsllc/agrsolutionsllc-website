@@ -342,7 +342,7 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
   .invoice-actions button{border:1px solid #dfe5ee;border-radius:10px;padding:10px 14px;background:#fff;color:#10264a;font-weight:700;cursor:pointer}
   .invoice-actions button.primary{background:#10264a;color:#fff;border-color:#10264a}
   .top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #d9b45b;padding-bottom:22px}
-  .brand{display:flex;flex-direction:column;align-items:flex-start;gap:8px}.brand-logo{width:140px;height:112px;object-fit:contain;border-radius:10px}.brand-copy p{margin:3px 0;color:#5d687b}
+  .brand{display:flex;flex-direction:column;align-items:flex-start;gap:8px}.brand-logo{width:160px;height:128px;object-fit:contain;border-radius:10px}.brand-copy p{margin:3px 0;color:#5d687b}
   .doc{text-align:right}.doc h2{margin:0 0 6px;font-size:24px}.paid{display:inline-block;margin-top:8px;padding:6px 11px;border:1px solid #1d7a56;border-radius:999px;color:#1d7a56;font-weight:700}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}.box{padding:16px;border:1px solid #e3e7ee;border-radius:12px}
   .box span{display:block;color:#6b768a;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}.box strong{font-size:17px}
