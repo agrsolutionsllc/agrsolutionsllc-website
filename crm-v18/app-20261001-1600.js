@@ -2612,15 +2612,16 @@ function openModal(kind,values={}){
   if(actualKind==='case'){
     const totalPriceInput=fields.querySelector('[name="serviceTotal"]');
     const cardPriceInput=fields.querySelector('[name="cardPrice"]');
-    if(cardPriceInput){
-      cardPriceInput.insertAdjacentHTML('afterend','<div class="pricing-preview" id="pricingPreview"></div>');
+    if(cardPriceInput && totalPriceInput){
+      totalPriceInput.insertAdjacentHTML('afterend','<div class="price-field-summary" id="cashPriceSummary"><span>Cash / Zelle</span><strong>$0.00</strong></div>');
+      cardPriceInput.insertAdjacentHTML('afterend','<div class="price-field-summary" id="cardPriceSummary"><span>Tarjeta / Stripe</span><strong>$0.00</strong></div>');
       const refreshPricingPreview=()=>{
         const standard=Math.max(0,Number(totalPriceInput?.value||0));
         const card=Math.max(0,Number(cardPriceInput?.value||standard));
-        const box=fields.querySelector('#pricingPreview');
-        if(box) box.innerHTML=
-          '<span>Precio estándar / Cash / Zelle</span><strong>'+money(standard)+'</strong>'+
-          '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
+        const cashBox=fields.querySelector('#cashPriceSummary');
+        const cardBox=fields.querySelector('#cardPriceSummary');
+        if(cashBox) cashBox.innerHTML='<span>Cash / Zelle</span><strong>'+money(standard)+'</strong>';
+        if(cardBox) cardBox.innerHTML='<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
       };
       [totalPriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
       refreshPricingPreview();
