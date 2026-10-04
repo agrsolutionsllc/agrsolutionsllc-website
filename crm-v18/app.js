@@ -2619,23 +2619,27 @@ function openModal(kind,values={}){
     const amountInput=form.querySelector('[name="amount"]');
     const methodSelect=form.querySelector('[name="method"]');
     if(methodSelect){
-      methodSelect.insertAdjacentHTML('afterend','<div class="payment-discount-helper" id="paymentDiscountHelper"></div>');
+      const methodLabel=methodSelect.closest('label');
+      methodLabel?.insertAdjacentHTML('afterend','<div class="payment-discount-helper payment-helper-row" id="paymentDiscountHelper" hidden></div>');
       const refreshPaymentDiscountHelper=()=>{
         const k=caseById(Number(caseSelect?.value||0));
         const box=form.querySelector('#paymentDiscountHelper');
-        if(!box || !k){ if(box) box.innerHTML=''; return; }
+        if(!box || !k){ if(box){box.innerHTML='';box.hidden=true;} return; }
         const isCash=methodSelect.value==='Cash';
         const isZelle=methodSelect.value==='Zelle';
         const discount=isCash?caseCashDiscount(k):(isZelle?caseZelleDiscount(k):0);
         const payoff=isCash?caseCashPayoff(k):(isZelle?caseZellePayoff(k):caseBalance(k));
         if((isCash||isZelle) && discount>0){
+          box.hidden=false;
           box.innerHTML='<span>Liquidación '+methodSelect.value+' con precio especial:</span><strong>'+money(payoff)+'</strong><button type="button" class="secondary" id="useCashPayoff">Usar este monto</button>';
           const btn=box.querySelector('#useCashPayoff');
           if(btn) btn.onclick=()=>{ if(amountInput) amountInput.value=payoff.toFixed(2); };
         }else if(discount>0){
+          box.hidden=false;
           box.innerHTML='<small>Este caso tiene precios especiales para Cash/Zelle.</small>';
         }else{
           box.innerHTML='';
+          box.hidden=true;
         }
       };
       caseSelect?.addEventListener('change',refreshPaymentDiscountHelper);
