@@ -355,7 +355,6 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
 <body>
 <div class="invoice-actions no-print">
   <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
-  <button type="button" class="primary" id="emailInvoiceBtn">Enviar por correo</button>
 </div>
 <div class="sheet">
   <div class="top">
@@ -380,22 +379,7 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
     <br>Gracias por confiar en AGR Solutions LLC.
   </div>
 </div>
-<script>
-window.addEventListener('load',()=>{
-  const btn=document.getElementById('emailInvoiceBtn');
-  if(btn){
-    btn.addEventListener('click',()=>{
-      const to=\${JSON.stringify(client?.email||'')};
-      if(!to){alert('Este cliente no tiene un correo registrado.');return;}
-      const subject=\${JSON.stringify((finalInvoice?'Factura final':'Recibo de pago')+' · '+docNo+' · AGR Solutions LLC')};
-      const body=\${JSON.stringify('Hola '+(client?.name||'')+',\n\nAdjuntamos su '+(finalInvoice?'factura final':'recibo de pago')+' correspondiente a '+(k.service||'su servicio')+'.\n\nReferencia: '+docNo+'\n\nGracias por confiar en AGR Solutions LLC.\n203-824-0351\nagrsolutionsllc.com')};
-      const gmail='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-      window.open(gmail,'_blank','noopener');
-      alert('Se abrió el correo preparado para el cliente. Guarda esta factura como PDF y adjúntala antes de enviarla.');
-    });
-  }
-});
-</script>
+
 </body></html>`;
 }
 function openPaymentDocument(k,p,finalInvoice=false){
