@@ -900,3 +900,26 @@ button.danger:hover{background:#fff5f4}
 #recordForm:has(input[name="serviceTotal"]) #pricingPreview{
   display:none!important;
 }
+
+
+/* Payment form: keep primary controls aligned and show helper on its own row */
+#recordForm:has(select[name="method"]) .form-grid{
+  align-items:start;
+}
+#recordForm:has(select[name="method"]) .form-grid label{
+  align-self:start;
+}
+#recordForm:has(select[name="method"]) .form-grid input[name="amount"],
+#recordForm:has(select[name="method"]) .form-grid select[name="method"],
+#recordForm:has(select[name="method"]) .form-grid input[name="date"]{
+  height:54px;
+  min-height:54px;
+  padding:0 16px;
+}
+#recordForm:has(select[name="method"]) .payment-helper-row{
+  grid-column:1 / -1;
+  margin:0;
+}
+#recordForm:has(select[name="method"]) .payment-helper-row[hidden]{
+  display:none!important;
+}
