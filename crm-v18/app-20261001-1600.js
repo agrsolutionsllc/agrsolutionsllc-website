@@ -203,14 +203,22 @@ const caseById=id=>data.cases.find(c=>c.id===Number(id));
 const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
 const caseDiscountCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.discountCredit||0),0);
 const casePaid=id=>caseCollected(id)+caseDiscountCredits(id);
-const caseBalance=c=>Math.max(Number(c.serviceTotal||0)-casePaid(c.id),0);
 const caseStandardPrice=c=>Number(c.serviceTotal||0);
 const caseCashPrice=c=>Number(c.cashPrice ?? Math.max(caseStandardPrice(c)-Number(c.cashZelleDiscount||0),0));
 const caseZellePrice=c=>caseCashPrice(c);
 const caseCardPrice=c=>Number(c.cardPrice ?? caseStandardPrice(c));
+const paymentUsesCardPrice=method=>/card|stripe|credit|debit/i.test(String(method||''));
+const casePaymentRows=c=>data.payments.filter(p=>Number(p.caseId)===Number(c.id));
+const caseUsesCardPrice=c=>casePaymentRows(c).some(p=>paymentUsesCardPrice(p.method));
+const caseApplicablePrice=c=>caseUsesCardPrice(c)?caseCardPrice(c):caseCashPrice(c);
+const caseBalance=c=>Math.max(caseApplicablePrice(c)-casePaid(c.id),0);
+const caseBalanceForMethod=(c,method)=>{
+  const target=paymentUsesCardPrice(method)?caseCardPrice(c):((method==='Cash'||method==='Zelle')?caseCashPrice(c):caseApplicablePrice(c));
+  return Math.max(target-casePaid(c.id),0);
+};
 const caseCashDiscount=c=>Math.max(caseStandardPrice(c)-caseCashPrice(c),0);
 const caseZelleDiscount=c=>caseCashDiscount(c);
-const caseCashPayoff=c=>Math.max(caseBalance(c)-caseCashDiscount(c),0);
+const caseCashPayoff=c=>Math.max(caseCashPrice(c)-casePaid(c.id),0);
 const caseZellePayoff=c=>caseCashPayoff(c);
 const accountChargesForClient=id=>data.clientAccountCharges.filter(x=>Number(x.clientId)===Number(id));
 const accountPaymentsForClient=id=>data.clientAccountPayments.filter(x=>Number(x.clientId)===Number(id));
@@ -288,12 +296,18 @@ function casePaymentRowsChronological(k){
     });
 }
 function paymentBalanceAfter(k,paymentId){
-  let remaining=Number(k.serviceTotal||0);
+  let paid=0;
+  let usesCard=false;
   for(const p of casePaymentRowsChronological(k)){
-    remaining-=Number(p.amount||0)+Number(p.discountCredit||0);
-    if(String(p.id)===String(paymentId)) return Math.max(remaining,0);
+    paid+=Number(p.amount||0)+Number(p.discountCredit||0);
+    if(paymentUsesCardPrice(p.method)) usesCard=true;
+    if(String(p.id)===String(paymentId)){
+      const target=usesCard?caseCardPrice(k):caseCashPrice(k);
+      return Math.max(target-paid,0);
+    }
   }
-  return Math.max(remaining,0);
+  const target=usesCard?caseCardPrice(k):caseCashPrice(k);
+  return Math.max(target-paid,0);
 }
 function isFinalPayment(k,p){
   return paymentBalanceAfter(k,p.id)<=0.009;
@@ -1530,7 +1544,7 @@ function renderCaseDocuments(k){
 function buildBalanceReminder(k,requestedAmount){
   const client=clientById(k.clientId);
   const name=client?.name||'cliente';
-  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
+  const balance=caseBalance(k);
   const invoice=k.invoiceNumber?.trim();
   const requested=Math.min(balance,Math.max(0,Number(requestedAmount||balance)));
   const hasLiveLink=k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(requested);
@@ -1542,7 +1556,7 @@ function buildBalanceReminder(k,requestedAmount){
 }
 
 async function ensureBalancePaymentLink(k,requestedAmount){
-  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
+  const balance=caseBalance(k);
   const amount=Number(requestedAmount||0);
   if(balance<=0) return '';
   if(!Number.isFinite(amount) || amount<=0) throw new Error('Ingresa un monto válido.');
@@ -1578,7 +1592,7 @@ async function ensureBalancePaymentLink(k,requestedAmount){
 }
 
 function balanceReminderHTML(k){
-  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
+  const balance=caseBalance(k);
   if(balance<=0) return '<div class="balance-reminder paid"><strong>Saldo pagado</strong><span>Este caso no tiene saldo pendiente.</span></div>';
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
@@ -1630,7 +1644,7 @@ function bindBalanceReminder(k,root){
   const status=root.querySelector('.copy-status');
   const linkStatus=root.querySelector('.balance-link-status');
   const preview=root.querySelector('.balance-preview');
-  const balance=Math.max(caseCardPrice(k)-casePaid(k.id),0);
+  const balance=caseBalance(k);
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
   const email=(client?.email||'').trim();
@@ -2682,7 +2696,7 @@ function openModal(kind,values={}){
         const isCash=methodSelect.value==='Cash';
         const isZelle=methodSelect.value==='Zelle';
         const discount=isCash?caseCashDiscount(k):(isZelle?caseZelleDiscount(k):0);
-        const payoff=isCash?caseCashPayoff(k):(isZelle?caseZellePayoff(k):caseBalance(k));
+        const payoff=isCash?caseCashPayoff(k):(isZelle?caseZellePayoff(k):caseBalanceForMethod(k,methodSelect.value));
         if((isCash||isZelle) && discount>0){
           box.innerHTML='<span>Liquidación '+methodSelect.value+' con precio especial:</span><strong>'+money(payoff)+'</strong><button type="button" class="secondary" id="useCashPayoff">Usar este monto</button>';
           const btn=box.querySelector('#useCashPayoff');
@@ -3096,9 +3110,9 @@ form.addEventListener('submit',async e=>{
   if(mode==='payment'){
     const k=caseById(f.caseId);
     if(k){
-      const balance=caseBalance(k);
       const amount=Number(f.amount||0);
       const method=f.method||'';
+      const balance=caseBalanceForMethod(k,method);
       const isCash=method==='Cash';
       const isZelle=method==='Zelle';
       const discountAvailable=isCash?caseCashDiscount(k):(isZelle?caseZelleDiscount(k):0);
