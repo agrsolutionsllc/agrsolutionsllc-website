@@ -76,6 +76,7 @@ const STRIPE_SYNC_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/ap
 const FOXIT_SEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-send-contract';
 const FOXIT_STATUS_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-envelope-status';
 const FOXIT_SIGNED_PDF_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-signed-document';
+const FINAL_INVOICE_EMAIL_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/send-final-invoice';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 if(!data.documents || typeof data.documents!=='object') data.documents={};
@@ -389,6 +390,40 @@ function openPaymentDocument(k,p,finalInvoice=false){
   w.document.open();
   w.document.write(paymentDocumentHTML(k,p,{finalInvoice}));
   w.document.close();
+}
+
+async function finalInvoicePdfBase64(k,p){
+  if(typeof html2pdf!=='function') throw new Error('El generador de PDF no está disponible. Recarga el CRM e intenta nuevamente.');
+  const frame=document.createElement('iframe');
+  frame.style.position='fixed';
+  frame.style.left='-10000px';
+  frame.style.top='0';
+  frame.style.width='900px';
+  frame.style.height='1200px';
+  frame.style.opacity='0';
+  frame.setAttribute('aria-hidden','true');
+  document.body.appendChild(frame);
+  try{
+    const doc=frame.contentDocument;
+    doc.open();
+    doc.write(paymentDocumentHTML(k,p,{finalInvoice:true}));
+    doc.close();
+    await new Promise(resolve=>setTimeout(resolve,250));
+    const imgs=[...doc.images];
+    await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r;})));
+    const sheet=doc.querySelector('.sheet');
+    if(!sheet) throw new Error('No se pudo preparar la factura para PDF.');
+    const dataUri=await html2pdf().set({
+      margin:0,
+      filename:(k.invoiceNumber||('AGR-'+k.id))+'-Factura-Final.pdf',
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+      jsPDF:{unit:'in',format:'letter',orientation:'portrait'}
+    }).from(sheet).outputPdf('datauristring');
+    return String(dataUri).split(',').pop();
+  }finally{
+    frame.remove();
+  }
 }
 
 function todayISO(){return new Date().toISOString().slice(0,10)}
@@ -1795,16 +1830,48 @@ function renderCasePayments(k){
     };
   });
   pane.querySelectorAll('.payment-email-btn').forEach(btn=>{
-    btn.onclick=()=>{
+    btn.onclick=async()=>{
       const p=data.payments.find(x=>String(x.id)===String(btn.dataset.paymentEmail));
       const client=clientById(k.clientId);
       if(!p || !client?.email){alert('Este cliente no tiene un correo registrado.');return;}
       const docNo=k.invoiceNumber||('AGR-'+k.id);
-      const subject='Factura final · '+docNo+' · AGR Solutions LLC';
-      const body='Hola '+(client.name||'')+',\n\nAdjuntamos su factura final correspondiente a '+(k.service||'su servicio')+'.\n\nReferencia: '+docNo+'\n\nGracias por confiar en AGR Solutions LLC.\n203-824-0351\nagrsolutionsllc.com';
-      const gmail='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(client.email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-      window.open(gmail,'_blank','noopener');
-      alert('Se abrió el correo preparado. Guarda la factura como PDF y adjúntala antes de enviarla.');
+      const ok=window.confirm('¿Enviar la factura final '+docNo+' a '+client.email+'?\n\nEl PDF se adjuntará automáticamente.');
+      if(!ok) return;
+      const original=btn.textContent;
+      btn.disabled=true;
+      btn.textContent='Enviando...';
+      try{
+        const pdfBase64=await finalInvoicePdfBase64(k,p);
+        const response=await fetch(FINAL_INVOICE_EMAIL_URL,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            to:client.email,
+            clientName:client.name||'',
+            invoiceNumber:docNo,
+            service:k.service||'',
+            pdfBase64
+          })
+        });
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok || !result.sent) throw new Error(result.error||'No se pudo enviar la factura.');
+        data.communications.unshift({
+          id:Date.now(),
+          caseId:k.id,
+          channel:'Correo',
+          action:'Factura final '+docNo+' enviada a '+client.email+' con PDF adjunto',
+          at:new Date().toISOString()
+        });
+        save();
+        logCaseEvent(k.id,'Factura final '+docNo+' enviada por correo','communication');
+        renderCommunicationHistory(k);
+        alert('Factura enviada correctamente a '+client.email+'.');
+      }catch(err){
+        alert(err.message||'No se pudo enviar la factura.');
+      }finally{
+        btn.disabled=false;
+        btn.textContent=original;
+      }
     };
   });
 
