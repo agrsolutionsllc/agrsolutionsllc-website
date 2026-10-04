@@ -359,7 +359,7 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
 </div>
 <div class="sheet">
   <div class="top">
-    <div class="brand"><img class="brand-logo" src="../logo-agr.jpeg.jpeg" alt="AGR Solutions LLC"><div class="brand-copy"><h1>AGR Solutions LLC</h1><p>294 Tyler Street, East Haven, CT 06512</p><p>203-824-0351 · agrsolutionsllc.com</p></div></div>
+    <div class="brand"><img class="brand-logo" src="https://agrsolutionsllc.com/logo-agr.jpeg.jpeg" alt="AGR Solutions LLC"><div class="brand-copy"><h1>AGR Solutions LLC</h1><p>294 Tyler Street, East Haven, CT 06512</p><p>203-824-0351 · agrsolutionsllc.com</p></div></div>
     <div class="doc"><h2>${finalInvoice?'FACTURA FINAL':'RECIBO DE PAGO'}</h2><div>${esc(docNo)}</div>${finalInvoice?'<span class="paid">PAID IN FULL</span>':''}</div>
   </div>
   <div class="grid">
@@ -1798,7 +1798,7 @@ function renderCasePayments(k){
     <div class="workspace-table"><table>
       <thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th><th>Documento</th></tr></thead>
       <tbody>
-        ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td><td><button type="button" class="secondary payment-doc-btn" data-payment-doc="${p.id}" data-final="${isFinalPayment(k,p)?'1':'0'}">${isFinalPayment(k,p)?'Factura final':'Recibo'}</button></td></tr>`).join(''):'<tr><td colspan="5">No hay pagos registrados.</td></tr>'}
+        ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td><td><button type="button" class="secondary payment-doc-btn" data-payment-doc="${p.id}" data-final="${isFinalPayment(k,p)?'1':'0'}">${isFinalPayment(k,p)?'Factura final':'Recibo'}</button>${isFinalPayment(k,p)?' <button type="button" class="secondary payment-email-btn" data-payment-email="'+p.id+'">Correo</button>':''}</td></tr>`).join(''):'<tr><td colspan="5">No hay pagos registrados.</td></tr>'}
       </tbody>
     </table></div>
     ${balanceReminderHTML(k)}`;
@@ -1808,6 +1808,19 @@ function renderCasePayments(k){
     btn.onclick=()=>{
       const p=data.payments.find(x=>String(x.id)===String(btn.dataset.paymentDoc));
       if(p) openPaymentDocument(k,p,btn.dataset.final==='1');
+    };
+  });
+  pane.querySelectorAll('.payment-email-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      const p=data.payments.find(x=>String(x.id)===String(btn.dataset.paymentEmail));
+      const client=clientById(k.clientId);
+      if(!p || !client?.email){alert('Este cliente no tiene un correo registrado.');return;}
+      const docNo=k.invoiceNumber||('AGR-'+k.id);
+      const subject='Factura final · '+docNo+' · AGR Solutions LLC';
+      const body='Hola '+(client.name||'')+',\n\nAdjuntamos su factura final correspondiente a '+(k.service||'su servicio')+'.\n\nReferencia: '+docNo+'\n\nGracias por confiar en AGR Solutions LLC.\n203-824-0351\nagrsolutionsllc.com';
+      const gmail='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(client.email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+      window.open(gmail,'_blank','noopener');
+      alert('Se abrió el correo preparado. Guarda la factura como PDF y adjúntala antes de enviarla.');
     };
   });
 
