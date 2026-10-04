@@ -338,21 +338,28 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
 <style>
   *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#10264a;margin:0;background:#fff}
   .sheet{max-width:820px;margin:0 auto;padding:48px}
+  .invoice-actions{max-width:820px;margin:18px auto 0;padding:0 48px;display:flex;justify-content:flex-end;gap:10px}
+  .invoice-actions button{border:1px solid #dfe5ee;border-radius:10px;padding:10px 14px;background:#fff;color:#10264a;font-weight:700;cursor:pointer}
+  .invoice-actions button.primary{background:#10264a;color:#fff;border-color:#10264a}
   .top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #d9b45b;padding-bottom:22px}
-  .brand h1{margin:0;font-size:26px;letter-spacing:.02em}.brand p{margin:5px 0;color:#5d687b}
+  .brand{display:flex;align-items:flex-start;gap:14px}.brand-logo{width:74px;height:74px;object-fit:contain;border-radius:10px}.brand-copy h1{margin:0;font-size:26px;letter-spacing:.02em}.brand-copy p{margin:5px 0;color:#5d687b}
   .doc{text-align:right}.doc h2{margin:0 0 6px;font-size:24px}.paid{display:inline-block;margin-top:8px;padding:6px 11px;border:1px solid #1d7a56;border-radius:999px;color:#1d7a56;font-weight:700}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}.box{padding:16px;border:1px solid #e3e7ee;border-radius:12px}
   .box span{display:block;color:#6b768a;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}.box strong{font-size:17px}
   table{width:100%;border-collapse:collapse;margin:24px 0}th,td{text-align:left;padding:12px;border-bottom:1px solid #e3e7ee}th{font-size:12px;text-transform:uppercase;color:#6b768a}
   .totals{margin-left:auto;max-width:360px}.totals div{display:flex;justify-content:space-between;padding:8px 0}.totals .grand{border-top:2px solid #10264a;margin-top:6px;padding-top:12px;font-size:18px;font-weight:700}
   .footer{margin-top:42px;padding-top:18px;border-top:1px solid #e3e7ee;color:#6b768a;font-size:12px;line-height:1.6}
-  @media print{.sheet{max-width:none;padding:28px}.no-print{display:none!important}}
+  @media print{.sheet{max-width:none;padding:28px}.no-print{display:none!important}.invoice-actions{display:none!important}}
 </style>
 </head>
 <body>
+<div class="invoice-actions no-print">
+  <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
+  <button type="button" class="primary" id="emailInvoiceBtn">Enviar por correo</button>
+</div>
 <div class="sheet">
   <div class="top">
-    <div class="brand"><h1>AGR Solutions LLC</h1><p>294 Tyler Street, East Haven, CT 06512</p><p>203-824-0351 · agrsolutionsllc.com</p></div>
+    <div class="brand"><img class="brand-logo" src="../logo-agr.jpeg.jpeg" alt="AGR Solutions LLC"><div class="brand-copy"><h1>AGR Solutions LLC</h1><p>294 Tyler Street, East Haven, CT 06512</p><p>203-824-0351 · agrsolutionsllc.com</p></div></div>
     <div class="doc"><h2>${finalInvoice?'FACTURA FINAL':'RECIBO DE PAGO'}</h2><div>${esc(docNo)}</div>${finalInvoice?'<span class="paid">PAID IN FULL</span>':''}</div>
   </div>
   <div class="grid">
@@ -373,7 +380,22 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
     <br>Gracias por confiar en AGR Solutions LLC.
   </div>
 </div>
-<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));</script>
+<script>
+window.addEventListener('load',()=>{
+  const btn=document.getElementById('emailInvoiceBtn');
+  if(btn){
+    btn.addEventListener('click',()=>{
+      const to=\${JSON.stringify(client?.email||'')};
+      if(!to){alert('Este cliente no tiene un correo registrado.');return;}
+      const subject=\${JSON.stringify((finalInvoice?'Factura final':'Recibo de pago')+' · '+docNo+' · AGR Solutions LLC')};
+      const body=\${JSON.stringify('Hola '+(client?.name||'')+',\n\nAdjuntamos su '+(finalInvoice?'factura final':'recibo de pago')+' correspondiente a '+(k.service||'su servicio')+'.\n\nReferencia: '+docNo+'\n\nGracias por confiar en AGR Solutions LLC.\n203-824-0351\nagrsolutionsllc.com')};
+      const gmail='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+      window.open(gmail,'_blank','noopener');
+      alert('Se abrió el correo preparado para el cliente. Guarda esta factura como PDF y adjúntala antes de enviarla.');
+    });
+  }
+});
+</script>
 </body></html>`;
 }
 function openPaymentDocument(k,p,finalInvoice=false){
