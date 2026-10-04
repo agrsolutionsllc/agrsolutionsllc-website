@@ -873,3 +873,30 @@ button.danger:hover{background:#fff5f4}
 #recordForm:has(input[name="serviceTotal"]) .form-grid .pricing-preview{
   margin-top:10px;
 }
+
+
+/* New Case: balanced price summaries under each corresponding field */
+#recordForm:has(input[name="serviceTotal"]) .price-field-summary{
+  margin-top:10px;
+  min-height:52px;
+  padding:10px 14px;
+  border:1px solid #e3e7ee;
+  border-radius:12px;
+  background:#fafbfc;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+#recordForm:has(input[name="serviceTotal"]) .price-field-summary span{
+  color:var(--muted);
+  font-size:.9rem;
+  font-weight:700;
+}
+#recordForm:has(input[name="serviceTotal"]) .price-field-summary strong{
+  color:var(--navy);
+  font-size:1rem;
+}
+#recordForm:has(input[name="serviceTotal"]) #pricingPreview{
+  display:none!important;
+}
