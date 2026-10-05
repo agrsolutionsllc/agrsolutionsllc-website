@@ -2,27 +2,29 @@
 (function(){
   const style=document.createElement('style');
   style.textContent=`
+    #caseBoard.kanban{align-items:start!important}
     #caseBoard .column{
-      height:480px;
-      min-height:480px;
-      max-height:480px;
-      overflow-y:auto;
-      overflow-x:hidden;
-      position:relative;
+      height:500px!important;
+      min-height:500px!important;
+      max-height:500px!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      position:relative!important;
       scrollbar-gutter:stable;
-      padding-top:0;
+      overscroll-behavior:contain;
+      padding-top:0!important;
     }
     #caseBoard .column-head{
-      position:sticky;
-      top:0;
-      z-index:5;
-      background:#eef1f6;
-      padding:13px 0 10px;
-      margin-bottom:10px;
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      gap:8px;
-      align-items:center;
+      position:sticky!important;
+      top:0!important;
+      z-index:5!important;
+      background:#eef1f6!important;
+      padding:13px 0 10px!important;
+      margin-bottom:10px!important;
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) auto!important;
+      gap:8px!important;
+      align-items:center!important;
     }
     #caseBoard .column-head strong{min-width:0}
     #caseBoard .column-head span{justify-self:end}
@@ -39,17 +41,17 @@
       cursor:pointer;
     }
     #caseBoard .column-expanded{
-      height:auto;
-      min-height:480px;
-      max-height:none;
-      overflow:visible;
+      height:auto!important;
+      min-height:500px!important;
+      max-height:none!important;
+      overflow:visible!important;
     }
     #caseBoard .column::-webkit-scrollbar{width:9px}
     #caseBoard .column::-webkit-scrollbar-thumb{background:#cfd6e2;border-radius:999px;border:2px solid #eef1f6}
     #caseBoard .column::-webkit-scrollbar-track{background:transparent}
     @media(max-width:700px){
-      #caseBoard .column{height:430px;min-height:430px;max-height:430px}
-      #caseBoard .column-expanded{height:auto;min-height:430px;max-height:none}
+      #caseBoard .column{height:430px!important;min-height:430px!important;max-height:430px!important}
+      #caseBoard .column-expanded{height:auto!important;min-height:430px!important;max-height:none!important}
     }
   `;
   document.head.appendChild(style);
