@@ -3,12 +3,25 @@
   // Keep company account + delete actions on the same row.
   const companyActionsStyle=document.createElement('style');
   companyActionsStyle.textContent=`
-    #companiesTable td:last-child{white-space:nowrap;min-width:300px}
+    #companiesTable td:last-child{white-space:nowrap;min-width:240px}
     #companiesTable td:last-child .client-account-btn,
     #companiesTable td:last-child .delete-icon-btn{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center}
     #companiesTable td:last-child .delete-icon-btn{margin-left:8px}
   `;
   document.head.appendChild(companyActionsStyle);
+
+  // Shorter company invoice label to free table space.
+  function shortenCompanyInvoiceLabel(){
+    document.querySelectorAll('[data-company-account-id]').forEach(btn=>{
+      if(btn.textContent.trim()!=='Factura global') btn.textContent='Factura global';
+    });
+    const heading=document.querySelector('#view-companies thead th:last-child');
+    if(heading && heading.textContent.trim()!=='Factura global') heading.textContent='Factura global';
+  }
+  const companyLabelObserver=new MutationObserver(shortenCompanyInvoiceLabel);
+  companyLabelObserver.observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',shortenCompanyInvoiceLabel);
+  setTimeout(shortenCompanyInvoiceLabel,0);
 
   // Keep the CRM invoice preview fix that already works.
   const originalPaymentDocumentHTML=window.paymentDocumentHTML;
