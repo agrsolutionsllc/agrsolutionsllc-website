@@ -1,16 +1,17 @@
 // AGR CRM · Active invoice renderer fixes
 (function(){
-  // Keep company account + delete actions on the same row.
+  // Company table: compact global-invoice action and keep folder numbers on one line.
   const companyActionsStyle=document.createElement('style');
   companyActionsStyle.textContent=`
-    #companiesTable td:last-child{white-space:nowrap;min-width:240px}
+    #view-companies th:first-child,#companiesTable td:first-child{min-width:104px!important;width:104px!important}
+    #companiesTable .folder-number-badge{white-space:nowrap!important;min-width:72px!important}
+    #companiesTable td:last-child{white-space:nowrap!important;min-width:220px!important}
     #companiesTable td:last-child .client-account-btn,
-    #companiesTable td:last-child .delete-icon-btn{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center}
+    #companiesTable td:last-child .delete-icon-btn{display:inline-flex!important;vertical-align:middle;align-items:center;justify-content:center}
     #companiesTable td:last-child .delete-icon-btn{margin-left:8px}
   `;
   document.head.appendChild(companyActionsStyle);
 
-  // Shorter company invoice label to free table space.
   function shortenCompanyInvoiceLabel(){
     document.querySelectorAll('[data-company-account-id]').forEach(btn=>{
       if(btn.textContent.trim()!=='Factura global') btn.textContent='Factura global';
@@ -18,10 +19,13 @@
     const heading=document.querySelector('#view-companies thead th:last-child');
     if(heading && heading.textContent.trim()!=='Factura global') heading.textContent='Factura global';
   }
-  const companyLabelObserver=new MutationObserver(shortenCompanyInvoiceLabel);
-  companyLabelObserver.observe(document.documentElement,{childList:true,subtree:true});
+  shortenCompanyInvoiceLabel();
+  const companiesRoot=document.getElementById('view-companies')||document.documentElement;
+  new MutationObserver(shortenCompanyInvoiceLabel).observe(companiesRoot,{childList:true,subtree:true});
   document.addEventListener('DOMContentLoaded',shortenCompanyInvoiceLabel);
-  setTimeout(shortenCompanyInvoiceLabel,0);
+  document.addEventListener('click',e=>{
+    if(e.target.closest('[data-view="companies"]')) setTimeout(shortenCompanyInvoiceLabel,0);
+  });
 
   // Keep the CRM invoice preview fix that already works.
   const originalPaymentDocumentHTML=window.paymentDocumentHTML;
@@ -88,12 +92,9 @@
 
   const fmt=n=>typeof money==='function'?money(Number(n||0)):'$'+Number(n||0).toFixed(2);
 
-  // PDF attached to automatic Resend email. Built directly with jsPDF,
-  // not by screenshotting HTML, so browser scroll/layout cannot crop it.
   window.finalInvoicePdfBase64=async function(k,p){
     const JsPDF=await loadJsPDF();
     const doc=new JsPDF({unit:'pt',format:'letter',orientation:'portrait'});
-    const W=612;
     const navy=[16,38,74], gray=[93,104,123], light=[225,230,238], gold=[217,180,91], green=[29,122,86];
     const client=clientById(k.clientId);
     const rows=typeof casePaymentRowsChronological==='function'?casePaymentRowsChronological(k):[];
@@ -102,7 +103,6 @@
     const servicePrice=typeof caseApplicablePrice==='function'?Number(caseApplicablePrice(k)||0):Number(k.serviceTotal||k.priceCash||k.price||0);
     const docNo=k.invoiceNumber||('AGR-'+k.id);
 
-    // Header
     const logo=await logoDataUrl();
     doc.addImage(logo,'JPEG',42,38,150,93);
     doc.setTextColor(...gray); doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
@@ -120,7 +120,6 @@
 
     doc.setDrawColor(...gold); doc.setLineWidth(1.5); doc.line(42,184,570,184);
 
-    // Client / service boxes
     const boxY=206, boxH=82;
     doc.setDrawColor(...light); doc.setLineWidth(1);
     doc.roundedRect(42,boxY,250,boxH,9,9,'S');
@@ -137,13 +136,12 @@
     doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
     doc.text('Referencia: '+docNo,334,269);
 
-    // Payments table
     let y=324;
     doc.setTextColor(...gray); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
     doc.text('FECHA',56,y); doc.text('MÉTODO',244,y); doc.text('MONTO',556,y,{align:'right'});
     y+=12; doc.setDrawColor(...light); doc.line(42,y,570,y); y+=22;
     doc.setFont('helvetica','normal'); doc.setTextColor(...navy); doc.setFontSize(11.5);
-    rows.forEach((r,idx)=>{
+    rows.forEach(r=>{
       if(y>570){
         doc.addPage(); y=58;
         doc.setTextColor(...gray); doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
