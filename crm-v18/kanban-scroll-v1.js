@@ -98,3 +98,13 @@
     if(e.target.closest('[data-view="cases"],[data-jump="cases"]')) setTimeout(enhanceColumns,0);
   });
 })();
+
+// Load case bundles / included forms manager.
+(function(){
+  if(document.querySelector('script[data-agr-case-bundles]')) return;
+  const s=document.createElement('script');
+  s.src='./case-bundles-v1.js?v=1';
+  s.async=false;
+  s.dataset.agrCaseBundles='1';
+  document.head.appendChild(s);
+})();
