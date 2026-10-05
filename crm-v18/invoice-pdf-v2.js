@@ -3,8 +3,8 @@
   // Company table: compact global-invoice action and keep folder numbers on one line.
   const companyActionsStyle=document.createElement('style');
   companyActionsStyle.textContent=`
-    #view-companies th:first-child,#companiesTable td:first-child{min-width:104px!important;width:104px!important}
-    #companiesTable .folder-number-badge{white-space:nowrap!important;min-width:72px!important}
+    #view-companies th:first-child,#companiesTable td:first-child{min-width:118px!important;width:118px!important}
+    #companiesTable .folder-number-badge{display:inline-flex!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;min-width:84px!important;width:auto!important;padding-left:12px!important;padding-right:12px!important}
     #companiesTable td:last-child{white-space:nowrap!important;min-width:220px!important}
     #companiesTable td:last-child .client-account-btn,
     #companiesTable td:last-child .delete-icon-btn{display:inline-flex!important;vertical-align:middle;align-items:center;justify-content:center}
