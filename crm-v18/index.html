@@ -24,7 +24,6 @@
           <span>Solutions LLC</span>
         </div>
       </div>
-
       <nav class="side-nav">
         <button class="nav-item active" data-view="dashboard">⌂ <span>Dashboard</span></button>
         <button class="nav-item" data-view="clients">◉ <span>Clientes</span></button>
@@ -37,33 +36,19 @@
         <button class="nav-item" data-view="tasks">✓ <span>Tareas</span></button>
         <button class="nav-item" data-view="backup">⬇ <span>Backup</span></button>
       </nav>
-
-      <div class="sidebar-footer">
-        <span>Modo prototipo</span>
-        <small>Solo datos de prueba</small>
-      </div>
+      <div class="sidebar-footer"><span>Modo prototipo</span><small>Solo datos de prueba</small></div>
     </aside>
-
     <main class="main">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">AGR SOLUTIONS LLC</p>
-          <h1 id="pageTitle">Dashboard</h1>
-        </div>
+        <div><p class="eyebrow">AGR SOLUTIONS LLC</p><h1 id="pageTitle">Dashboard</h1></div>
         <div class="top-actions">
           <div class="global-search-wrap">
-            <span class="search-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="7"></circle>
-                <path d="m20 20-3.5-3.5"></path>
-              </svg>
-            </span>
+            <span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></span>
             <input id="globalSearch" type="search" placeholder="Buscar cliente, factura, receipt, A-Number o teléfono...">
             <div id="globalSearchResults" class="global-search-results" hidden></div>
           </div>
         </div>
       </header>
-
       <section class="view active" id="view-dashboard">
         <div class="stats-grid">
           <article class="stat-card"><span>Clientes activos</span><strong id="statClients">0</strong><small>Base de prueba</small></article>
@@ -72,430 +57,27 @@
           <article class="stat-card"><span>Próximas citas</span><strong id="statAppointments">0</strong><small>Agenda de prueba</small></article>
           <article class="stat-card"><span>Urgentes hoy</span><strong id="statTasks">0</strong><small>Tareas vencidas o para hoy</small></article>
         </div>
-
-        <article class="panel attention-panel">
-          <div class="panel-head">
-            <div><p class="eyebrow">PRIORIDADES</p><h2>Lo que necesita tu atención</h2></div>
-            <button class="primary" data-open="task">+ Nueva tarea</button>
-          </div>
-          <div id="dashboardAlerts" class="dashboard-alerts"></div>
-        </article>
-
-        <article class="panel today-panel">
-          <div class="panel-head">
-            <div><p class="eyebrow">HOY</p><h2>Citas de hoy</h2></div>
-            <div class="toolbar-actions"><button class="ghost" type="button" data-whatsapp-appointment>WhatsApp → cita</button><button class="primary" data-open="appointment">+ Nueva cita</button></div>
-          </div>
-          <div id="todayAppointmentList" class="appointment-list"></div>
-        </article>
-
+        <article class="panel attention-panel"><div class="panel-head"><div><p class="eyebrow">PRIORIDADES</p><h2>Lo que necesita tu atención</h2></div><button class="primary" data-open="task">+ Nueva tarea</button></div><div id="dashboardAlerts" class="dashboard-alerts"></div></article>
+        <article class="panel today-panel"><div class="panel-head"><div><p class="eyebrow">HOY</p><h2>Citas de hoy</h2></div><div class="toolbar-actions"><button class="ghost" type="button" data-whatsapp-appointment>WhatsApp → cita</button><button class="primary" data-open="appointment">+ Nueva cita</button></div></div><div id="todayAppointmentList" class="appointment-list"></div></article>
         <div class="dashboard-grid">
-          <article class="panel">
-            <div class="panel-head">
-              <div><p class="eyebrow">CASOS</p><h2>Seguimiento reciente</h2></div>
-              <button class="text-btn" data-jump="cases">Ver todos →</button>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Cliente</th><th>Servicio</th><th>Estado</th></tr></thead>
-                <tbody id="recentCases"></tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-head">
-              <div><p class="eyebrow">AGENDA</p><h2>Próximas citas</h2></div>
-            </div>
-            <div id="appointmentList" class="appointment-list"></div>
-          </article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">CASOS</p><h2>Seguimiento reciente</h2></div><button class="text-btn" data-jump="cases">Ver todos →</button></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Servicio</th><th>Estado</th></tr></thead><tbody id="recentCases"></tbody></table></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">AGENDA</p><h2>Próximas citas</h2></div></div><div id="appointmentList" class="appointment-list"></div></article>
         </div>
       </section>
-
-      <section class="view" id="view-clients">
-        <div class="section-toolbar">
-          <div>
-            <p class="eyebrow">CLIENTES</p>
-            <h2>Directorio de clientes</h2>
-          </div>
-          <button class="primary" data-open="client">+ Nuevo cliente</button>
-        </div>
-        <div class="panel">
-          <div class="search-row"><input id="clientSearch" type="search" placeholder="Buscar por nombre, teléfono o email"></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Carpeta</th><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th></tr></thead>
-              <tbody id="clientsTable"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="view" id="view-companies">
-        <div class="section-toolbar">
-          <div>
-            <p class="eyebrow">EMPRESAS</p>
-            <h2>Clientes empresariales</h2>
-            <p class="section-subtext">Cuentas recurrentes, varios servicios y facturación global.</p>
-          </div>
-          <button class="primary" data-open="client-company">+ Nueva empresa</button>
-        </div>
-        <div class="panel">
-          <div class="search-row"><input id="companySearch" type="search" placeholder="Buscar empresa por nombre, teléfono o email"></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Carpeta</th><th>Empresa</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th><th>Cuenta global</th></tr></thead>
-              <tbody id="companiesTable"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="view" id="view-cases">
-        <div class="section-toolbar">
-          <div>
-            <p class="eyebrow">CASOS & TRÁMITES</p>
-            <h2>Pipeline de trabajo</h2>
-          </div>
-          <button class="primary" data-open="case">+ Nuevo caso</button>
-        </div>
-        <div class="kanban" id="caseBoard"></div>
-      </section>
-
-      <section class="view" id="view-services">
-        <div class="section-toolbar">
-          <div>
-            <p class="eyebrow">SERVICIOS</p>
-            <h2>Catálogo interno de servicios</h2>
-          </div>
-          <button class="primary" data-open="service">+ Nuevo servicio</button>
-        </div>
-        <div class="panel">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Servicio</th><th>Categoría</th><th>Precio sugerido</th><th>Activo</th></tr></thead>
-              <tbody id="servicesTable"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="view" id="view-payments">
-        <div class="section-toolbar">
-          <div><p class="eyebrow">PAGOS</p><h2>Facturación y saldos</h2></div>
-          <button class="primary" data-open="payment">+ Registrar pago</button>
-        </div>
-        <div class="panel">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Cliente</th><th>Servicio</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
-              <tbody id="paymentsTable"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="view" id="view-cashbook">
-        <div class="section-toolbar">
-          <div>
-            <p class="eyebrow">CAJA</p>
-            <h2>Control de movimientos del negocio</h2>
-            <p class="section-subtext">Registra ingresos rápidos y egresos que necesites controlar fuera de los casos formales.</p>
-          </div>
-        </div>
-
-        <div class="cashbook-tabs" role="tablist" aria-label="Caja">
-          <button type="button" class="cashbook-tab active" data-cash-tab="income">Ingresos</button>
-          <button type="button" class="cashbook-tab" data-cash-tab="expense">Egresos</button>
-        </div>
-
-        <div class="cashbook-pane active" data-cash-pane="income">
-          <div class="cashbook-summary" id="cashbookSummary"></div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <div><p class="eyebrow">NUEVO MOVIMIENTO</p><h2>Registrar ingreso</h2></div>
-            </div>
-            <form id="cashbookForm" class="cashbook-form cashbook-form-multi">
-              <div class="cashbook-meta-grid">
-                <label>Fecha<input id="cashbookDate" type="date" required></label>
-                <label>Cliente (opcional)
-                  <select id="cashbookClient"><option value="">Sin cliente vinculado</option></select>
-                </label>
-                <label>Método
-                  <select id="cashbookMethod">
-                    <option>Cash</option><option>Zelle</option><option>Credit Card</option><option>Debit Card</option><option>Check</option><option>ACH / Bank Transfer</option><option>Other</option>
-                  </select>
-                </label>
-                <label>Categoría
-                  <select id="cashbookCategory">
-                    <option>Notaría</option><option>Traducciones</option><option>DMV</option><option>Taxes</option><option>Copias / Impresiones</option><option>Consultas</option><option>Documentos / Contratos</option><option>Otros servicios</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="cashbook-items-wrap">
-                <div class="cashbook-items-head">
-                  <div><p class="eyebrow">DETALLE</p><h3>Trámites / subservicios</h3></div>
-                  <button type="button" class="secondary" id="addCashbookItem">+ Añadir línea</button>
-                </div>
-                <div class="cashbook-items-table">
-                  <div class="cashbook-item-labels">
-                    <span>Trámite</span><span>Subservicio / detalle</span><span>Cant.</span><span>Valor unitario</span><span>Total</span><span></span>
-                  </div>
-                  <div id="cashbookItems"></div>
-                </div>
-                <div class="cashbook-grand-total"><span>TOTAL GENERAL</span><strong id="cashbookGrandTotal">$0.00</strong></div>
-              </div>
-
-              <label class="cashbook-note">Nota<input id="cashbookNote" type="text" placeholder="Opcional"></label>
-              <button type="submit" class="primary cashbook-save">Guardar ingreso</button>
-            </form>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head"><div><p class="eyebrow">HISTORIAL</p><h2>Ingresos registrados</h2></div></div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Categoría</th><th>Método</th><th>Total</th><th>Nota</th></tr></thead>
-                <tbody id="cashbookTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="cashbook-pane" data-cash-pane="expense">
-          <div class="cashbook-summary" id="expenseSummary"></div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <div><p class="eyebrow">NUEVO EGRESO</p><h2>Registrar gasto</h2></div>
-            </div>
-            <form id="expenseForm" class="cashbook-form cashbook-form-multi">
-              <div class="cashbook-meta-grid">
-                <label>Fecha<input id="expenseDate" type="date" required></label>
-                <label>Proveedor / Persona<input id="expensePayee" type="text" placeholder="Ej. USPS, Staples, proveedor"></label>
-                <label>Método
-                  <select id="expenseMethod">
-                    <option>Cash</option><option>Zelle</option><option>Credit Card</option><option>Debit Card</option><option>Check</option><option>ACH / Bank Transfer</option><option>Other</option>
-                  </select>
-                </label>
-                <label>Categoría
-                  <select id="expenseCategory">
-                    <option>Correo / USPS / UPS</option>
-                    <option>Oficina / Suministros</option>
-                    <option>Software / Suscripciones</option>
-                    <option>Publicidad / Marketing</option>
-                    <option>Educación / Cursos</option>
-                    <option>Fees / Trámites</option>
-                    <option>Teléfono / Internet</option>
-                    <option>Transporte / Millas</option>
-                    <option>Servicios profesionales</option>
-                    <option>Otros gastos</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="cashbook-items-wrap">
-                <div class="cashbook-items-head">
-                  <div><p class="eyebrow">DETALLE</p><h3>Gastos / conceptos</h3></div>
-                  <button type="button" class="secondary" id="addExpenseItem">+ Añadir línea</button>
-                </div>
-                <div class="cashbook-items-table">
-                  <div class="cashbook-item-labels">
-                    <span>Concepto</span><span>Detalle</span><span>Cant.</span><span>Valor unitario</span><span>Total</span><span></span>
-                  </div>
-                  <div id="expenseItems"></div>
-                </div>
-                <div class="cashbook-grand-total"><span>TOTAL EGRESO</span><strong id="expenseGrandTotal">$0.00</strong></div>
-              </div>
-
-              <label class="cashbook-note">Nota<input id="expenseNote" type="text" placeholder="Opcional"></label>
-              <button type="submit" class="primary cashbook-save">Guardar egreso</button>
-            </form>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head"><div><p class="eyebrow">HISTORIAL</p><h2>Egresos registrados</h2></div></div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Fecha</th><th>Proveedor / Persona</th><th>Detalle</th><th>Categoría</th><th>Método</th><th>Total</th><th>Nota</th></tr></thead>
-                <tbody id="expenseTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="view" id="view-backup">
-        <div class="section-toolbar">
-          <div>
-            <p class="eyebrow">SEGURIDAD DE DATOS</p>
-            <h2>Backup y restauración</h2>
-            <p class="section-subtext">Guarda una copia completa del CRM fuera del navegador.</p>
-          </div>
-        </div>
-
-        <div class="backup-grid">
-          <article class="panel backup-card">
-            <div>
-              <p class="eyebrow">COPIA DE SEGURIDAD</p>
-              <h2>Descargar backup completo</h2>
-              <p>Incluye clientes, empresas, carpetas, casos, pagos, caja, citas, tareas, documentos, notas y cuentas globales.</p>
-            </div>
-            <div class="backup-summary" id="backupSummary"></div>
-            <button type="button" class="primary" id="downloadBackup">Descargar backup de datos</button>
-            <button type="button" class="secondary" id="downloadFullCRM">Descargar CRM completo</button>
-            <small id="backupDownloadStatus" class="backup-status" aria-live="polite"></small>
-            <small id="fullCRMDownloadStatus" class="backup-status" aria-live="polite"></small>
-          </article>
-
-          <article class="panel backup-card backup-restore-card">
-            <div>
-              <p class="eyebrow">RESTAURAR</p>
-              <h2>Restaurar desde un archivo</h2>
-              <p>Usa un archivo <strong>.json</strong> creado por este CRM. Antes de restaurar, se descargará una copia de seguridad del estado actual.</p>
-            </div>
-            <input type="file" id="restoreBackupFile" accept=".json,application/json" hidden>
-            <button type="button" class="secondary" id="chooseRestoreBackup">Seleccionar backup</button>
-            <div id="restoreBackupPreview" class="restore-preview" hidden></div>
-            <button type="button" class="primary danger-safe" id="confirmRestoreBackup" hidden>Restaurar este backup</button>
-            <small id="backupRestoreStatus" class="backup-status" aria-live="polite"></small>
-          </article>
-        </div>
-
-        <article class="panel backup-auto-card">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">BACKUP AUTOMÁTICO</p>
-              <h2>Guardar copias periódicamente</h2>
-              <p class="section-subtext">Elige una carpeta de tu PC o disco externo. El CRM guardará una copia cuando esté abierto y corresponda según la frecuencia.</p>
-            </div>
-          </div>
-          <div class="backup-auto-controls">
-            <label>Frecuencia
-              <select id="autoBackupFrequency">
-                <option value="1">Todos los días</option>
-                <option value="3">Cada 3 días</option>
-                <option value="7" selected>Semanal</option>
-              </select>
-            </label>
-            <label class="backup-toggle-row">
-              <input type="checkbox" id="autoBackupEnabled">
-              <span>Activar backup automático</span>
-            </label>
-            <button type="button" class="secondary" id="chooseAutoBackupFolder">Elegir carpeta de backup</button>
-            <button type="button" class="ghost" id="runAutoBackupNow">Guardar copia ahora</button>
-          </div>
-          <div class="backup-auto-info">
-            <strong id="autoBackupFolderLabel">Carpeta no configurada</strong>
-            <span id="autoBackupLastRun">Aún no hay backup automático.</span>
-          </div>
-          <small id="autoBackupStatus" class="backup-status" aria-live="polite"></small>
-        </article>
-
-        <article class="panel backup-help">
-          <p class="eyebrow">RECOMENDACIÓN</p>
-          <h3>Cómo guardarlo en tu disco duro externo</h3>
-          <p>Descarga el archivo y conserva varias copias por fecha. Una estructura sencilla sería: <strong>AGR CRM Backups → 2026 → Septiembre</strong>.</p>
-        </article>
-      </section>
-
-      <section class="view" id="view-appointments">
-        <div class="section-toolbar">
-          <div><p class="eyebrow">CITAS</p><h2>Agenda</h2><p class="section-subtext">Cada cita puede abrirse en Google Calendar con los datos ya preparados.</p></div>
-          <div class="toolbar-actions"><button class="ghost" type="button" data-whatsapp-appointment>WhatsApp → cita</button><button class="primary" data-open="appointment">+ Nueva cita</button></div>
-        </div>
-        <div class="panel"><div id="appointmentsTable" class="appointment-list large"></div></div>
-      </section>
-
-      <section class="view" id="view-tasks">
-        <div class="section-toolbar">
-          <div><p class="eyebrow">TAREAS & RECORDATORIOS</p><h2>Control diario</h2></div>
-          <button class="primary" data-open="task">+ Nueva tarea</button>
-        </div>
-        <div class="panel">
-          <p class="task-help">Usa esta sección para pendientes que no deben olvidarse: revisar casos, responder cartas, llamadas, cobros o cualquier seguimiento.</p>
-          <div id="tasksList" class="tasks-list"></div>
-        </div>
-      </section>
+      <section class="view" id="view-clients"><div class="section-toolbar"><div><p class="eyebrow">CLIENTES</p><h2>Directorio de clientes</h2></div><button class="primary" data-open="client">+ Nuevo cliente</button></div><div class="panel"><div class="search-row"><input id="clientSearch" type="search" placeholder="Buscar por nombre, teléfono o email"></div><div class="table-wrap"><table><thead><tr><th>Carpeta</th><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th></tr></thead><tbody id="clientsTable"></tbody></table></div></div></section>
+      <section class="view" id="view-companies"><div class="section-toolbar"><div><p class="eyebrow">EMPRESAS</p><h2>Clientes empresariales</h2><p class="section-subtext">Cuentas recurrentes, varios servicios y facturación global.</p></div><button class="primary" data-open="client-company">+ Nueva empresa</button></div><div class="panel"><div class="search-row"><input id="companySearch" type="search" placeholder="Buscar empresa por nombre, teléfono o email"></div><div class="table-wrap"><table><thead><tr><th>Carpeta</th><th>Empresa</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th><th>Cuenta global</th></tr></thead><tbody id="companiesTable"></tbody></table></div></div></section>
+      <section class="view" id="view-cases"><div class="section-toolbar"><div><p class="eyebrow">CASOS & TRÁMITES</p><h2>Pipeline de trabajo</h2></div><button class="primary" data-open="case">+ Nuevo caso</button></div><div class="kanban" id="caseBoard"></div></section>
+      <section class="view" id="view-services"><div class="section-toolbar"><div><p class="eyebrow">SERVICIOS</p><h2>Catálogo interno de servicios</h2></div><button class="primary" data-open="service">+ Nuevo servicio</button></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Categoría</th><th>Precio sugerido</th><th>Activo</th></tr></thead><tbody id="servicesTable"></tbody></table></div></div></section>
+      <section class="view" id="view-payments"><div class="section-toolbar"><div><p class="eyebrow">PAGOS</p><h2>Facturación y saldos</h2></div><button class="primary" data-open="payment">+ Registrar pago</button></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Servicio</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody id="paymentsTable"></tbody></table></div></div></section>
+      <section class="view" id="view-cashbook"><div class="section-toolbar"><div><p class="eyebrow">CAJA</p><h2>Control de movimientos del negocio</h2><p class="section-subtext">Registra ingresos rápidos y egresos que necesites controlar fuera de los casos formales.</p></div></div><div class="cashbook-tabs" role="tablist" aria-label="Caja"><button type="button" class="cashbook-tab active" data-cash-tab="income">Ingresos</button><button type="button" class="cashbook-tab" data-cash-tab="expense">Egresos</button></div><div class="cashbook-pane active" data-cash-pane="income"><div class="cashbook-summary" id="cashbookSummary"></div><div class="panel"><div class="panel-head"><div><p class="eyebrow">NUEVO MOVIMIENTO</p><h2>Registrar ingreso</h2></div></div><form id="cashbookForm" class="cashbook-form cashbook-form-multi"><div class="cashbook-meta-grid"><label>Fecha<input id="cashbookDate" type="date" required></label><label>Cliente (opcional)<select id="cashbookClient"><option value="">Sin cliente vinculado</option></select></label><label>Método<select id="cashbookMethod"><option>Cash</option><option>Zelle</option><option>Credit Card</option><option>Debit Card</option><option>Check</option><option>ACH / Bank Transfer</option><option>Other</option></select></label><label>Categoría<select id="cashbookCategory"><option>Notaría</option><option>Traducciones</option><option>DMV</option><option>Taxes</option><option>Copias / Impresiones</option><option>Consultas</option><option>Documentos / Contratos</option><option>Otros servicios</option></select></label></div><div class="cashbook-items-wrap"><div class="cashbook-items-head"><div><p class="eyebrow">DETALLE</p><h3>Trámites / subservicios</h3></div><button type="button" class="secondary" id="addCashbookItem">+ Añadir línea</button></div><div class="cashbook-items-table"><div class="cashbook-item-labels"><span>Trámite</span><span>Subservicio / detalle</span><span>Cant.</span><span>Valor unitario</span><span>Total</span><span></span></div><div id="cashbookItems"></div></div><div class="cashbook-grand-total"><span>TOTAL GENERAL</span><strong id="cashbookGrandTotal">$0.00</strong></div></div><label class="cashbook-note">Nota<input id="cashbookNote" type="text" placeholder="Opcional"></label><button type="submit" class="primary cashbook-save">Guardar ingreso</button></form></div><div class="panel"><div class="panel-head"><div><p class="eyebrow">HISTORIAL</p><h2>Ingresos registrados</h2></div></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Detalle</th><th>Categoría</th><th>Método</th><th>Total</th><th>Nota</th></tr></thead><tbody id="cashbookTable"></tbody></table></div></div></div><div class="cashbook-pane" data-cash-pane="expense"><div class="cashbook-summary" id="expenseSummary"></div><div class="panel"><div class="panel-head"><div><p class="eyebrow">NUEVO EGRESO</p><h2>Registrar gasto</h2></div></div><form id="expenseForm" class="cashbook-form cashbook-form-multi"><div class="cashbook-meta-grid"><label>Fecha<input id="expenseDate" type="date" required></label><label>Proveedor / Persona<input id="expensePayee" type="text" placeholder="Ej. USPS, Staples, proveedor"></label><label>Método<select id="expenseMethod"><option>Cash</option><option>Zelle</option><option>Credit Card</option><option>Debit Card</option><option>Check</option><option>ACH / Bank Transfer</option><option>Other</option></select></label><label>Categoría<select id="expenseCategory"><option>Correo / USPS / UPS</option><option>Oficina / Suministros</option><option>Software / Suscripciones</option><option>Publicidad / Marketing</option><option>Educación / Cursos</option><option>Fees / Trámites</option><option>Teléfono / Internet</option><option>Transporte / Millas</option><option>Servicios profesionales</option><option>Otros gastos</option></select></label></div><div class="cashbook-items-wrap"><div class="cashbook-items-head"><div><p class="eyebrow">DETALLE</p><h3>Gastos / conceptos</h3></div><button type="button" class="secondary" id="addExpenseItem">+ Añadir línea</button></div><div class="cashbook-items-table"><div class="cashbook-item-labels"><span>Concepto</span><span>Detalle</span><span>Cant.</span><span>Valor unitario</span><span>Total</span><span></span></div><div id="expenseItems"></div></div><div class="cashbook-grand-total"><span>TOTAL EGRESO</span><strong id="expenseGrandTotal">$0.00</strong></div></div><label class="cashbook-note">Nota<input id="expenseNote" type="text" placeholder="Opcional"></label><button type="submit" class="primary cashbook-save">Guardar egreso</button></form></div><div class="panel"><div class="panel-head"><div><p class="eyebrow">HISTORIAL</p><h2>Egresos registrados</h2></div></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Proveedor / Persona</th><th>Detalle</th><th>Categoría</th><th>Método</th><th>Total</th><th>Nota</th></tr></thead><tbody id="expenseTable"></tbody></table></div></div></div></section>
+      <section class="view" id="view-backup"><div class="section-toolbar"><div><p class="eyebrow">SEGURIDAD DE DATOS</p><h2>Backup y restauración</h2><p class="section-subtext">Guarda una copia completa del CRM fuera del navegador.</p></div></div><div class="backup-grid"><article class="panel backup-card"><div><p class="eyebrow">COPIA DE SEGURIDAD</p><h2>Descargar backup completo</h2><p>Incluye clientes, empresas, carpetas, casos, pagos, caja, citas, tareas, documentos, notas y cuentas globales.</p></div><div class="backup-summary" id="backupSummary"></div><button type="button" class="primary" id="downloadBackup">Descargar backup de datos</button><button type="button" class="secondary" id="downloadFullCRM">Descargar CRM completo</button><small id="backupDownloadStatus" class="backup-status" aria-live="polite"></small><small id="fullCRMDownloadStatus" class="backup-status" aria-live="polite"></small></article><article class="panel backup-card backup-restore-card"><div><p class="eyebrow">RESTAURAR</p><h2>Restaurar desde un archivo</h2><p>Usa un archivo <strong>.json</strong> creado por este CRM. Antes de restaurar, se descargará una copia de seguridad del estado actual.</p></div><input type="file" id="restoreBackupFile" accept=".json,application/json" hidden><button type="button" class="secondary" id="chooseRestoreBackup">Seleccionar backup</button><div id="restoreBackupPreview" class="restore-preview" hidden></div><button type="button" class="primary danger-safe" id="confirmRestoreBackup" hidden>Restaurar este backup</button><small id="backupRestoreStatus" class="backup-status" aria-live="polite"></small></article></div><article class="panel backup-auto-card"><div class="panel-head"><div><p class="eyebrow">BACKUP AUTOMÁTICO</p><h2>Guardar copias periódicamente</h2><p class="section-subtext">Elige una carpeta de tu PC o disco externo. El CRM guardará una copia cuando esté abierto y corresponda según la frecuencia.</p></div></div><div class="backup-auto-controls"><label>Frecuencia<select id="autoBackupFrequency"><option value="1">Todos los días</option><option value="3">Cada 3 días</option><option value="7" selected>Semanal</option></select></label><label class="backup-toggle-row"><input type="checkbox" id="autoBackupEnabled"><span>Activar backup automático</span></label><button type="button" class="secondary" id="chooseAutoBackupFolder">Elegir carpeta de backup</button><button type="button" class="ghost" id="runAutoBackupNow">Guardar copia ahora</button></div><div class="backup-auto-info"><strong id="autoBackupFolderLabel">Carpeta no configurada</strong><span id="autoBackupLastRun">Aún no hay backup automático.</span></div><small id="autoBackupStatus" class="backup-status" aria-live="polite"></small></article><article class="panel backup-help"><p class="eyebrow">RECOMENDACIÓN</p><h3>Cómo guardarlo en tu disco duro externo</h3><p>Descarga el archivo y conserva varias copias por fecha. Una estructura sencilla sería: <strong>AGR CRM Backups → 2026 → Septiembre</strong>.</p></article></section>
+      <section class="view" id="view-appointments"><div class="section-toolbar"><div><p class="eyebrow">CITAS</p><h2>Agenda</h2><p class="section-subtext">Cada cita puede abrirse en Google Calendar con los datos ya preparados.</p></div><div class="toolbar-actions"><button class="ghost" type="button" data-whatsapp-appointment>WhatsApp → cita</button><button class="primary" data-open="appointment">+ Nueva cita</button></div></div><div class="panel"><div id="appointmentsTable" class="appointment-list large"></div></div></section>
+      <section class="view" id="view-tasks"><div class="section-toolbar"><div><p class="eyebrow">TAREAS & RECORDATORIOS</p><h2>Control diario</h2></div><button class="primary" data-open="task">+ Nueva tarea</button></div><div class="panel"><p class="task-help">Usa esta sección para pendientes que no deben olvidarse: revisar casos, responder cartas, llamadas, cobros o cualquier seguimiento.</p><div id="tasksList" class="tasks-list"></div></div></section>
     </main>
   </div>
-
-  <dialog id="recordDialog">
-    <form method="dialog" id="recordForm">
-      <div class="modal-head">
-        <div><p class="eyebrow">NUEVO REGISTRO</p><h2 id="modalTitle">Nuevo cliente</h2></div>
-        <button type="button" class="close-btn" id="closeDialog" aria-label="Cerrar">×</button>
-      </div>
-      <div id="caseWorkspaceTabs" class="case-workspace-tabs" hidden>
-        <button type="button" class="case-tab active" data-case-tab="summary">Resumen</button>
-        <button type="button" class="case-tab" data-case-tab="documents">Requisitos</button>
-        <button type="button" class="case-tab" data-case-tab="payments">Pagos</button>
-        <button type="button" class="case-tab" id="caseContractTab" data-case-tab="contract" hidden>Contrato</button>
-        <button type="button" class="case-tab" data-case-tab="history">Historial</button>
-        <button type="button" class="case-tab" data-case-tab="notes">Notas</button>
-        <button type="button" class="case-tab" data-case-tab="communications">Comunicaciones</button>
-      </div>
-
-      <section class="case-pane active" data-case-pane="summary">
-        <div id="formFields" class="form-grid"></div>
-      </section>
-      <section class="case-pane" data-case-pane="documents" hidden><div id="caseDocumentsPane"></div></section>
-      <section class="case-pane" data-case-pane="payments" hidden><div id="casePaymentsPane"></div></section>
-      <section class="case-pane" data-case-pane="contract" hidden><div id="caseContractPane"></div></section>
-      <section class="case-pane" data-case-pane="history" hidden><div id="caseHistoryPane"></div></section>
-      <section class="case-pane" data-case-pane="notes" hidden><div id="caseNotesPane"></div></section>
-      <section class="case-pane" data-case-pane="communications" hidden>
-        <section id="clientNotificationBox" class="client-notification" hidden>
-          <div class="notification-head">
-            <div>
-              <span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span>
-              <strong>Notificar sobre este caso</strong>
-              <small class="notification-contact"></small>
-            </div>
-          </div>
-          <div class="notification-preview"></div>
-          <div class="notification-actions">
-            <a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-            <a class="notify-btn notify-email">Enviar por correo</a>
-          </div>
-          <small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small>
-        </section>
-        <div id="communicationHistory"></div>
-      </section>
-      <div class="modal-actions">
-        <button type="button" class="ghost" id="cancelDialog">Cancelar</button>
-        <button type="submit" value="default" class="primary">Guardar</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="clientAccountDialog">
-    <div class="client-account-dialog">
-      <div class="modal-head">
-        <div><p class="eyebrow">CUENTA DEL CLIENTE</p><h2 id="clientAccountTitle">Cuenta del cliente</h2></div>
-        <button type="button" class="close-btn" id="closeClientAccount" aria-label="Cerrar">×</button>
-      </div>
-      <div id="clientAccountBody"></div>
-    </div>
-  </dialog>
-
-  <dialog id="whatsappAppointmentDialog">
-    <div class="whatsapp-dialog-body">
-      <div class="modal-head">
-        <div><p class="eyebrow">WHATSAPP → CITA</p><h2>Preparar cita desde mensaje</h2></div>
-        <button type="button" class="close-btn" id="cancelWhatsAppAppointment" aria-label="Cerrar">×</button>
-      </div>
-      <p class="wa-helper">Pega aquí el mensaje del cliente. El CRM intentará detectar fecha, hora, teléfono y tipo de consulta. Siempre podrás revisar antes de guardar.</p>
-      <textarea id="whatsappAppointmentText" rows="8" placeholder="Ejemplo: Hola, soy María Pérez. ¿Puedo ir mañana a las 3:30 pm para una consulta de inmigración? Mi número es 203-555-1234."></textarea>
-      <div class="modal-actions">
-        <button type="button" class="ghost" id="cancelWhatsAppAppointment2">Cancelar</button>
-        <button type="button" class="primary" id="prepareWhatsAppAppointment">Preparar cita</button>
-      </div>
-    </div>
-  </dialog>
-
+  <dialog id="recordDialog"><form method="dialog" id="recordForm"><div class="modal-head"><div><p class="eyebrow">NUEVO REGISTRO</p><h2 id="modalTitle">Nuevo cliente</h2></div><button type="button" class="close-btn" id="closeDialog" aria-label="Cerrar">×</button></div><div id="caseWorkspaceTabs" class="case-workspace-tabs" hidden><button type="button" class="case-tab active" data-case-tab="summary">Resumen</button><button type="button" class="case-tab" data-case-tab="documents">Requisitos</button><button type="button" class="case-tab" data-case-tab="payments">Pagos</button><button type="button" class="case-tab" id="caseContractTab" data-case-tab="contract" hidden>Contrato</button><button type="button" class="case-tab" data-case-tab="history">Historial</button><button type="button" class="case-tab" data-case-tab="notes">Notas</button><button type="button" class="case-tab" data-case-tab="communications">Comunicaciones</button></div><section class="case-pane active" data-case-pane="summary"><div id="formFields" class="form-grid"></div></section><section class="case-pane" data-case-pane="documents" hidden><div id="caseDocumentsPane"></div></section><section class="case-pane" data-case-pane="payments" hidden><div id="casePaymentsPane"></div></section><section class="case-pane" data-case-pane="contract" hidden><div id="caseContractPane"></div></section><section class="case-pane" data-case-pane="history" hidden><div id="caseHistoryPane"></div></section><section class="case-pane" data-case-pane="notes" hidden><div id="caseNotesPane"></div></section><section class="case-pane" data-case-pane="communications" hidden><section id="clientNotificationBox" class="client-notification" hidden><div class="notification-head"><div><span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span><strong>Notificar sobre este caso</strong><small class="notification-contact"></small></div></div><div class="notification-preview"></div><div class="notification-actions"><a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a><a class="notify-btn notify-email">Enviar por correo</a></div><small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small></section><div id="communicationHistory"></div></section><div class="modal-actions"><button type="button" class="ghost" id="cancelDialog">Cancelar</button><button type="submit" value="default" class="primary">Guardar</button></div></form></dialog>
+  <dialog id="clientAccountDialog"><div class="client-account-dialog"><div class="modal-head"><div><p class="eyebrow">CUENTA DEL CLIENTE</p><h2 id="clientAccountTitle">Cuenta del cliente</h2></div><button type="button" class="close-btn" id="closeClientAccount" aria-label="Cerrar">×</button></div><div id="clientAccountBody"></div></div></dialog>
+  <dialog id="whatsappAppointmentDialog"><div class="whatsapp-dialog-body"><div class="modal-head"><div><p class="eyebrow">WHATSAPP → CITA</p><h2>Preparar cita desde mensaje</h2></div><button type="button" class="close-btn" id="cancelWhatsAppAppointment" aria-label="Cerrar">×</button></div><p class="wa-helper">Pega aquí el mensaje del cliente. El CRM intentará detectar fecha, hora, teléfono y tipo de consulta. Siempre podrás revisar antes de guardar.</p><textarea id="whatsappAppointmentText" rows="8" placeholder="Ejemplo: Hola, soy María Pérez. ¿Puedo ir mañana a las 3:30 pm para una consulta de inmigración? Mi número es 203-555-1234."></textarea><div class="modal-actions"><button type="button" class="ghost" id="cancelWhatsAppAppointment2">Cancelar</button><button type="button" class="primary" id="prepareWhatsAppAppointment">Preparar cita</button></div></div></dialog>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="./app-20261001-1600.js?v=53"></script>
   <script>
@@ -505,19 +87,10 @@
       if(!btn) return;
       e.preventDefault();
       const tab=btn.getAttribute('data-case-tab');
-      document.querySelectorAll('.case-tab').forEach(function(b){
-        b.classList.toggle('active', b.getAttribute('data-case-tab')===tab);
-      });
-      document.querySelectorAll('[data-case-pane]').forEach(function(p){
-        const active=p.getAttribute('data-case-pane')===tab;
-        p.hidden=!active;
-        p.classList.toggle('active',active);
-      });
+      document.querySelectorAll('.case-tab').forEach(function(b){b.classList.toggle('active', b.getAttribute('data-case-tab')===tab);});
+      document.querySelectorAll('[data-case-pane]').forEach(function(p){const active=p.getAttribute('data-case-pane')===tab;p.hidden=!active;p.classList.toggle('active',active);});
       const deleteCaseButton=document.getElementById('deleteCaseButton');
-      if(deleteCaseButton){
-        deleteCaseButton.hidden=tab!=='summary';
-        deleteCaseButton.style.display=tab==='summary'?'':'none';
-      }
+      if(deleteCaseButton){deleteCaseButton.hidden=tab!=='summary';deleteCaseButton.style.display=tab==='summary'?'':'none';}
     });
   </script>
 </body>
