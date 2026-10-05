@@ -4,12 +4,12 @@
   style.textContent=`
     #caseBoard.kanban{
       align-items:start!important;
-      grid-auto-rows:500px!important;
+      grid-auto-rows:360px!important;
     }
     #caseBoard .column{
-      height:500px!important;
-      min-height:500px!important;
-      max-height:500px!important;
+      height:360px!important;
+      min-height:360px!important;
+      max-height:360px!important;
       overflow:hidden!important;
       display:flex!important;
       flex-direction:column!important;
@@ -47,11 +47,11 @@
     #caseBoard .column-body::-webkit-scrollbar-track{background:transparent}
     #caseBoard .column-expand-btn{display:none!important}
     @media(max-width:700px){
-      #caseBoard.kanban{grid-auto-rows:430px!important}
+      #caseBoard.kanban{grid-auto-rows:330px!important}
       #caseBoard .column{
-        height:430px!important;
-        min-height:430px!important;
-        max-height:430px!important;
+        height:330px!important;
+        min-height:330px!important;
+        max-height:330px!important;
       }
     }
   `;
