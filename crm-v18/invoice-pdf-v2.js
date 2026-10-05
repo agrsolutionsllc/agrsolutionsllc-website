@@ -201,3 +201,13 @@
     return String(dataUri).split(',').pop();
   };
 })();
+
+// Load scalable kanban behavior without changing case data or workflow logic.
+(function(){
+  if(document.querySelector('script[data-agr-kanban-scroll]')) return;
+  const s=document.createElement('script');
+  s.src='./kanban-scroll-v1.js?v=1';
+  s.async=false;
+  s.dataset.agrKanbanScroll='1';
+  document.head.appendChild(s);
+})();
