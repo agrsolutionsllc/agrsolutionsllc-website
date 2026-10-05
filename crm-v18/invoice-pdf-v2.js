@@ -3,8 +3,21 @@
   // Company table: compact global-invoice action and keep folder numbers on one line.
   const companyActionsStyle=document.createElement('style');
   companyActionsStyle.textContent=`
-    #view-companies th:first-child,#companiesTable td:first-child{min-width:118px!important;width:118px!important}
-    #companiesTable .folder-number-badge{display:inline-flex!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;min-width:84px!important;width:auto!important;padding-left:12px!important;padding-right:12px!important}
+    #view-companies th:first-child,#companiesTable td:first-child{min-width:128px!important;width:128px!important}
+    #companiesTable .folder-number-badge{
+      display:inline-flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      white-space:nowrap!important;
+      word-break:keep-all!important;
+      overflow-wrap:normal!important;
+      min-width:92px!important;
+      width:92px!important;
+      max-width:none!important;
+      flex:0 0 92px!important;
+      padding-left:12px!important;
+      padding-right:12px!important;
+    }
     #companiesTable td:last-child{white-space:nowrap!important;min-width:220px!important}
     #companiesTable td:last-child .client-account-btn,
     #companiesTable td:last-child .delete-icon-btn{display:inline-flex!important;vertical-align:middle;align-items:center;justify-content:center}
@@ -12,19 +25,24 @@
   `;
   document.head.appendChild(companyActionsStyle);
 
-  function shortenCompanyInvoiceLabel(){
+  function normalizeCompanyTableUI(){
     document.querySelectorAll('[data-company-account-id]').forEach(btn=>{
       if(btn.textContent.trim()!=='Factura global') btn.textContent='Factura global';
     });
     const heading=document.querySelector('#view-companies thead th:last-child');
     if(heading && heading.textContent.trim()!=='Factura global') heading.textContent='Factura global';
+    document.querySelectorAll('#companiesTable .folder-number-badge').forEach(badge=>{
+      const raw=String(badge.textContent||'').replace(/\u2011/g,'-').trim();
+      const visual=raw.replace(/-/g,'\u2011');
+      if(badge.textContent!==visual) badge.textContent=visual;
+    });
   }
-  shortenCompanyInvoiceLabel();
+  normalizeCompanyTableUI();
   const companiesRoot=document.getElementById('view-companies')||document.documentElement;
-  new MutationObserver(shortenCompanyInvoiceLabel).observe(companiesRoot,{childList:true,subtree:true});
-  document.addEventListener('DOMContentLoaded',shortenCompanyInvoiceLabel);
+  new MutationObserver(normalizeCompanyTableUI).observe(companiesRoot,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',normalizeCompanyTableUI);
   document.addEventListener('click',e=>{
-    if(e.target.closest('[data-view="companies"]')) setTimeout(shortenCompanyInvoiceLabel,0);
+    if(e.target.closest('[data-view="companies"]')) setTimeout(normalizeCompanyTableUI,0);
   });
 
   // Keep the CRM invoice preview fix that already works.
