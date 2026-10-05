@@ -1,38 +1,26 @@
-// AGR CRM · Invoice renderer fixes
+// AGR CRM · Active invoice renderer fixes
 (function(){
   const safe=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-  function correctedDocumentHTML(html){
-    const extra=`<style>
-      .brand-copy{margin-top:14px!important}
-      .brand-copy p{margin:4px 0!important}
-      .brand-logo{width:210px!important;height:auto!important;max-width:210px!important;display:block!important}
-    </style>`;
-    return String(html||'').replace('</head>',extra+'</head>');
+  // Fix the ORIGINAL invoice HTML used by the CRM itself.
+  // The source template had margin-top:-72px on .brand-copy, which pulled
+  // the agency address up over the logo. Keep the approved 210px logo size.
+  const originalPaymentDocumentHTML=window.paymentDocumentHTML;
+  if(typeof originalPaymentDocumentHTML==='function'){
+    const fixedPaymentDocumentHTML=function(k,p,options){
+      let html=String(originalPaymentDocumentHTML(k,p,options)||'');
+      html=html.replace(/\.brand-copy\{margin-top:\s*-\d+px\}/g,'.brand-copy{margin-top:14px}');
+      html=html.replace('</head>',`<style>
+        .brand{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:0!important}
+        .brand-logo{width:210px!important;height:auto!important;max-width:210px!important;display:block!important;object-fit:contain!important}
+        .brand-copy{margin-top:14px!important;display:block!important;position:static!important;transform:none!important}
+        .brand-copy p{margin:4px 0!important;line-height:1.25!important}
+      </style></head>`);
+      return html;
+    };
+    window.paymentDocumentHTML=fixedPaymentDocumentHTML;
+    try{ paymentDocumentHTML=fixedPaymentDocumentHTML; }catch(_){ }
   }
-
-  // Intercept the CRM invoice/receipt button before the original click handler.
-  document.addEventListener('click',function(e){
-    const btn=e.target.closest?.('.payment-doc-btn');
-    if(!btn) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    try{
-      const p=data.payments.find(x=>String(x.id)===String(btn.dataset.paymentDoc));
-      if(!p) return;
-      const k=caseById(p.caseId);
-      if(!k) return;
-      const finalInvoice=btn.dataset.final==='1';
-      const w=window.open('','_blank');
-      if(!w){alert('Permite ventanas emergentes para abrir el documento.');return;}
-      try{w.opener=null;}catch(_){}
-      w.document.open();
-      w.document.write(correctedDocumentHTML(paymentDocumentHTML(k,p,{finalInvoice})));
-      w.document.close();
-    }catch(err){
-      console.error('AGR invoice preview fix:',err);
-    }
-  },true);
 
   async function makeLogoCanvas(){
     const canvas=document.createElement('canvas');
@@ -46,7 +34,7 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     const img=new Image();
     img.crossOrigin='anonymous';
-    img.src='https://agrsolutionsllc.com/logo-agr.jpeg.jpeg?pdf=3';
+    img.src='https://agrsolutionsllc.com/logo-agr.jpeg.jpeg?invoice=4';
     await new Promise(resolve=>{if(img.complete) resolve(); else {img.onload=resolve;img.onerror=resolve;}});
     if(img.naturalWidth&&img.naturalHeight){
       const scale=Math.min(canvas.width/img.naturalWidth,canvas.height/img.naturalHeight);
@@ -57,6 +45,7 @@
     return canvas;
   }
 
+  // PDF attached to the automatic Resend email.
   window.finalInvoicePdfBase64=async function(k,p){
     if(typeof html2pdf!=='function') throw new Error('El generador de PDF no está disponible. Recarga el CRM e intenta nuevamente.');
 
@@ -69,14 +58,13 @@
     const stage=document.createElement('div');
     stage.id='agrInvoicePdfStage';
     stage.style.cssText='position:fixed;left:-10000px;top:0;width:720px;background:#fff;z-index:-1;';
-
     stage.innerHTML=`
       <style>
-        #agrInvoicePdfStage, #agrInvoicePdfStage *{box-sizing:border-box}
+        #agrInvoicePdfStage,#agrInvoicePdfStage *{box-sizing:border-box}
         #agrInvoicePdfStage .invoice-sheet{width:720px;padding:34px 38px 38px;background:#fff;color:#10264a;font-family:Arial,Helvetica,sans-serif}
         #agrInvoicePdfStage .invoice-top{display:flex;justify-content:space-between;align-items:flex-start;gap:30px;padding-bottom:18px;border-bottom:2px solid #d9b45b;page-break-inside:avoid}
         #agrInvoicePdfStage .invoice-brand{width:55%;display:block}
-        #agrInvoicePdfStage .invoice-logo-slot{width:210px;height:130px;display:block;margin:0 0 10px 0;overflow:hidden}
+        #agrInvoicePdfStage .invoice-logo-slot{width:210px;height:130px;display:block;margin:0 0 12px;overflow:hidden}
         #agrInvoicePdfStage .invoice-logo-slot canvas{width:210px!important;height:130px!important;display:block!important}
         #agrInvoicePdfStage .invoice-company{font-size:13px;line-height:1.45;color:#59667a}
         #agrInvoicePdfStage .invoice-doc{width:40%;text-align:right;padding-top:4px}
