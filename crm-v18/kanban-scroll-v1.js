@@ -2,91 +2,98 @@
 (function(){
   const style=document.createElement('style');
   style.textContent=`
-    #caseBoard.kanban{align-items:start!important}
+    #caseBoard.kanban{
+      align-items:start!important;
+      grid-auto-rows:500px!important;
+    }
     #caseBoard .column{
       height:500px!important;
       min-height:500px!important;
       max-height:500px!important;
-      overflow-y:auto!important;
-      overflow-x:hidden!important;
+      overflow:hidden!important;
+      display:flex!important;
+      flex-direction:column!important;
       position:relative!important;
-      scrollbar-gutter:stable;
-      overscroll-behavior:contain;
-      padding-top:0!important;
+      padding:0 13px 13px!important;
     }
     #caseBoard .column-head{
-      position:sticky!important;
-      top:0!important;
+      flex:0 0 auto!important;
+      position:relative!important;
+      top:auto!important;
       z-index:5!important;
       background:#eef1f6!important;
       padding:13px 0 10px!important;
-      margin-bottom:10px!important;
-      display:grid!important;
-      grid-template-columns:minmax(0,1fr) auto!important;
-      gap:8px!important;
+      margin:0!important;
+      display:flex!important;
       align-items:center!important;
+      justify-content:space-between!important;
+      gap:8px!important;
     }
-    #caseBoard .column-head strong{min-width:0}
-    #caseBoard .column-head span{justify-self:end}
-    #caseBoard .column-expand-btn{
-      grid-column:1/-1;
-      justify-self:start;
-      border:0;
-      background:transparent;
-      color:#0d2b57;
-      font-size:.76rem;
-      font-weight:800;
-      padding:0;
-      margin-top:-2px;
-      cursor:pointer;
+    #caseBoard .column-body{
+      flex:1 1 auto!important;
+      min-height:0!important;
+      overflow-y:auto!important;
+      overflow-x:hidden!important;
+      overscroll-behavior:contain;
+      scrollbar-gutter:stable;
+      padding:0 3px 2px 0;
     }
-    #caseBoard .column-expanded{
-      height:auto!important;
-      min-height:500px!important;
-      max-height:none!important;
-      overflow:visible!important;
+    #caseBoard .column-body::-webkit-scrollbar{width:9px}
+    #caseBoard .column-body::-webkit-scrollbar-thumb{
+      background:#cfd6e2;
+      border-radius:999px;
+      border:2px solid #eef1f6;
     }
-    #caseBoard .column::-webkit-scrollbar{width:9px}
-    #caseBoard .column::-webkit-scrollbar-thumb{background:#cfd6e2;border-radius:999px;border:2px solid #eef1f6}
-    #caseBoard .column::-webkit-scrollbar-track{background:transparent}
+    #caseBoard .column-body::-webkit-scrollbar-track{background:transparent}
+    #caseBoard .column-expand-btn{display:none!important}
     @media(max-width:700px){
-      #caseBoard .column{height:430px!important;min-height:430px!important;max-height:430px!important}
-      #caseBoard .column-expanded{height:auto!important;min-height:430px!important;max-height:none!important}
+      #caseBoard.kanban{grid-auto-rows:430px!important}
+      #caseBoard .column{
+        height:430px!important;
+        min-height:430px!important;
+        max-height:430px!important;
+      }
     }
   `;
   document.head.appendChild(style);
 
+  let enhancing=false;
   function enhanceColumns(){
-    document.querySelectorAll('#caseBoard .column').forEach(column=>{
-      const head=column.querySelector('.column-head');
-      if(!head) return;
-      const countEl=head.querySelector('span');
-      const count=Number(countEl?.textContent||0);
-      let btn=head.querySelector('.column-expand-btn');
-      if(count<=5){
-        if(btn) btn.remove();
+    if(enhancing) return;
+    enhancing=true;
+    try{
+      document.querySelectorAll('#caseBoard .column').forEach(column=>{
         column.classList.remove('column-expanded');
-        return;
-      }
-      if(!btn){
-        btn=document.createElement('button');
-        btn.type='button';
-        btn.className='column-expand-btn';
-        btn.addEventListener('click',function(e){
-          e.stopPropagation();
-          const expanded=column.classList.toggle('column-expanded');
-          btn.textContent=expanded?'Volver a vista compacta':'Ver todos';
-          if(!expanded) column.scrollTop=0;
-        });
-        head.appendChild(btn);
-      }
-      if(!btn.textContent) btn.textContent=column.classList.contains('column-expanded')?'Volver a vista compacta':'Ver todos';
-    });
+        column.querySelectorAll('.column-expand-btn').forEach(btn=>btn.remove());
+        const head=column.querySelector(':scope > .column-head');
+        if(!head) return;
+
+        let body=column.querySelector(':scope > .column-body');
+        if(!body){
+          body=document.createElement('div');
+          body.className='column-body';
+          const movable=[...column.children].filter(el=>el!==head && !el.classList.contains('column-body'));
+          movable.forEach(el=>body.appendChild(el));
+          column.appendChild(body);
+        }else{
+          const stray=[...column.children].filter(el=>el!==head && el!==body);
+          stray.forEach(el=>body.appendChild(el));
+        }
+      });
+    }finally{
+      enhancing=false;
+    }
   }
 
   enhanceColumns();
   const board=document.getElementById('caseBoard');
-  if(board) new MutationObserver(enhanceColumns).observe(board,{childList:true,subtree:true});
+  if(board){
+    let timer=null;
+    new MutationObserver(()=>{
+      clearTimeout(timer);
+      timer=setTimeout(enhanceColumns,0);
+    }).observe(board,{childList:true,subtree:false});
+  }
   document.addEventListener('click',e=>{
     if(e.target.closest('[data-view="cases"],[data-jump="cases"]')) setTimeout(enhanceColumns,0);
   });
