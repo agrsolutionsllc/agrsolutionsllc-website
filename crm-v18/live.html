@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AGR CRM</title>
+  <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f7fb}iframe{border:0;width:100%;height:100%;display:block}</style>
+</head>
+<body>
+<iframe id="agrCrm" src="./index.html?live=20261005-1935" title="AGR CRM"></iframe>
+<script>
+(function(){
+  const frame=document.getElementById('agrCrm');
+  frame.addEventListener('load',()=>{
+    const w=frame.contentWindow, d=frame.contentDocument;
+    if(!w||!d) return;
+    const style=d.createElement('style');
+    style.textContent=`
+      #view-companies th:first-child,#companiesTable td:first-child{min-width:132px!important;width:132px!important}
+      #companiesTable .folder-number-badge{display:inline-flex!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;min-width:96px!important;width:96px!important;max-width:96px!important;flex:0 0 96px!important;padding:6px 12px!important;line-height:1.15!important}
+      #companiesTable td:last-child{white-space:nowrap!important}
+    `;
+    d.head.appendChild(style);
+    const normalize=()=>{
+      d.querySelectorAll('#companiesTable .folder-number-badge').forEach(b=>{
+        const raw=String(b.textContent||'').replace(/\u2011/g,'-').replace(/\s+/g,'').trim();
+        if(raw) b.textContent=raw.replace(/-/g,'\u2011');
+      });
+      d.querySelectorAll('[data-company-account-id]').forEach(btn=>btn.textContent='Factura global');
+      const h=d.querySelector('#view-companies thead th:last-child');
+      if(h) h.textContent='Factura global';
+    };
+    normalize();
+    const root=d.getElementById('view-companies')||d.body;
+    new w.MutationObserver(normalize).observe(root,{childList:true,subtree:true});
+    d.addEventListener('click',e=>{if(e.target.closest('[data-view="companies"]')) w.setTimeout(normalize,0);});
+  });
+})();
+</script>
+</body>
+</html>
