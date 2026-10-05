@@ -108,13 +108,3 @@
   s.dataset.agrAosService='1';
   document.head.appendChild(s);
 })();
-
-// Production-style Foxit eSign UI.
-(function(){
-  if(document.querySelector('script[data-agr-production-esign]')) return;
-  const s=document.createElement('script');
-  s.src='./production-esign-v1.js?v=2';
-  s.async=false;
-  s.dataset.agrProductionEsign='1';
-  document.head.appendChild(s);
-})();
