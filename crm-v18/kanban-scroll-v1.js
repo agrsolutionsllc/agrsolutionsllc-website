@@ -103,7 +103,7 @@
 (function(){
   if(document.querySelector('script[data-agr-aos-service]')) return;
   const s=document.createElement('script');
-  s.src='./aos-service-v1.js?v=1';
+  s.src='./aos-service-v1.js?v=2';
   s.async=false;
   s.dataset.agrAosService='1';
   document.head.appendChild(s);
