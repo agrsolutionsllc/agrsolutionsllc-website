@@ -34,7 +34,7 @@
     ctx.fillRect(0,0,canvas.width,canvas.height);
     const img=new Image();
     img.crossOrigin='anonymous';
-    img.src='https://agrsolutionsllc.com/logo-agr.jpeg.jpeg?invoice=4';
+    img.src='https://agrsolutionsllc.com/logo-agr.jpeg.jpeg?invoice=5';
     await new Promise(resolve=>{if(img.complete) resolve(); else {img.onload=resolve;img.onerror=resolve;}});
     if(img.naturalWidth&&img.naturalHeight){
       const scale=Math.min(canvas.width/img.naturalWidth,canvas.height/img.naturalHeight);
@@ -57,7 +57,9 @@
 
     const stage=document.createElement('div');
     stage.id='agrInvoicePdfStage';
-    stage.style.cssText='position:fixed;left:-10000px;top:0;width:720px;background:#fff;z-index:-1;';
+    // Keep the render target at the document origin. Moving it thousands of
+    // pixels off-screen makes html2canvas clip/offset the invoice.
+    stage.style.cssText='position:absolute;left:0;top:0;width:720px;background:#fff;z-index:-2147483647;pointer-events:none;';
     stage.innerHTML=`
       <style>
         #agrInvoicePdfStage,#agrInvoicePdfStage *{box-sizing:border-box}
@@ -126,7 +128,7 @@
         margin:[0.18,0.18,0.18,0.18],
         filename:docNo+'-Factura-Final.pdf',
         image:{type:'jpeg',quality:0.98},
-        html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:760},
+        html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:760,scrollX:0,scrollY:0},
         jsPDF:{unit:'in',format:'letter',orientation:'portrait'},
         pagebreak:{mode:['css','legacy']}
       }).from(sheet).outputPdf('datauristring');
