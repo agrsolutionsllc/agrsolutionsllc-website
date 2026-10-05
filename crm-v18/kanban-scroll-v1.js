@@ -99,22 +99,12 @@
   });
 })();
 
-// Load case bundles / included forms manager.
+// AOS is handled as a normal service instead of a case-package UI.
 (function(){
-  if(document.querySelector('script[data-agr-case-bundles]')) return;
+  if(document.querySelector('script[data-agr-aos-service]')) return;
   const s=document.createElement('script');
-  s.src='./case-bundles-v1.js?v=1';
+  s.src='./aos-service-v1.js?v=1';
   s.async=false;
-  s.dataset.agrCaseBundles='1';
-  document.head.appendChild(s);
-})();
-
-// Add package selector directly to the New Case form.
-(function(){
-  if(document.querySelector('script[data-agr-new-case-bundles]')) return;
-  const s=document.createElement('script');
-  s.src='./case-new-form-bundles-v1.js?v=1';
-  s.async=false;
-  s.dataset.agrNewCaseBundles='1';
+  s.dataset.agrAosService='1';
   document.head.appendChild(s);
 })();
