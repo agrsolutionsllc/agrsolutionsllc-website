@@ -1,5 +1,15 @@
 // AGR CRM · Active invoice renderer fixes
 (function(){
+  // Keep company account + delete actions on the same row.
+  const companyActionsStyle=document.createElement('style');
+  companyActionsStyle.textContent=`
+    #companiesTable td:last-child{white-space:nowrap;min-width:300px}
+    #companiesTable td:last-child .client-account-btn,
+    #companiesTable td:last-child .delete-icon-btn{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center}
+    #companiesTable td:last-child .delete-icon-btn{margin-left:8px}
+  `;
+  document.head.appendChild(companyActionsStyle);
+
   // Keep the CRM invoice preview fix that already works.
   const originalPaymentDocumentHTML=window.paymentDocumentHTML;
   if(typeof originalPaymentDocumentHTML==='function'){
