@@ -131,7 +131,6 @@
         </div>
       </section>
 
-
       <section class="view" id="view-companies">
         <div class="section-toolbar">
           <div>
@@ -195,7 +194,6 @@
           </div>
         </div>
       </section>
-
 
       <section class="view" id="view-cashbook">
         <div class="section-toolbar">
@@ -443,44 +441,28 @@
       <section class="case-pane active" data-case-pane="summary">
         <div id="formFields" class="form-grid"></div>
       </section>
-
-      <section class="case-pane" data-case-pane="documents" hidden>
-        <div id="caseDocumentsPane"></div>
-      </section>
-
-      <section class="case-pane" data-case-pane="payments" hidden>
-        <div id="casePaymentsPane"></div>
-      </section>
-
-      <section class="case-pane" data-case-pane="contract" hidden>
-        <div id="caseContractPane"></div>
-      </section>
-
-      <section class="case-pane" data-case-pane="history" hidden>
-        <div id="caseHistoryPane"></div>
-      </section>
-
-      <section class="case-pane" data-case-pane="notes" hidden>
-        <div id="caseNotesPane"></div>
-      </section>
-
+      <section class="case-pane" data-case-pane="documents" hidden><div id="caseDocumentsPane"></div></section>
+      <section class="case-pane" data-case-pane="payments" hidden><div id="casePaymentsPane"></div></section>
+      <section class="case-pane" data-case-pane="contract" hidden><div id="caseContractPane"></div></section>
+      <section class="case-pane" data-case-pane="history" hidden><div id="caseHistoryPane"></div></section>
+      <section class="case-pane" data-case-pane="notes" hidden><div id="caseNotesPane"></div></section>
       <section class="case-pane" data-case-pane="communications" hidden>
-      <section id="clientNotificationBox" class="client-notification" hidden>
-        <div class="notification-head">
-          <div>
-            <span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span>
-            <strong>Notificar sobre este caso</strong>
-            <small class="notification-contact"></small>
+        <section id="clientNotificationBox" class="client-notification" hidden>
+          <div class="notification-head">
+            <div>
+              <span class="notification-kicker">ACTUALIZACIÓN AL CLIENTE</span>
+              <strong>Notificar sobre este caso</strong>
+              <small class="notification-contact"></small>
+            </div>
           </div>
-        </div>
-        <div class="notification-preview"></div>
-        <div class="notification-actions">
-          <a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-          <a class="notify-btn notify-email">Enviar por correo</a>
-        </div>
-        <small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small>
-      </section>
-      <div id="communicationHistory"></div>
+          <div class="notification-preview"></div>
+          <div class="notification-actions">
+            <a class="notify-btn notify-whatsapp" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+            <a class="notify-btn notify-email">Enviar por correo</a>
+          </div>
+          <small class="notification-note">El CRM prepara el mensaje. Tú revisas y confirmas el envío en WhatsApp o en tu aplicación de correo.</small>
+        </section>
+        <div id="communicationHistory"></div>
       </section>
       <div class="modal-actions">
         <button type="button" class="ghost" id="cancelDialog">Cancelar</button>
@@ -516,7 +498,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="./app-20261001-1600.js?v=53"></script>
-  <script src="./invoice-pdf-fix.js?v=1"></script>
   <script>
     document.getElementById('cancelWhatsAppAppointment2')?.addEventListener('click', function(){ document.getElementById('whatsappAppointmentDialog')?.close(); });
     document.addEventListener('click', function(e){
