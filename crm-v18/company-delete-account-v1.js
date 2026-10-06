@@ -76,3 +76,13 @@
     if(typeof render==='function') render();
   }catch(err){console.error('No se pudo actualizar la vista de tareas',err);}
 })();
+
+// Load manual delete controls for Caja histories.
+(function(){
+  if(document.querySelector('script[data-agr-cashbook-delete]')) return;
+  const s=document.createElement('script');
+  s.src='./cashbook-delete-v1.js?v=1';
+  s.async=false;
+  s.dataset.agrCashbookDelete='1';
+  document.head.appendChild(s);
+})();
