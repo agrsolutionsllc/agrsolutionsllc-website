@@ -91,12 +91,12 @@ export default async function handler(req,res){
         },
         {
           type:'date',
-          x:58,y:358,width:92,height:18,
+          x:58,y:382,width:104,height:18,
           documentNumber:1,pageNumber:finalPage,
           tabOrder:2,party:1,required:true,
           name:'Client Date Signed',
           tooltip:'Fecha de firma del cliente',
-          dateFormat:'MM-DD-YYYY'
+          dateFormat:'MM/DD/YYYY'
         }
       ]
     };
