@@ -764,6 +764,8 @@ dialog form{max-height:88vh;overflow:auto}
 /* Multi-line quick income entry */
 .cashbook-form-multi{display:block}
 .cashbook-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.cashbook-meta-grid label{min-width:0}
+.cashbook-meta-grid input,.cashbook-meta-grid select{display:block;width:100%;min-width:0}
 .cashbook-items-wrap{border:1px solid #e3e7ee;border-radius:16px;padding:16px;margin:10px 0 16px;background:#fafbfc}
 .cashbook-items-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
 .cashbook-items-head h3{margin:2px 0 0;color:var(--navy)}
