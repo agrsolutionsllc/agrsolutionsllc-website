@@ -106,3 +106,13 @@
   s.dataset.agrContractClean='1';
   document.head.appendChild(s);
 })();
+
+// Load PostgreSQL/local-server synchronization after the CRM is initialized.
+(function(){
+  if(document.querySelector('script[data-agr-server-sync]')) return;
+  const s=document.createElement('script');
+  s.src='./server-sync-v1.js?v=1';
+  s.async=false;
+  s.dataset.agrServerSync='1';
+  document.head.appendChild(s);
+})();
