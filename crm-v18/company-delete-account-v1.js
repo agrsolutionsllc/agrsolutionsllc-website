@@ -87,11 +87,11 @@
   document.head.appendChild(s);
 })();
 
-// Load daily cash closing and closing history.
+// Load daily cash closing and filtered closing history.
 (function(){
   if(document.querySelector('script[data-agr-cash-close]')) return;
   const s=document.createElement('script');
-  s.src='./cash-close-v1.js?v=1';
+  s.src='./cash-close-v1.js?v=2';
   s.async=false;
   s.dataset.agrCashClose='1';
   document.head.appendChild(s);
