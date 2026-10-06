@@ -39,3 +39,40 @@
     if(typeof deleteClientRecord==='function') deleteClientRecord(id);
   },true);
 })();
+
+// Keep completed tasks in data/history, but hide them from the active task list.
+(function(){
+  try{
+    renderTasks=function(){
+      const box=$('#tasksList');
+      if(!box) return;
+      const rows=[...data.tasks]
+        .filter(t=>!t.done)
+        .sort((a,b)=>{
+          const sa=taskState(a), sb=taskState(b);
+          const order={overdue:0,today:1,normal:2,future:3,done:4};
+          return (order[sa]-order[sb]) || (priorityRank(a.priority)-priorityRank(b.priority)) || String(a.date||'').localeCompare(String(b.date||''));
+        });
+      box.innerHTML=rows.length?rows.map(t=>{
+        const k=t.caseId?caseById(t.caseId):null;
+        return `<article class="task-card ${taskState(t)}">
+          <button type="button" class="task-check" data-task-toggle="${t.id}" aria-label="Completar tarea"></button>
+          <div class="task-body">
+            <strong>${esc(t.title)}</strong>
+            <span>${t.date?esc(t.date):'Sin fecha'} · ${esc(t.priority||'Media')}${k?' · '+esc(clientName(k.clientId))+' — '+esc(k.service):''}</span>
+            ${t.note?`<small>${esc(t.note)}</small>`:''}
+          </div>
+        </article>`;
+      }).join(''):'<p class="empty-state">No hay tareas pendientes.</p>';
+      box.querySelectorAll('[data-task-toggle]').forEach(btn=>btn.onclick=()=>{
+        const t=data.tasks.find(x=>x.id===Number(btn.dataset.taskToggle));
+        if(!t) return;
+        t.done=true;
+        t.completedAt=new Date().toISOString();
+        save();
+        render();
+      });
+    };
+    if(typeof render==='function') render();
+  }catch(err){console.error('No se pudo actualizar la vista de tareas',err);}
+})();
