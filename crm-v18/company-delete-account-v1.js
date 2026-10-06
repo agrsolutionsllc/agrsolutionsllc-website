@@ -97,35 +97,12 @@
   document.head.appendChild(s);
 })();
 
-// Production contract cleanup: hide the old PDF-test button and keep the signing date label professional.
+// Load exact contract cleanup after the main CRM logic is available.
 (function(){
-  function cleanupContractUi(){
-    document.getElementById('printCaseContract')?.remove();
-  }
-
-  cleanupContractUi();
-  new MutationObserver(cleanupContractUi).observe(document.documentElement,{childList:true,subtree:true});
-
-  function patchJsPdfDateLabel(){
-    const ctor=window.jspdf?.jsPDF || window.jsPDF;
-    const api=ctor?.API;
-    if(!api || typeof api.text!=='function') return false;
-    if(api.text.__agrDateLabelPatched) return true;
-    const originalText=api.text;
-    const patched=function(text,...args){
-      if(text==='Fecha de firma: se completa al firmar') text='Fecha de firma:';
-      return originalText.call(this,text,...args);
-    };
-    patched.__agrDateLabelPatched=true;
-    api.text=patched;
-    return true;
-  }
-
-  if(!patchJsPdfDateLabel()){
-    let tries=0;
-    const timer=setInterval(()=>{
-      tries+=1;
-      if(patchJsPdfDateLabel() || tries>40) clearInterval(timer);
-    },250);
-  }
+  if(document.querySelector('script[data-agr-contract-clean]')) return;
+  const s=document.createElement('script');
+  s.src='./contract-signature-clean-v1.js?v=1';
+  s.async=false;
+  s.dataset.agrContractClean='1';
+  document.head.appendChild(s);
 })();
