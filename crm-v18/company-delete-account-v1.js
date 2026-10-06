@@ -1,4 +1,4 @@
-// AGR CRM · Allow deleting companies that only have global-account movements
+// AGR CRM · Safe company deletion helper
 (function(){
   document.addEventListener('click',function(e){
     const btn=e.target.closest('[data-delete-client-id]');
@@ -8,26 +8,34 @@
     if(!client || !client.isCompany) return;
 
     const hasCases=Array.isArray(data?.cases) && data.cases.some(x=>Number(x.clientId)===id);
-    const hasCash=(Array.isArray(data?.cashbook)&&data.cashbook.some(x=>Number(x.clientId)===id)) || (Array.isArray(data?.expenses)&&data.expenses.some(x=>Number(x.clientId)===id));
-    const hasAccount=(Array.isArray(data?.clientAccountCharges)&&data.clientAccountCharges.some(x=>Number(x.clientId)===id)) ||
+    if(hasCases) return;
+
+    const linkedAccount=(Array.isArray(data?.clientAccountCharges)&&data.clientAccountCharges.some(x=>Number(x.clientId)===id)) ||
       (Array.isArray(data?.clientAccountPayments)&&data.clientAccountPayments.some(x=>Number(x.clientId)===id)) ||
       (Array.isArray(data?.clientAccountInvoices)&&data.clientAccountInvoices.some(x=>Number(x.clientId)===id));
+    const linkedCash=(Array.isArray(data?.cashbook)&&data.cashbook.some(x=>Number(x.clientId)===id)) ||
+      (Array.isArray(data?.expenses)&&data.expenses.some(x=>Number(x.clientId)===id));
 
-    if(!hasAccount || hasCases || hasCash) return;
+    if(!linkedAccount && !linkedCash) return;
 
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
 
     const balance=typeof accountBalance==='function'?Number(accountBalance(id)||0):0;
-    const msg='Esta empresa tiene movimientos en su Cuenta global'+(balance>0?' y un saldo pendiente de '+(typeof money==='function'?money(balance):'$'+balance.toFixed(2)):'')+'.\n\nSi continúas, se eliminarán la empresa y todos sus cargos, pagos y facturas globales asociados.\n\n¿Eliminar de todos modos?';
+    const amount=typeof money==='function'?money(balance):'$'+balance.toFixed(2);
+    const msg='Esta empresa no tiene casos.\n\n'+
+      (balance>0?'Saldo pendiente registrado: '+amount+'.\n\n':'')+
+      'Los movimientos históricos se conservarán, pero dejarán de estar vinculados a esta empresa.\n\n¿Continuar con la eliminación?';
     if(!window.confirm(msg)) return;
 
-    data.clientAccountCharges=data.clientAccountCharges.filter(x=>Number(x.clientId)!==id);
-    data.clientAccountPayments=data.clientAccountPayments.filter(x=>Number(x.clientId)!==id);
-    data.clientAccountInvoices=data.clientAccountInvoices.filter(x=>Number(x.clientId)!==id);
-    data.clients=data.clients.filter(x=>Number(x.id)!==id);
+    (data.clientAccountCharges||[]).forEach(x=>{if(Number(x.clientId)===id) x.clientId=null;});
+    (data.clientAccountPayments||[]).forEach(x=>{if(Number(x.clientId)===id) x.clientId=null;});
+    (data.clientAccountInvoices||[]).forEach(x=>{if(Number(x.clientId)===id) x.clientId=null;});
+    (data.cashbook||[]).forEach(x=>{if(Number(x.clientId)===id) x.clientId=null;});
+    (data.expenses||[]).forEach(x=>{if(Number(x.clientId)===id) x.clientId=null;});
+
     if(typeof save==='function') save();
-    if(typeof render==='function') render();
+    if(typeof deleteClientRecord==='function') deleteClientRecord(id);
   },true);
 })();
