@@ -17,8 +17,8 @@
 <section class="sticky-actions"><div class="actions"><div class="progress-wrap"><div id="progressText" class="progress-label">Progreso 0%</div><div class="progress"><div id="progressBar" class="progress-bar"></div></div></div><button type="button" id="saveBtn" class="secondary">Guardar progreso</button><button type="button" id="submitBtn" class="submit">Enviar intake a AGR</button></div><div class="security">La información proporcionada se utiliza únicamente para preparar y revisar su trámite con AGR Solutions LLC.</div></section>
 </main>
 <footer>AGR Solutions LLC · Organizamos tu presente, construimos tu futuro</footer>
-<script src="../shared/uscis-intake-schemas.js?v=20261011-1738"></script>
-<script src="../shared/uscis-intake-engine.js?v=20261011-1738"></script>
+<script src="../shared/uscis-intake-schemas.js?v=20261011-1808"></script>
+<script src="../shared/uscis-intake-engine.js?v=20261011-1808"></script>
 <script>
 document.addEventListener('DOMContentLoaded',async function(){
   const root=document.getElementById('intakeRoot');
@@ -63,6 +63,38 @@ document.addEventListener('DOMContentLoaded',async function(){
 
   try{
     await window.AGRIntakeEngine.init({formId:'I-130',root:'#intakeRoot',progressBar:'#progressBar',progressText:'#progressText',saveStatus:'#saveStatus',saveBtn:'#saveBtn',submitBtn:'#submitBtn'});
+
+    const engine=window.AGRIntakeEngine;
+    engine.save=async function(showMessage=true){
+      const s=this.state;
+      if(s.loading||s.submitting)return false;
+      const answers=this.collectAnswers();
+      const progress=this.updateProgress();
+      if(showMessage)this.showStatus('Guardando en el servidor...','');
+      if(s.saveBtn)s.saveBtn.disabled=true;
+      try{
+        const r=await fetch(s.apiBase+'/api/intake-save',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          cache:'no-store',
+          body:JSON.stringify({token:s.token,answers:answers,progress:progress})
+        });
+        const text=await r.text();
+        let result={};
+        try{result=text?JSON.parse(text):{};}catch(parseError){throw new Error('El servidor respondió, pero la respuesta no pudo leerse. Código '+r.status+'.');}
+        if(!r.ok||!result.ok){throw new Error(result.error||('El servidor rechazó el guardado. Código '+r.status+'.'));}
+        s.intake=result.intake||s.intake;
+        if(showMessage)this.showStatus('✓ Guardado en servidor. Puede cerrar y volver a abrir este enlace para comprobarlo.','success');
+        return true;
+      }catch(e){
+        console.error(e);
+        if(showMessage)this.showStatus('No se pudo guardar: '+(e.message||'error desconocido'),'error');
+        return false;
+      }finally{
+        if(s.saveBtn)s.saveBtn.disabled=false;
+      }
+    };
+
     syncI130AToBeneficiary();
   }catch(err){
     console.error(err);
