@@ -72,7 +72,10 @@
         head.className='card agr-schema-header';
         head.innerHTML='<div class="gold">USCIS '+this.escape(schema.id)+'</div><h2 style="margin-top:8px">'+this.escape(schema.title)+'</h2><p class="muted">Edición USCIS: <strong>'+this.escape(schema.edition||'')+'</strong></p>';
         wrap.appendChild(head);
-        (schema.sections||[]).forEach(sec=>wrap.appendChild(this.renderSection(sec)));
+        (schema.sections||[]).forEach(sec=>{
+          if(sec.audience==='agr'||sec.id==='i130-part7-interpreter'||sec.id==='i130a-part5-interpreter') return;
+          wrap.appendChild(this.renderSection(sec));
+        });
         s.root.appendChild(wrap);
       });
       this.bindInputs();
