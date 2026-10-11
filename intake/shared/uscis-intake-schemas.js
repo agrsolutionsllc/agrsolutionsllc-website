@@ -166,8 +166,8 @@
         {key:'beneficiaryEmploymentStartDate',label:'Fecha en que comenzó ese empleo',type:'date',source:'Part 4, Item 52'}
       ]},
 
-      {id:'i130-part4-proceedings',title:'Parte 4 · Beneficiario — Procedimientos Migratorios',fields:[
-        {key:'beneficiaryEverInProceedings',label:'¿Ha estado alguna vez en procedimientos migratorios?',type:'radio',options:yesNo,source:'Part 4, Item 53'},
+      {id:'i130-part4-proceedings',title:'Parte 4 · Beneficiario — Corte de Inmigración y Deportación/Remoción',description:'Incluye Corte de Inmigración, orden de deportación/remoción, exclusión, rescisión o revisión judicial relacionada.',fields:[
+        {key:'beneficiaryEverInProceedings',label:'¿Alguna vez ha tenido un caso en Corte de Inmigración o algún procedimiento de deportación/remoción?',type:'radio',options:yesNo,source:'Part 4, Item 53'},
         {key:'beneficiaryProceedingType',label:'Tipo de procedimiento',type:'checkboxGroup',source:'Part 4, Item 54',visibleWhen:{field:'beneficiaryEverInProceedings',equals:'yes'},options:[{value:'removal',label:'Removal'},{value:'exclusionDeportation',label:'Exclusion / Deportation'},{value:'rescission',label:'Rescission'},{value:'otherJudicial',label:'Otro procedimiento judicial'}]},
         {key:'beneficiaryProceedingCity',label:'Ciudad del procedimiento',type:'text',source:'Part 4, Item 55.a',visibleWhen:{field:'beneficiaryEverInProceedings',equals:'yes'}},
         {key:'beneficiaryProceedingState',label:'Estado',type:'text',source:'Part 4, Item 55.b',visibleWhen:{field:'beneficiaryEverInProceedings',equals:'yes'}},
