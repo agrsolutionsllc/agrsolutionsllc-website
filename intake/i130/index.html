@@ -17,12 +17,11 @@
 <section class="sticky-actions"><div class="actions"><div class="progress-wrap"><div id="progressText" class="progress-label">Progreso 0%</div><div class="progress"><div id="progressBar" class="progress-bar"></div></div></div><button type="button" id="saveBtn" class="secondary">Guardar progreso</button><button type="button" id="submitBtn" class="submit">Enviar intake a AGR</button></div><div class="security">La información proporcionada se utiliza únicamente para preparar y revisar su trámite con AGR Solutions LLC.</div></section>
 </main>
 <footer>AGR Solutions LLC · Organizamos tu presente, construimos tu futuro</footer>
-<script src="../shared/uscis-intake-schemas.js?v=20261011-1755"></script>
-<script src="../shared/uscis-intake-engine.js?v=20261011-1755"></script>
+<script src="../shared/uscis-intake-schemas.js?v=20261011-1738"></script>
+<script src="../shared/uscis-intake-engine.js?v=20261011-1738"></script>
 <script>
 document.addEventListener('DOMContentLoaded',async function(){
   const root=document.getElementById('intakeRoot');
-  const statusBox=document.getElementById('saveStatus');
   if(!window.AGRIntakeEngine){
     root.innerHTML='<section class="card"><h2>No se pudo cargar el intake.</h2><p class="muted">Comuníquese con AGR Solutions LLC.</p></section>';
     return;
@@ -62,85 +61,21 @@ document.addEventListener('DOMContentLoaded',async function(){
     }
   }
 
-  function setAutosaveStatus(message,type){
-    if(!statusBox) return;
-    statusBox.className='notice';
-    if(type==='success') statusBox.classList.add('success');
-    if(type==='error') statusBox.classList.add('error');
-    statusBox.textContent=message;
-    statusBox.classList.remove('hidden');
-  }
-
-  let dirty=false;
-  let saving=false;
-  let saveQueued=false;
-  let localTimer=null;
-
-  async function saveNow(){
-    const engine=window.AGRIntakeEngine;
-    if(!engine||!engine.state||engine.state.loading||engine.state.submitting) return false;
-    if(saving){saveQueued=true;return false;}
-    if(!dirty) return true;
-    saving=true;
-    clearTimeout(localTimer);
-    setAutosaveStatus('Guardando automáticamente...','');
-    const ok=await engine.save(false);
-    if(ok){
-      dirty=false;
-      setAutosaveStatus('✓ Guardado automáticamente. Puede cerrar y continuar después con el mismo enlace.','success');
-    }else{
-      setAutosaveStatus('No se pudo guardar automáticamente. Presione “Guardar progreso” antes de cerrar esta página.','error');
-    }
-    saving=false;
-    if(saveQueued){saveQueued=false;if(dirty)setTimeout(saveNow,150);}
-    return ok;
-  }
-
-  function markDirty(){
-    dirty=true;
-    clearTimeout(localTimer);
-    localTimer=setTimeout(saveNow,800);
-  }
-
   try{
-    const engine=window.AGRIntakeEngine;
-    await engine.init({formId:'I-130',root:'#intakeRoot',progressBar:'#progressBar',progressText:'#progressText',saveStatus:'#saveStatus',saveBtn:'#saveBtn',submitBtn:'#submitBtn'});
+    await window.AGRIntakeEngine.init({formId:'I-130',root:'#intakeRoot',progressBar:'#progressBar',progressText:'#progressText',saveStatus:'#saveStatus',saveBtn:'#saveBtn',submitBtn:'#submitBtn'});
     syncI130AToBeneficiary();
-
-    engine.scheduleAutosave=function(){
-      markDirty();
-    };
   }catch(err){
     console.error(err);
     root.innerHTML='<section class="card"><div class="gold">AGR Solutions LLC</div><h2>No se pudo completar la carga del intake.</h2><p class="muted">Actualice la página. Si el problema continúa, comuníquese con AGR Solutions LLC.</p></section>';
-    return;
   }
 
   root.addEventListener('input',function(e){
     if(Object.prototype.hasOwnProperty.call(duplicateMap,e.target.name||'')) syncI130AToBeneficiary();
-    markDirty();
   });
 
   root.addEventListener('change',function(e){
     if(Object.prototype.hasOwnProperty.call(duplicateMap,e.target.name||'')) syncI130AToBeneficiary();
     if(e.target.name==='relationship') setTimeout(syncI130AToBeneficiary,50);
-    markDirty();
-    setTimeout(saveNow,120);
-  });
-
-  root.addEventListener('focusout',function(e){
-    if(e.target&&e.target.matches&&e.target.matches('input,select,textarea')&&!e.target.readOnly){
-      markDirty();
-      setTimeout(saveNow,120);
-    }
-  });
-
-  document.addEventListener('visibilitychange',function(){
-    if(document.visibilityState==='hidden'&&dirty) saveNow();
-  });
-
-  window.addEventListener('pagehide',function(){
-    if(dirty) saveNow();
   });
 });
 </script>
