@@ -70,68 +70,6 @@ document.addEventListener('DOMContentLoaded',function(){
     }
   }
 
-  function customizeI130AAddressHistory(){
-    const engine=window.AGRIntakeEngine;
-    if(!engine||!engine.state||!engine.state.root) return;
-
-    const section=engine.state.root.querySelector('[data-section-id="i130a-part1-address-history"]');
-    if(!section) return;
-
-    const repeater=section.querySelector('.agr-repeater[data-repeater-key="spouseBeneficiaryAddressHistory"]');
-    if(repeater){
-      const items=repeater.querySelector('.agr-repeater-items');
-      const addButton=repeater.querySelector('.agr-add-repeat');
-      if(addButton) addButton.textContent='Agregar otra dirección';
-      if(items&&items.children.length===0&&addButton){
-        addButton.click();
-      }
-    }
-
-    const foreignField=section.querySelector('[data-field-key="spouseBeneficiaryLastForeignAddressOverOneYear"]');
-    const foreignFrom=section.querySelector('[data-field-key="spouseBeneficiaryLastForeignAddressFrom"]');
-    const foreignTo=section.querySelector('[data-field-key="spouseBeneficiaryLastForeignAddressTo"]');
-    if(!foreignField) return;
-
-    const foreignLabel=foreignField.querySelector(':scope > label');
-    if(foreignLabel) foreignLabel.textContent='Última dirección fuera de Estados Unidos donde vivió durante más de un año (opcional)';
-
-    let question=section.querySelector('.agr-foreign-address-question');
-    if(!question){
-      question=document.createElement('div');
-      question.className='field full agr-foreign-address-question';
-      question.innerHTML='<label>¿Vivió fuera de Estados Unidos en una dirección durante más de un año?</label><p class="muted" style="margin:0 0 8px">Si no aplica, seleccione “No” y continúe con la siguiente sección.</p><div class="agr-choice-list"><label style="font-weight:400;margin:7px 0"><input type="radio" name="spouseBeneficiaryHasForeignAddressOverOneYear" value="yes" data-answer-key="spouseBeneficiaryHasForeignAddressOverOneYear"> Sí</label><label style="font-weight:400;margin:7px 0"><input type="radio" name="spouseBeneficiaryHasForeignAddressOverOneYear" value="no" data-answer-key="spouseBeneficiaryHasForeignAddressOverOneYear"> No</label></div>';
-      foreignField.parentNode.insertBefore(question,foreignField);
-
-      const stored=engine.state.answers&&engine.state.answers.spouseBeneficiaryHasForeignAddressOverOneYear;
-      if(stored){
-        const radio=question.querySelector('input[value="'+CSS.escape(stored)+'"]');
-        if(radio) radio.checked=true;
-      }
-
-      question.querySelectorAll('input[type="radio"]').forEach(function(radio){
-        radio.addEventListener('change',function(){
-          if(engine.state.answers) engine.state.answers.spouseBeneficiaryHasForeignAddressOverOneYear=radio.value;
-          refreshForeignAddressVisibility();
-          engine.collectAnswers();
-          engine.updateProgress();
-          engine.scheduleAutosave();
-        });
-      });
-    }
-
-    function refreshForeignAddressVisibility(){
-      const selected=section.querySelector('input[name="spouseBeneficiaryHasForeignAddressOverOneYear"]:checked');
-      const show=selected&&selected.value==='yes';
-      [foreignField,foreignFrom,foreignTo].forEach(function(block){
-        if(!block) return;
-        block.classList.toggle('hidden',!show);
-        block.querySelectorAll('input,select,textarea').forEach(function(control){control.disabled=!show;});
-      });
-    }
-
-    refreshForeignAddressVisibility();
-  }
-
   document.getElementById('intakeRoot').addEventListener('input',function(e){
     if(Object.prototype.hasOwnProperty.call(duplicateMap,e.target.name||'')){
       setTimeout(syncI130AToBeneficiary,0);
@@ -140,17 +78,16 @@ document.addEventListener('DOMContentLoaded',function(){
 
   document.getElementById('intakeRoot').addEventListener('change',function(e){
     if(Object.prototype.hasOwnProperty.call(duplicateMap,e.target.name||'')||e.target.name==='relationship'){
-      setTimeout(function(){syncI130AToBeneficiary();customizeI130AAddressHistory();},0);
+      setTimeout(syncI130AToBeneficiary,0);
     }
   });
 
   const observer=new MutationObserver(function(){
     syncI130AToBeneficiary();
-    customizeI130AAddressHistory();
   });
   observer.observe(document.getElementById('intakeRoot'),{childList:true,subtree:true});
 
-  setTimeout(function(){syncI130AToBeneficiary();customizeI130AAddressHistory();},700);
+  setTimeout(syncI130AToBeneficiary,700);
 });
 </script>
 </body>
