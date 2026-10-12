@@ -18,7 +18,7 @@
 </main>
 <footer>AGR Solutions LLC · Organizamos tu presente, construimos tu futuro</footer>
 <script src="../shared/uscis-intake-schemas.js?v=20261011-1808"></script>
-<script src="../shared/uscis-intake-engine.js?v=20261011-1808"></script>
+<script src="../shared/uscis-intake-engine.js?v=20261012-1054"></script>
 <script>
 document.addEventListener('DOMContentLoaded',async function(){
   const root=document.getElementById('intakeRoot');
@@ -65,6 +65,16 @@ document.addEventListener('DOMContentLoaded',async function(){
     await window.AGRIntakeEngine.init({formId:'I-130',root:'#intakeRoot',progressBar:'#progressBar',progressText:'#progressText',saveStatus:'#saveStatus',saveBtn:'#saveBtn',submitBtn:'#submitBtn'});
 
     const engine=window.AGRIntakeEngine;
+
+    // El render inicial del engine puede leer los campos vacíos antes de restaurar
+    // los answers que llegaron del servidor. Restauramos nuevamente desde intake,
+    // que conserva la respuesta original obtenida por /api/intake-get.
+    const persistedAnswers=(engine.state.intake&&engine.state.intake.answers)||{};
+    engine.state.answers=JSON.parse(JSON.stringify(persistedAnswers));
+    engine.applyPrefill((engine.state.intake&&engine.state.intake.prefill)||{});
+    engine.restoreAnswers();
+    engine.refreshAllConditions();
+    engine.updateProgress();
 
     // Temporalmente usamos únicamente guardado manual para evitar solicitudes
     // simultáneas que puedan sobrescribir la información más reciente.
