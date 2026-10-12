@@ -65,13 +65,30 @@ document.addEventListener('DOMContentLoaded',async function(){
     await window.AGRIntakeEngine.init({formId:'I-130',root:'#intakeRoot',progressBar:'#progressBar',progressText:'#progressText',saveStatus:'#saveStatus',saveBtn:'#saveBtn',submitBtn:'#submitBtn'});
 
     const engine=window.AGRIntakeEngine;
+
+    // Temporalmente usamos únicamente guardado manual para evitar solicitudes
+    // simultáneas que puedan sobrescribir la información más reciente.
+    if(engine.state.autosaveTimer){
+      clearTimeout(engine.state.autosaveTimer);
+      engine.state.autosaveTimer=null;
+    }
+    engine.scheduleAutosave=function(){
+      if(this.state.autosaveTimer){
+        clearTimeout(this.state.autosaveTimer);
+        this.state.autosaveTimer=null;
+      }
+    };
+
     engine.save=async function(showMessage=true){
       const s=this.state;
-      if(s.loading||s.submitting)return false;
+      if(s.loading||s.submitting||s._manualSaveInProgress)return false;
+      if(s.autosaveTimer){clearTimeout(s.autosaveTimer);s.autosaveTimer=null;}
       const answers=this.collectAnswers();
       const progress=this.updateProgress();
+      const originalText=s.saveBtn?s.saveBtn.textContent:'Guardar progreso';
+      s._manualSaveInProgress=true;
       if(showMessage)this.showStatus('Guardando en el servidor...','');
-      if(s.saveBtn)s.saveBtn.disabled=true;
+      if(s.saveBtn){s.saveBtn.disabled=true;s.saveBtn.textContent='Guardando...';}
       try{
         const r=await fetch(s.apiBase+'/api/intake-save',{
           method:'POST',
@@ -85,13 +102,19 @@ document.addEventListener('DOMContentLoaded',async function(){
         if(!r.ok||!result.ok){throw new Error(result.error||('El servidor rechazó el guardado. Código '+r.status+'.'));}
         s.intake=result.intake||s.intake;
         if(showMessage)this.showStatus('✓ Guardado en servidor. Puede cerrar y volver a abrir este enlace para comprobarlo.','success');
+        if(s.saveBtn)s.saveBtn.textContent='✓ Guardado';
         return true;
       }catch(e){
         console.error(e);
         if(showMessage)this.showStatus('No se pudo guardar: '+(e.message||'error desconocido'),'error');
+        if(s.saveBtn)s.saveBtn.textContent='Error al guardar';
         return false;
       }finally{
-        if(s.saveBtn)s.saveBtn.disabled=false;
+        s._manualSaveInProgress=false;
+        if(s.saveBtn){
+          s.saveBtn.disabled=false;
+          setTimeout(function(){if(s.saveBtn)s.saveBtn.textContent=originalText;},1800);
+        }
       }
     };
 
