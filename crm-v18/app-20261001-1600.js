@@ -12,6 +12,7 @@ const seed={
     {id:2,name:'I-485 Ajuste de estatus',category:'Inmigración',price:1400,active:true},
     {id:3,name:'I-765 Permiso de trabajo',category:'Inmigración',price:250,active:true},
     {id:30,name:'I-864 Affidavit of Support',category:'Inmigración',price:0,active:true},
+    {id:31,name:'AOS Master - Adjustment of Status Package',category:'Inmigración',price:0,active:true},
     {id:4,name:'N-400 Naturalización',category:'Inmigración',price:375,active:true},
     {id:5,name:'DACA Renovación',category:'Inmigración',price:350,active:true},
     {id:6,name:'FOIA USCIS / EOIR',category:'Inmigración',price:120,active:true},
@@ -4165,7 +4166,10 @@ function intakeTypeForCase(k){
   if(s.includes('i-130') || s.includes('i130') || s.includes('petición familiar') || s.includes('peticion familiar')){
     return {code:'i130',label:'I-130 · Petición Familiar'};
   }
-  if(s.includes('i-864') || s.includes('i864') || s.includes('affidavit of support') || s.includes('patrocinador financiero')){
+  if(s.includes('aos master') || s.includes('adjustment of status package') || s.includes('paquete de ajuste')){
+  return {code:'aos',label:'AOS Master · Adjustment of Status'};
+}
+if(s.includes('i-864') || s.includes('i864') || s.includes('affidavit of support') || s.includes('patrocinador financiero')){
   return {code:'i864',label:'I-864 · Affidavit of Support'};
 }
 if(s.includes('i-765') || s.includes('i765') || s.includes('permiso de trabajo') || s.includes('autorizacion de empleo') || s.includes('autorización de empleo')){
@@ -4718,7 +4722,7 @@ function renderCaseIntake(k){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           caseId:String(k.id),
-          intakeType:type.code==='i130'?'I-130':(type.code==='i485'?'I-485':(type.code==='i765'?'I-765':(type.code==='i864'?'I-864':type.label))),
+          intakeType:type.code==='i130'?'I-130':(type.code==='i485'?'I-485':(type.code==='i765'?'I-765':(type.code==='i864'?'I-864':(type.code==='aos'?'AOS':type.label)))),
           prefill:{
             clientName:client.name||'',
             email:client.email||'',
