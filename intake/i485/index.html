@@ -867,48 +867,33 @@
   <h2>Historial de direcciones y empleo</h2>
 
   <p class="muted">
-    Proporcione su historial reciente de residencia, empleo y estudios.
+    Proporcione la información de los últimos cinco años, comenzando por la más reciente.
   </p>
 
   <div class="grid">
 
     <div class="field full">
-      <label for="addressHistory">
-        Direcciones anteriores
-      </label>
-      <textarea id="addressHistory" name="addressHistory"
-        placeholder="Incluya cada dirección anterior, ciudad, estado/provincia, país y las fechas aproximadas desde/hasta que vivió allí."></textarea>
+      <div class="notice"><strong>Direcciones anteriores</strong></div>
     </div>
 
     <div class="field full">
-      <label for="currentEmploymentStatus">
-        Situación laboral actual
-      </label>
-      <select id="currentEmploymentStatus" name="currentEmploymentStatus" required>
-        <option value="">Seleccione</option>
-        <option value="employed">Empleado/a</option>
-        <option value="selfEmployed">Trabajador/a por cuenta propia</option>
-        <option value="unemployed">Desempleado/a</option>
-        <option value="student">Estudiante</option>
-        <option value="retired">Retirado/a</option>
-        <option value="other">Otro</option>
-      </select>
+      <div id="addressHistoryList"></div>
+      <button type="button" class="secondary" id="addAddressBtn">+ Agregar otra dirección</button>
     </div>
 
     <div class="field full">
-      <label for="employmentHistory">
-        Historial de empleo
-      </label>
-      <textarea id="employmentHistory" name="employmentHistory"
-        placeholder="Para cada empleo incluya: nombre del empleador, dirección, ocupación/cargo y fechas aproximadas desde/hasta. Incluya períodos de desempleo si aplica."></textarea>
+      <div class="notice"><strong>Historial de empleo</strong></div>
     </div>
 
     <div class="field full">
-      <label for="educationHistory">
-        Historial de estudios
-      </label>
+      <div id="employmentHistoryList"></div>
+      <button type="button" class="secondary" id="addEmploymentBtn">+ Agregar otro empleo</button>
+    </div>
+
+    <div class="field full">
+      <label for="educationHistory">Historial de estudios</label>
       <textarea id="educationHistory" name="educationHistory"
-        placeholder="Incluya escuela, colegio, universidad u otra institución, ubicación, área de estudio y fechas aproximadas."></textarea>
+        placeholder="Incluya institución, ubicación, área de estudio y fechas."></textarea>
     </div>
 
   </div>
@@ -1247,6 +1232,67 @@
   }
 
 
+  function rebuildDynamicHistory(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const addressNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^address(\d+)(Street|Apt|City|State|Postal|Country|From|To)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const employmentNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^employer(\d+)(Name|Street|City|State|Postal|Country|Occupation|From|To)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const addressList=document.getElementById('addressHistoryList');
+    if(addressList && addressNumbers.length){
+      addressList.innerHTML='';
+      addressIndex=0;
+
+      addressNumbers.forEach(function(n){
+        addAddressRow({
+          street:answers['address'+n+'Street']||'',
+          apt:answers['address'+n+'Apt']||'',
+          city:answers['address'+n+'City']||'',
+          state:answers['address'+n+'State']||'',
+          postal:answers['address'+n+'Postal']||'',
+          country:answers['address'+n+'Country']||'',
+          from:answers['address'+n+'From']||'',
+          to:answers['address'+n+'To']||''
+        });
+      });
+    }
+
+    const employmentList=document.getElementById('employmentHistoryList');
+    if(employmentList && employmentNumbers.length){
+      employmentList.innerHTML='';
+      employmentIndex=0;
+
+      employmentNumbers.forEach(function(n){
+        addEmploymentRow({
+          name:answers['employer'+n+'Name']||'',
+          street:answers['employer'+n+'Street']||'',
+          city:answers['employer'+n+'City']||'',
+          state:answers['employer'+n+'State']||'',
+          postal:answers['employer'+n+'Postal']||'',
+          country:answers['employer'+n+'Country']||'',
+          occupation:answers['employer'+n+'Occupation']||'',
+          from:answers['employer'+n+'From']||'',
+          to:answers['employer'+n+'To']||''
+        });
+      });
+    }
+  }
+
   function fillAnswers(answers){
     if(!answers || typeof answers!=='object') return;
 
@@ -1264,6 +1310,130 @@
     updateConditionalFields();
   }
 
+
+  let addressIndex=0;
+  let employmentIndex=0;
+
+  function addAddressRow(values={}){
+    addressIndex++;
+    const n=addressIndex;
+    const list=document.getElementById('addressHistoryList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Dirección ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Calle y número</label>
+          <input name="address${n}Street" value="${values.street||''}">
+        </div>
+
+        <div class="field">
+          <label>Apartamento / Piso / Unidad</label>
+          <input name="address${n}Apt" value="${values.apt||''}">
+        </div>
+
+        <div class="field">
+          <label>Ciudad</label>
+          <input name="address${n}City" value="${values.city||''}">
+        </div>
+
+        <div class="field">
+          <label>Estado / Provincia</label>
+          <input name="address${n}State" value="${values.state||''}">
+        </div>
+
+        <div class="field">
+          <label>ZIP / Código postal</label>
+          <input name="address${n}Postal" value="${values.postal||''}">
+        </div>
+
+        <div class="field">
+          <label>País</label>
+          <input name="address${n}Country" value="${values.country||''}">
+        </div>
+
+        <div class="field">
+          <label>Desde</label>
+          <input name="address${n}From" type="date" value="${values.from||''}">
+        </div>
+
+        <div class="field">
+          <label>Hasta</label>
+          <input name="address${n}To" type="date" value="${values.to||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  function addEmploymentRow(values={}){
+    employmentIndex++;
+    const n=employmentIndex;
+    const list=document.getElementById('employmentHistoryList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Empleo ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Nombre del empleador o empresa</label>
+          <input name="employer${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field full">
+          <label>Dirección del empleador</label>
+          <input name="employer${n}Street" value="${values.street||''}">
+        </div>
+
+        <div class="field">
+          <label>Ciudad</label>
+          <input name="employer${n}City" value="${values.city||''}">
+        </div>
+
+        <div class="field">
+          <label>Estado / Provincia</label>
+          <input name="employer${n}State" value="${values.state||''}">
+        </div>
+
+        <div class="field">
+          <label>ZIP / Código postal</label>
+          <input name="employer${n}Postal" value="${values.postal||''}">
+        </div>
+
+        <div class="field">
+          <label>País</label>
+          <input name="employer${n}Country" value="${values.country||''}">
+        </div>
+
+        <div class="field full">
+          <label>Ocupación / Cargo</label>
+          <input name="employer${n}Occupation" value="${values.occupation||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de inicio</label>
+          <input name="employer${n}From" type="date" value="${values.from||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de terminación</label>
+          <input name="employer${n}To" type="date" value="${values.to||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
 
   function calculateProgress(){
     const controls=Array.from(
@@ -1631,6 +1801,7 @@
             intake.prefill.aNumber;
         }
       }
+      rebuildDynamicHistory(intake.answers || {});
       fillAnswers(intake.answers || {});
 
       updateProgress();
@@ -1728,6 +1899,32 @@
       'change',
       updateConditionalFields
     );
+
+  document
+    .getElementById('addAddressBtn')
+    .addEventListener(
+      'click',
+      function(){
+        addAddressRow();
+      }
+    );
+
+  document
+    .getElementById('addEmploymentBtn')
+    .addEventListener(
+      'click',
+      function(){
+        addEmploymentRow();
+      }
+    );
+
+  if(document.getElementById('addressHistoryList')){
+    addAddressRow();
+  }
+
+  if(document.getElementById('employmentHistoryList')){
+    addEmploymentRow();
+  }
 
   saveBtn.addEventListener(
     'click',
