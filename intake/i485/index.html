@@ -380,6 +380,109 @@
 </section>
 
 <section class="card">
+  <div class="gold">Información biográfica</div>
+  <h2>Características físicas</h2>
+
+  <div class="grid">
+
+    <div class="field">
+      <label for="applicantHeightFeet">Altura - pies</label>
+      <input id="applicantHeightFeet" name="applicantHeightFeet" type="number" min="2" max="8">
+    </div>
+
+    <div class="field">
+      <label for="applicantHeightInches">Altura - pulgadas</label>
+      <input id="applicantHeightInches" name="applicantHeightInches" type="number" min="0" max="11">
+    </div>
+
+    <div class="field">
+      <label for="applicantWeight">Peso en libras</label>
+      <input id="applicantWeight" name="applicantWeight" type="number" min="1">
+    </div>
+
+    <div class="field">
+      <label for="applicantEyeColor">Color de ojos</label>
+      <select id="applicantEyeColor" name="applicantEyeColor">
+        <option value="">Seleccione</option>
+        <option value="black">Negros</option>
+        <option value="blue">Azules</option>
+        <option value="brown">Marrones</option>
+        <option value="gray">Grises</option>
+        <option value="green">Verdes</option>
+        <option value="hazel">Avellana</option>
+        <option value="maroon">Granate</option>
+        <option value="pink">Rosados</option>
+        <option value="unknown">Desconocido / Otro</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="applicantHairColor">Color de cabello</label>
+      <select id="applicantHairColor" name="applicantHairColor">
+        <option value="">Seleccione</option>
+        <option value="bald">Calvo/a</option>
+        <option value="black">Negro</option>
+        <option value="blond">Rubio</option>
+        <option value="brown">Marrón</option>
+        <option value="gray">Gris</option>
+        <option value="red">Rojo</option>
+        <option value="sandy">Arena</option>
+        <option value="white">Blanco</option>
+        <option value="unknown">Desconocido / Otro</option>
+      </select>
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
+  <div class="gold">Información biográfica</div>
+  <h2>Raza y origen étnico</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="applicantEthnicity">Origen étnico</label>
+      <select id="applicantEthnicity" name="applicantEthnicity">
+        <option value="">Seleccione</option>
+        <option value="hispanicLatino">Hispano/a o Latino/a</option>
+        <option value="notHispanicLatino">No Hispano/a ni Latino/a</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>Raza (puede seleccionar más de una)</label>
+
+      <label>
+        <input type="checkbox" name="raceWhite" value="yes">
+        Blanca
+      </label>
+
+      <label>
+        <input type="checkbox" name="raceAsian" value="yes">
+        Asiática
+      </label>
+
+      <label>
+        <input type="checkbox" name="raceBlackAfricanAmerican" value="yes">
+        Negra o Afroamericana
+      </label>
+
+      <label>
+        <input type="checkbox" name="raceAmericanIndianAlaskaNative" value="yes">
+        Indígena americana o nativa de Alaska
+      </label>
+
+      <label>
+        <input type="checkbox" name="raceNativeHawaiianPacificIslander" value="yes">
+        Nativa de Hawái u otra isla del Pacífico
+      </label>
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
   <div class="gold">Sección 2</div>
   <h2>Dirección y contacto</h2>
 
@@ -659,6 +762,57 @@
 </section>
 
 <section class="card">
+  <div class="gold">Historial migratorio adicional</div>
+  <h2>Visa J-1 / J-2</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="everJStatus">
+        ¿Alguna vez tuvo estatus J-1 o J-2 en Estados Unidos?
+      </label>
+      <select id="everJStatus" name="everJStatus" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="jStatusDetailsWrap">
+
+      <label for="jTwoYearRequirement">
+        ¿Estuvo sujeto/a al requisito de residencia en el extranjero de 2 años bajo INA 212(e)?
+      </label>
+      <select id="jTwoYearRequirement" name="jTwoYearRequirement">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+        <option value="unknown">No sabe</option>
+      </select>
+
+      <label for="jRequirementSatisfied">
+        Si estuvo sujeto/a, ¿cumplió el requisito de 2 años o recibió un waiver?
+      </label>
+      <select id="jRequirementSatisfied" name="jRequirementSatisfied">
+        <option value="">Seleccione</option>
+        <option value="satisfied">Cumplió los 2 años</option>
+        <option value="waiver">Recibió waiver</option>
+        <option value="notSatisfied">No lo ha cumplido</option>
+        <option value="unknown">No sabe</option>
+      </select>
+
+      <label for="jStatusNotes">
+        Información adicional sobre su estatus J-1/J-2
+      </label>
+      <textarea id="jStatusNotes" name="jStatusNotes"
+        placeholder="Incluya fechas, programa, país de residencia requerido y cualquier waiver o documento relacionado."></textarea>
+
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
   <div class="gold">Sección 5</div>
   <h2>Historial migratorio</h2>
 
@@ -759,6 +913,87 @@
       </label>
       <textarea id="immigrationHistoryNotes" name="immigrationHistoryNotes"
         placeholder="Explique cualquier respuesta Sí o cualquier situación que AGR deba conocer."></textarea>
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
+  <div class="gold">Información familiar</div>
+  <h2>Información sobre sus padres</h2>
+
+  <p class="muted">
+    Proporcione la información de ambos padres, incluso si han fallecido.
+  </p>
+
+  <div class="grid">
+
+    <div class="field full">
+      <div class="notice"><strong>Padre / Madre 1</strong></div>
+    </div>
+
+    <div class="field">
+      <label>Apellido legal actual</label>
+      <input name="parent1LastName">
+    </div>
+
+    <div class="field">
+      <label>Nombre</label>
+      <input name="parent1FirstName">
+    </div>
+
+    <div class="field">
+      <label>Segundo nombre, si aplica</label>
+      <input name="parent1MiddleName">
+    </div>
+
+    <div class="field full">
+      <label>Nombre completo al nacer, si era diferente</label>
+      <input name="parent1BirthName">
+    </div>
+
+    <div class="field">
+      <label>Fecha de nacimiento</label>
+      <input name="parent1DOB" type="date">
+    </div>
+
+    <div class="field">
+      <label>País de nacimiento</label>
+      <input name="parent1BirthCountry">
+    </div>
+
+    <div class="field full">
+      <div class="notice"><strong>Padre / Madre 2</strong></div>
+    </div>
+
+    <div class="field">
+      <label>Apellido legal actual</label>
+      <input name="parent2LastName">
+    </div>
+
+    <div class="field">
+      <label>Nombre</label>
+      <input name="parent2FirstName">
+    </div>
+
+    <div class="field">
+      <label>Segundo nombre, si aplica</label>
+      <input name="parent2MiddleName">
+    </div>
+
+    <div class="field full">
+      <label>Nombre completo al nacer, si era diferente</label>
+      <input name="parent2BirthName">
+    </div>
+
+    <div class="field">
+      <label>Fecha de nacimiento</label>
+      <input name="parent2DOB" type="date">
+    </div>
+
+    <div class="field">
+      <label>País de nacimiento</label>
+      <input name="parent2BirthCountry">
     </div>
 
   </div>
@@ -892,12 +1127,6 @@
       <button type="button" class="secondary" id="addEmploymentBtn">+ Agregar otro empleo</button>
     </div>
 
-    <div class="field full">
-      <label for="educationHistory">Historial de estudios</label>
-      <textarea id="educationHistory" name="educationHistory"
-        placeholder="Incluya institución, ubicación, área de estudio y fechas."></textarea>
-    </div>
-
   </div>
 </section>
 
@@ -978,6 +1207,36 @@
 </section>
 
 <section class="card">
+  <div class="gold">Información adicional</div>
+  <h2>Organizaciones y asociaciones</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="organizationMembership">
+        ¿Alguna vez ha sido miembro, ha estado asociado o ha participado en alguna organización, asociación, fondo, fundación, partido, club, sociedad o grupo similar?
+      </label>
+
+      <select id="organizationMembership" name="organizationMembership" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="organizationDetailsWrap">
+      <label for="organizationDetails">
+        Detalles de la organización o asociación
+      </label>
+
+      <textarea id="organizationDetails" name="organizationDetails"
+        placeholder="Indique nombre de la organización, ubicación, naturaleza del grupo, fechas de participación y su función o relación con la organización."></textarea>
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
   <div class="gold">Sección 9</div>
   <h2>Antecedentes criminales y seguridad</h2>
 
@@ -1021,30 +1280,8 @@
     </div>
 
     <div class="field full">
-      <label for="everProstitution">
-        ¿Alguna vez ha participado en prostitución, explotación sexual comercial o actividades relacionadas?
-      </label>
-      <select id="everProstitution" name="everProstitution" required>
-        <option value="">Seleccione</option>
-        <option value="no">No</option>
-        <option value="yes">Sí</option>
-      </select>
-    </div>
-
-    <div class="field full">
-      <label for="everMoneyLaundering">
-        ¿Alguna vez ha participado o ayudado en lavado de dinero?
-      </label>
-      <select id="everMoneyLaundering" name="everMoneyLaundering" required>
-        <option value="">Seleccione</option>
-        <option value="no">No</option>
-        <option value="yes">Sí</option>
-      </select>
-    </div>
-
-    <div class="field full">
       <label for="everSecurityRelatedActivity">
-        ¿Alguna vez ha participado en espionaje, sabotaje, terrorismo, persecución, genocidio, tortura u otra actividad relacionada con seguridad nacional?
+        ¿Alguna vez ha participado, ayudado o estado involucrado en espionaje, sabotaje, terrorismo u otra actividad relacionada con la seguridad nacional?
       </label>
       <select id="everSecurityRelatedActivity" name="everSecurityRelatedActivity" required>
         <option value="">Seleccione</option>
@@ -1059,6 +1296,165 @@
       </label>
       <textarea id="criminalSecurityDetails" name="criminalSecurityDetails"
         placeholder="Incluya fechas, lugares, cargos, arrestos, disposiciones judiciales, sentencias y cualquier documento disponible."></textarea>
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
+  <div class="gold">Inadmisibilidad adicional</div>
+  <h2>Conductas y actividades específicas</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="drugTraffickingActivity">
+        ¿Alguna vez ha participado, ayudado o conspirado en tráfico ilegal de drogas o sustancias controladas?
+      </label>
+      <select id="drugTraffickingActivity" name="drugTraffickingActivity" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="prostitutionActivity">
+        ¿Alguna vez ha participado en prostitución, administrado un negocio de prostitución o recibido ganancias relacionadas con prostitución?
+      </label>
+      <select id="prostitutionActivity" name="prostitutionActivity" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="moneyLaunderingActivity">
+        ¿Alguna vez ha participado, ayudado o conspirado en lavado de dinero?
+      </label>
+      <select id="moneyLaunderingActivity" name="moneyLaunderingActivity" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="specificConductDetails">
+        Explique cualquier respuesta “Sí”
+      </label>
+      <textarea id="specificConductDetails" name="specificConductDetails"
+        placeholder="Incluya fechas, lugares, personas involucradas, arrestos, cargos, resultados y cualquier documento relacionado."></textarea>
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
+  <div class="gold">Seguridad y derechos humanos</div>
+  <h2>Actividades de seguridad, persecución y grupos armados</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="persecutionParticipation">
+        ¿Alguna vez ha ordenado, incitado, ayudado o participado en la persecución de alguna persona por su raza, religión, nacionalidad, pertenencia a un grupo social u opinión política?
+      </label>
+      <select id="persecutionParticipation" name="persecutionParticipation" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="genocideParticipation">
+        ¿Alguna vez ha participado, ayudado o estado involucrado en genocidio, tortura, ejecuciones extrajudiciales u otros abusos graves de derechos humanos?
+      </label>
+      <select id="genocideParticipation" name="genocideParticipation" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="militaryService">
+        ¿Alguna vez ha servido en las fuerzas armadas, policía, milicia, grupo paramilitar, unidad de autodefensa o grupo armado?
+      </label>
+      <select id="militaryService" name="militaryService" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="armedGroupSupport">
+        ¿Alguna vez ha apoyado, financiado, reclutado personas para, recibido entrenamiento de, o participado con algún grupo armado u organización involucrada en violencia?
+      </label>
+      <select id="armedGroupSupport" name="armedGroupSupport" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="securityHumanRightsDetails">
+        Explique cualquier respuesta “Sí”
+      </label>
+      <textarea id="securityHumanRightsDetails" name="securityHumanRightsDetails"
+        placeholder="Incluya nombre de la organización o unidad, país, fechas, función, rango, actividades realizadas y cualquier otra información relevante."></textarea>
+    </div>
+
+  </div>
+</section>
+
+<section class="card">
+  <div class="gold">Trata de personas</div>
+  <h2>Trata, servidumbre y trabajo forzado</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="sexTraffickingParticipation">
+        ¿Alguna vez ha participado, ayudado, reclutado, transportado, albergado u obtenido a una persona para actos sexuales comerciales mediante fuerza, fraude o coerción, o cuando la persona era menor de 18 años?
+      </label>
+      <select id="sexTraffickingParticipation" name="sexTraffickingParticipation" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="laborTraffickingParticipation">
+        ¿Alguna vez ha participado en el reclutamiento, transporte, albergue u obtención de una persona para trabajo o servicios mediante fuerza, fraude o coerción, incluyendo servidumbre involuntaria, peonaje, deuda forzada o esclavitud?
+      </label>
+      <select id="laborTraffickingParticipation" name="laborTraffickingParticipation" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="traffickingBenefit">
+        ¿Alguna vez ha recibido dinero, bienes u otro beneficio de actividades relacionadas con trata de personas?
+      </label>
+      <select id="traffickingBenefit" name="traffickingBenefit" required>
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="traffickingDetails">Explique cualquier respuesta “Sí”</label>
+      <textarea id="traffickingDetails" name="traffickingDetails"
+        placeholder="Incluya fechas, lugares, personas involucradas, naturaleza de la actividad y cualquier arresto, investigación o resultado relacionado."></textarea>
     </div>
 
   </div>
@@ -1084,6 +1480,45 @@
         <option value="yes">Sí</option>
         <option value="unknown">No estoy seguro/a</option>
       </select>
+    </div>
+
+    <div class="field full hidden" id="publicChargeDetailsWrap">
+
+      <div class="notice">
+        Complete esta información solamente si corresponde la evaluación de carga pública.
+      </div>
+
+      <label for="publicChargeHouseholdSize">Número de personas en su hogar</label>
+      <input id="publicChargeHouseholdSize" name="publicChargeHouseholdSize" type="number" min="1">
+
+      <label for="publicChargeAnnualIncome">Ingreso anual total del hogar</label>
+      <input id="publicChargeAnnualIncome" name="publicChargeAnnualIncome">
+
+      <label for="publicChargeAssets">Valor aproximado de los activos del hogar</label>
+      <input id="publicChargeAssets" name="publicChargeAssets">
+
+      <label for="publicChargeLiabilities">Valor aproximado de las deudas u obligaciones del hogar</label>
+      <input id="publicChargeLiabilities" name="publicChargeLiabilities">
+
+      <label for="publicChargeEducation">Nivel educativo más alto completado</label>
+      <select id="publicChargeEducation" name="publicChargeEducation">
+        <option value="">Seleccione</option>
+        <option value="grades1to11">Grados 1 a 11</option>
+        <option value="grade12NoDiploma">12.º grado sin diploma</option>
+        <option value="highSchool">High School / GED o equivalente</option>
+        <option value="collegeNoDegree">Estudios universitarios sin título</option>
+        <option value="associate">Associate Degree</option>
+        <option value="bachelor">Bachelor's Degree</option>
+        <option value="master">Master's Degree</option>
+        <option value="professional">Título profesional</option>
+        <option value="doctorate">Doctorado</option>
+      </select>
+
+      <label for="publicChargeSkills">
+        Licencias, certificaciones, habilidades laborales o certificados educativos
+      </label>
+      <textarea id="publicChargeSkills" name="publicChargeSkills"></textarea>
+
     </div>
 
     <div class="field full">
@@ -1281,6 +1716,7 @@
 
       employmentNumbers.forEach(function(n){
         addEmploymentRow({
+          activityType:answers['employer'+n+'ActivityType']||'',
           name:answers['employer'+n+'Name']||'',
           street:answers['employer'+n+'Street']||'',
           city:answers['employer'+n+'City']||'',
@@ -1288,6 +1724,7 @@
           postal:answers['employer'+n+'Postal']||'',
           country:answers['employer'+n+'Country']||'',
           occupation:answers['employer'+n+'Occupation']||'',
+          supportSource:answers['employer'+n+'SupportSource']||'',
           from:answers['employer'+n+'From']||'',
           to:answers['employer'+n+'To']||''
         });
@@ -1563,7 +2000,19 @@
 
       <div class="grid">
         <div class="field full">
-          <label>Nombre del empleador o empresa</label>
+          <label>Tipo de actividad</label>
+          <select name="employer${n}ActivityType">
+            <option value="">Seleccione</option>
+            <option value="employment" ${values.activityType==='employment'?'selected':''}>Empleo</option>
+            <option value="selfEmployment" ${values.activityType==='selfEmployment'?'selected':''}>Trabajo por cuenta propia</option>
+            <option value="school" ${values.activityType==='school'?'selected':''}>Estudios / Escuela</option>
+            <option value="unemployed" ${values.activityType==='unemployed'?'selected':''}>Desempleado/a</option>
+            <option value="retired" ${values.activityType==='retired'?'selected':''}>Retirado/a</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>Nombre del empleador, empresa o escuela</label>
           <input name="employer${n}Name" value="${values.name||''}">
         </div>
 
@@ -1593,8 +2042,13 @@
         </div>
 
         <div class="field full">
-          <label>Ocupación / Cargo</label>
+          <label>Ocupación / Cargo / Área de estudio</label>
           <input name="employer${n}Occupation" value="${values.occupation||''}">
+        </div>
+
+        <div class="field full">
+          <label>Fuente de sustento económico, si estuvo desempleado/a o retirado/a</label>
+          <input name="employer${n}SupportSource" value="${values.supportSource||''}" placeholder="Ejemplo: ahorros, apoyo de cónyuge o familia, pensión, etc.">
         </div>
 
         <div class="field">
@@ -1700,7 +2154,25 @@
     const otherDOBDetailsWrap=document.getElementById('otherDOBDetailsWrap');
     if(otherDOBUsed && otherDOBDetailsWrap){
       otherDOBDetailsWrap.classList.toggle('hidden',otherDOBUsed.value!=='yes');
+  
+    const organizationMembership=document.getElementById('organizationMembership');
+    const organizationDetailsWrap=document.getElementById('organizationDetailsWrap');
+    if(organizationMembership && organizationDetailsWrap){
+      organizationDetailsWrap.classList.toggle('hidden',organizationMembership.value!=='yes');
     }
+
+    const everJStatus=document.getElementById('everJStatus');
+    const jStatusDetailsWrap=document.getElementById('jStatusDetailsWrap');
+    if(everJStatus && jStatusDetailsWrap){
+      jStatusDetailsWrap.classList.toggle('hidden',everJStatus.value!=='yes');
+    }
+
+    const publicChargeSubject=document.getElementById('publicChargeSubject');
+    const publicChargeDetailsWrap=document.getElementById('publicChargeDetailsWrap');
+    if(publicChargeSubject && publicChargeDetailsWrap){
+      publicChargeDetailsWrap.classList.toggle('hidden',publicChargeSubject.value!=='yes');
+    }
+  }
 
     const mailingSameAsPhysical=document.getElementById('mailingSameAsPhysical');
     const mailingAddressWrap=document.getElementById('mailingAddressWrap');
@@ -2146,6 +2618,39 @@
   if(document.getElementById('employmentHistoryList')){
     addEmploymentRow();
   }
+
+  document
+    .getElementById('organizationMembership')
+    .addEventListener(
+      'change',
+      function(){
+        const wrap=document.getElementById('organizationDetailsWrap');
+        if(!wrap) return;
+        wrap.classList.toggle('hidden',this.value!=='yes');
+      }
+    );
+
+  document
+    .getElementById('everJStatus')
+    .addEventListener(
+      'change',
+      function(){
+        const wrap=document.getElementById('jStatusDetailsWrap');
+        if(!wrap) return;
+        wrap.classList.toggle('hidden',this.value!=='yes');
+      }
+    );
+
+  document
+    .getElementById('publicChargeSubject')
+    .addEventListener(
+      'change',
+      function(){
+        const wrap=document.getElementById('publicChargeDetailsWrap');
+        if(!wrap) return;
+        wrap.classList.toggle('hidden',this.value!=='yes');
+      }
+    );
 
   saveBtn.addEventListener(
     'click',
