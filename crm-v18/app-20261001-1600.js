@@ -4213,8 +4213,26 @@ function caseIntakeFor(k){
 
   const rec=data.intakes[key];
 
-  if(!rec.type) rec.type=type.code;
-  if(!rec.typeLabel) rec.typeLabel=type.label;
+  if(rec.type && rec.type!==type.code){
+    rec.type=type.code;
+    rec.typeLabel=type.label;
+    rec.status='No enviado';
+    rec.token='';
+    rec.clientLink='';
+    rec.progress=0;
+    rec.answers={};
+    rec.createdAt='';
+    rec.sentAt='';
+    rec.clientUpdatedAt='';
+    rec.submittedAt='';
+    rec.reviewed=false;
+    rec.reviewedAt='';
+    rec.reviewedBy='';
+    save();
+  }else{
+    if(!rec.type) rec.type=type.code;
+    if(!rec.typeLabel) rec.typeLabel=type.label;
+  }
   if(!rec.answers || typeof rec.answers!=='object') rec.answers={};
 
   return rec;
