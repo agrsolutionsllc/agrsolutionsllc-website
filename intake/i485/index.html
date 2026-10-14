@@ -2154,7 +2154,8 @@
     const otherDOBDetailsWrap=document.getElementById('otherDOBDetailsWrap');
     if(otherDOBUsed && otherDOBDetailsWrap){
       otherDOBDetailsWrap.classList.toggle('hidden',otherDOBUsed.value!=='yes');
-  
+    }
+
     const organizationMembership=document.getElementById('organizationMembership');
     const organizationDetailsWrap=document.getElementById('organizationDetailsWrap');
     if(organizationMembership && organizationDetailsWrap){
@@ -2172,7 +2173,6 @@
     if(publicChargeSubject && publicChargeDetailsWrap){
       publicChargeDetailsWrap.classList.toggle('hidden',publicChargeSubject.value!=='yes');
     }
-  }
 
     const mailingSameAsPhysical=document.getElementById('mailingSameAsPhysical');
     const mailingAddressWrap=document.getElementById('mailingAddressWrap');
