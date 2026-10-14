@@ -11,6 +11,7 @@ const seed={
     {id:1,name:'I-130 Petición familiar',category:'Inmigración',price:1200,active:true},
     {id:2,name:'I-485 Ajuste de estatus',category:'Inmigración',price:1400,active:true},
     {id:3,name:'I-765 Permiso de trabajo',category:'Inmigración',price:250,active:true},
+    {id:30,name:'I-864 Affidavit of Support',category:'Inmigración',price:0,active:true},
     {id:4,name:'N-400 Naturalización',category:'Inmigración',price:375,active:true},
     {id:5,name:'DACA Renovación',category:'Inmigración',price:350,active:true},
     {id:6,name:'FOIA USCIS / EOIR',category:'Inmigración',price:120,active:true},
@@ -71,12 +72,12 @@ const statusLabels={
 };
 
 const storeKey='agr-crm-demo-v1';
-const STRIPE_BACKEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/create-payment-link';
-const STRIPE_SYNC_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/sync-payments';
+const STRIPE_BACKEND_URL='/api/stripe/create-payment-link';
+const STRIPE_SYNC_URL='/api/stripe/sync-payments';
 const FOXIT_SEND_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-send-contract';
 const FOXIT_STATUS_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-envelope-status';
 const FOXIT_SIGNED_PDF_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/foxit-signed-document';
-const FINAL_INVOICE_EMAIL_URL='https://agrsolutionsllc-website-stripe-back.vercel.app/api/send-final-invoice';
+const FINAL_INVOICE_EMAIL_URL='/api/send-final-invoice';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
 if(!data.documents || typeof data.documents!=='object') data.documents={};
@@ -89,6 +90,9 @@ if(!Array.isArray(data.clientAccountPayments)) data.clientAccountPayments=[];
 if(!Array.isArray(data.clientAccountInvoices)) data.clientAccountInvoices=[];
 if(!Array.isArray(data.cashbook)) data.cashbook=[];
 if(!Array.isArray(data.expenses)) data.expenses=[];
+if(!Array.isArray(data.pendingAccounts)) data.pendingAccounts=[];
+if(!Array.isArray(data.referralCreditUses)) data.referralCreditUses=[];
+if(!Array.isArray(data.referralGiftCards)) data.referralGiftCards=[];
 if(!data.caseContracts || typeof data.caseContracts!=='object') data.caseContracts={};
 if(!data.esignSettings || typeof data.esignSettings!=='object') data.esignSettings={agrSignerName:'',agrSignerEmail:''};
 
@@ -108,6 +112,27 @@ if(data.payments.some(p=>p.amount===undefined)){
 }
 
 const save=()=>localStorage.setItem(storeKey,JSON.stringify(data));
+
+/* RESET UNICO - CREDITOS DE PRUEBA ARIANA */
+if(!data._arianaReferralCreditReset20261008){
+  const ariana=data.clients.find(c=>
+    String(c.name||'')
+      .toUpperCase()
+      .includes('ARIANA REINOSO CARDENAS')
+  );
+
+  if(ariana){
+    data.referralCreditUses=(data.referralCreditUses||[])
+      .filter(x=>Number(x.clientId)!==Number(ariana.id));
+
+    data._arianaReferralCreditReset20261008=true;
+
+    save();
+
+    console.log('Créditos de prueba de Ariana restaurados.');
+  }
+}
+
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const clientById=id=>data.clients.find(c=>c.id===Number(id));
@@ -203,16 +228,20 @@ repairMissingCompanyFolderNumbers();
 const caseById=id=>data.cases.find(c=>c.id===Number(id));
 const caseCollected=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.amount||0),0);
 const caseDiscountCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.discountCredit||0),0);
-const casePaid=id=>caseCollected(id)+caseDiscountCredits(id);
+const caseReferralCredits=id=>data.payments.filter(p=>Number(p.caseId)===Number(id)).reduce((s,p)=>s+Number(p.referralCreditApplied||0),0);
+const casePaid=id=>caseCollected(id)+caseDiscountCredits(id)+caseReferralCredits(id);
 const caseStandardPrice=c=>Number(c.serviceTotal||0);
 const caseCashPrice=c=>Number(c.cashPrice ?? Math.max(caseStandardPrice(c)-Number(c.cashZelleDiscount||0),0));
 const caseZellePrice=c=>caseCashPrice(c);
-const caseCardPrice=c=>Number(c.cardPrice ?? caseStandardPrice(c));
+const STRIPE_FEE_RATE=0.029;
+const STRIPE_FEE_FIXED=0.30;
+const stripeGrossAmount=amount=>{const net=Math.max(0,Number(amount||0));return net>0?Math.ceil(((net+STRIPE_FEE_FIXED)/(1-STRIPE_FEE_RATE))*100)/100:0;};
+const caseCardPrice=c=>stripeGrossAmount(caseCashPrice(c));
 const paymentUsesCardPrice=method=>/card|stripe|credit|debit/i.test(String(method||''));
 const casePaymentRows=c=>data.payments.filter(p=>Number(p.caseId)===Number(c.id));
 const caseUsesCardPrice=c=>casePaymentRows(c).some(p=>paymentUsesCardPrice(p.method));
 const caseApplicablePrice=c=>caseUsesCardPrice(c)?caseCardPrice(c):caseCashPrice(c);
-const caseBalance=c=>Math.max(caseApplicablePrice(c)-casePaid(c.id),0);
+const caseBalance=c=>Math.max(caseCashPrice(c)-casePaid(c.id),0);
 const caseBalanceForMethod=(c,method)=>{
   const target=paymentUsesCardPrice(method)?caseCardPrice(c):((method==='Cash'||method==='Zelle')?caseCashPrice(c):caseApplicablePrice(c));
   return Math.max(target-casePaid(c.id),0);
@@ -300,19 +329,35 @@ function paymentBalanceAfter(k,paymentId){
   let paid=0;
   let usesCard=false;
   for(const p of casePaymentRowsChronological(k)){
-    paid+=Number(p.amount||0)+Number(p.discountCredit||0);
+    paid+=Number(p.amount||0)+Number(p.discountCredit||0)+Number(p.referralCreditApplied||0);
     if(paymentUsesCardPrice(p.method)) usesCard=true;
     if(String(p.id)===String(paymentId)){
-      const target=usesCard?caseCardPrice(k):caseCashPrice(k);
+      const target=caseCashPrice(k);
       return Math.max(target-paid,0);
     }
   }
-  const target=usesCard?caseCardPrice(k):caseCashPrice(k);
+  const target=caseCashPrice(k);
   return Math.max(target-paid,0);
 }
 function isFinalPayment(k,p){
   return paymentBalanceAfter(k,p.id)<=0.009;
 }
+function paymentReceiptSequenceNumber(k,p){
+  const rows=casePaymentRowsChronological(k);
+  const index=rows.findIndex(
+    x=>String(x.id)===String(p.id)
+  );
+
+  return Math.max(index+1,1);
+}
+
+function paymentReceiptDocumentNumber(k,p){
+  const base=k.invoiceNumber||('AGR-'+k.id);
+  const seq=paymentReceiptSequenceNumber(k,p);
+
+  return base+'-R'+String(seq).padStart(2,'0');
+}
+
 function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
   const client=clientById(k.clientId);
   const rows=casePaymentRowsChronological(k);
@@ -323,13 +368,20 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
   });
   const paidTotal=paidThrough.reduce((s,x)=>s+Number(x.amount||0),0);
   const creditsTotal=paidThrough.reduce((s,x)=>s+Number(x.discountCredit||0),0);
-  const effectivePaid=paidTotal+creditsTotal;
+  const referralCreditsTotal=paidThrough.reduce((s,x)=>s+Number(x.referralCreditApplied||0),0);
+  const effectivePaid=paidTotal+creditsTotal+referralCreditsTotal;
+  const currentDiscount=Number(p.discountCredit||0);
+  const currentReferralCredit=Number(p.referralCreditApplied||0);
+  const currentApplied=
+    Number(p.amount||0)+
+    currentDiscount+
+    currentReferralCredit;
   const docNo=finalInvoice
     ? (k.invoiceNumber||('AGR-'+k.id))
-    : ((k.invoiceNumber||('AGR-'+k.id))+'-R'+String(p.id).slice(-4));
+    : paymentReceiptDocumentNumber(k,p);
   const paymentsTable=finalInvoice
-    ? `<table><thead><tr><th>Fecha</th><th>Método</th><th>Monto</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.method||'—')}</td><td>${money(Number(x.amount||0))}${Number(x.discountCredit||0)>0?' + '+money(Number(x.discountCredit||0))+' descuento':''}</td></tr>`).join('')}</tbody></table>`
-    : `<table><thead><tr><th>Fecha</th><th>Método</th><th>Pago recibido</th></tr></thead><tbody><tr><td>${esc(p.date||'—')}</td><td>${esc(p.method||'—')}</td><td>${money(Number(p.amount||0))}</td></tr></tbody></table>`;
+    ? `<table><thead><tr><th>Fecha</th><th>Método</th><th>Monto</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.method||'—')}</td><td>${money(Number(x.amount||0))}${Number(x.discountCredit||0)>0?' + '+money(Number(x.discountCredit||0))+' descuento':''}${Number(x.referralCreditApplied||0)>0?' + '+money(Number(x.referralCreditApplied||0))+' Crédito AGR':''}</td></tr>`).join('')}</tbody></table>`
+    : `<table class="payment-receipt-table"><thead><tr><th>Fecha</th><th>Método</th><th>Pago recibido</th></tr></thead><tbody><tr><td>${esc(p.date||'—')}</td><td>${esc(p.method||'—')}</td><td>${money(Number(p.amount||0))}</td></tr></tbody></table>`;
 
   return `<!doctype html>
 <html lang="es">
@@ -343,11 +395,11 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
   .invoice-actions button{border:1px solid #dfe5ee;border-radius:10px;padding:10px 14px;background:#fff;color:#10264a;font-weight:700;cursor:pointer}
   .invoice-actions button.primary{background:#10264a;color:#fff;border-color:#10264a}
   .top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #d9b45b;padding-bottom:22px}
-  .brand{display:flex;flex-direction:column;align-items:flex-start;gap:0}.brand-logo{width:210px;height:auto;object-fit:contain;border-radius:10px;display:block}.brand-copy{margin-top:-72px}.brand-copy p{margin:2px 0;color:#5d687b;line-height:1.18}.brand-copy p{margin:3px 0;color:#5d687b}
+  .brand{display:flex;flex-direction:column;align-items:flex-start;gap:0}.brand-logo{width:175px;height:auto;object-fit:contain;border-radius:10px;display:block}.brand-copy{margin-top:-72px}.brand-copy p{margin:2px 0;color:#5d687b;line-height:1.18}.brand-copy p{margin:3px 0;color:#5d687b}
   .doc{text-align:right}.doc h2{margin:0 0 6px;font-size:24px}.paid{display:inline-block;margin-top:8px;padding:6px 11px;border:1px solid #1d7a56;border-radius:999px;color:#1d7a56;font-weight:700}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}.box{padding:16px;border:1px solid #e3e7ee;border-radius:12px}
+  .grid{display:grid;grid-template-columns:1fr;gap:18px;margin:28px 0}.box{padding:16px;border:1px solid #e3e7ee;border-radius:12px}
   .box span{display:block;color:#6b768a;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}.box strong{font-size:17px}
-  table{width:100%;border-collapse:collapse;margin:24px 0}th,td{text-align:left;padding:12px;border-bottom:1px solid #e3e7ee}th{font-size:12px;text-transform:uppercase;color:#6b768a}
+  table{width:100%;border-collapse:collapse;margin:24px 0}th,td{text-align:left;padding:12px;border-bottom:1px solid #e3e7ee}th{font-size:12px;text-transform:uppercase;color:#6b768a}.payment-receipt-table{table-layout:fixed}.payment-receipt-table th,.payment-receipt-table td{width:33.333%;vertical-align:middle}.payment-receipt-table th:nth-child(3),.payment-receipt-table td:nth-child(3){text-align:right}
   .totals{margin-left:auto;max-width:360px}.totals div{display:flex;justify-content:space-between;padding:8px 0}.totals .grand{border-top:2px solid #10264a;margin-top:6px;padding-top:12px;font-size:18px;font-weight:700}
   .footer{margin-top:42px;padding-top:18px;border-top:1px solid #e3e7ee;color:#6b768a;font-size:12px;line-height:1.6}
   @media print{.sheet{max-width:none;padding:28px}.no-print{display:none!important}.invoice-actions{display:none!important}}
@@ -368,10 +420,45 @@ function paymentDocumentHTML(k,p,{finalInvoice=false}={}){
   </div>
   ${paymentsTable}
   <div class="totals">
-    <div><span>Precio del servicio</span><strong>${money(Number(k.serviceTotal||0))}</strong></div>
-    ${finalInvoice?'<div><span>Total recibido</span><strong>'+money(paidTotal)+'</strong></div>':'<div><span>Pago recibido</span><strong>'+money(Number(p.amount||0))+'</strong></div>'}
-    ${creditsTotal>0?'<div><span>Descuento aplicado</span><strong>'+money(creditsTotal)+'</strong></div>':''}
-    <div class="grand"><span>Saldo restante</span><strong>${money(finalInvoice?0:after)}</strong></div>
+    <div>
+      <span>Precio del servicio</span>
+      <strong>${money(Number(k.serviceTotal||0))}</strong>
+    </div>
+
+    ${finalInvoice
+      ? '<div><span>Total recibido</span><strong>'+money(paidTotal)+'</strong></div>'
+      : '<div><span>Pago recibido en este recibo</span><strong>'+money(Number(p.amount||0))+'</strong></div>'
+    }
+
+    ${finalInvoice && creditsTotal>0
+      ? '<div><span>Descuentos aplicados</span><strong>'+money(creditsTotal)+'</strong></div>'
+      : ''
+    }
+
+    ${!finalInvoice && currentDiscount>0
+      ? '<div><span>Descuento aplicado en este recibo</span><strong>'+money(currentDiscount)+'</strong></div>'
+      : ''
+    }
+
+    ${finalInvoice && referralCreditsTotal>0
+      ? '<div><span>Crédito AGR utilizado</span><strong>'+money(referralCreditsTotal)+'</strong></div>'
+      : ''
+    }
+
+    ${!finalInvoice && currentReferralCredit>0
+      ? '<div><span>Crédito AGR aplicado en este recibo</span><strong>'+money(currentReferralCredit)+'</strong></div>'
+      : ''
+    }
+
+    <div>
+      <span>${finalInvoice?'Total cubierto':'Total cubierto acumulado'}</span>
+      <strong>${money(effectivePaid)}</strong>
+    </div>
+
+    <div class="grand">
+      <span>Saldo restante</span>
+      <strong>${money(finalInvoice?0:after)}</strong>
+    </div>
   </div>
   <div class="footer">
     ${finalInvoice
@@ -392,38 +479,130 @@ function openPaymentDocument(k,p,finalInvoice=false){
   w.document.close();
 }
 
-async function finalInvoicePdfBase64(k,p){
-  if(typeof html2pdf!=='function') throw new Error('El generador de PDF no está disponible. Recarga el CRM e intenta nuevamente.');
-  const frame=document.createElement('iframe');
-  frame.style.position='fixed';
-  frame.style.left='-10000px';
-  frame.style.top='0';
-  frame.style.width='900px';
-  frame.style.height='1200px';
-  frame.style.opacity='0';
-  frame.setAttribute('aria-hidden','true');
-  document.body.appendChild(frame);
-  try{
-    const doc=frame.contentDocument;
-    doc.open();
-    doc.write(paymentDocumentHTML(k,p,{finalInvoice:true}));
-    doc.close();
-    await new Promise(resolve=>setTimeout(resolve,250));
-    const imgs=[...doc.images];
-    await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(r=>{img.onload=img.onerror=r;})));
-    const sheet=doc.querySelector('.sheet');
-    if(!sheet) throw new Error('No se pudo preparar la factura para PDF.');
-    const dataUri=await html2pdf().set({
-      margin:0,
-      filename:(k.invoiceNumber||('AGR-'+k.id))+'-Factura-Final.pdf',
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
-      jsPDF:{unit:'in',format:'letter',orientation:'portrait'}
-    }).from(sheet).outputPdf('datauristring');
-    return String(dataUri).split(',').pop();
-  }finally{
-    frame.remove();
+async function paymentDocumentPdfBase64(k,p,finalInvoice=false){
+  if(typeof html2pdf!=='function'){
+    throw new Error(
+      'El generador de PDF no está disponible. Recarga el CRM.'
+    );
   }
+
+  const host=document.createElement('div');
+
+  host.style.position='fixed';
+  host.style.left='-12000px';
+  host.style.top='0';
+  host.style.width='816px';
+  host.style.background='#ffffff';
+  host.style.zIndex='-1';
+
+  document.body.appendChild(host);
+
+  try{
+    const html=paymentDocumentHTML(
+      k,
+      p,
+      {finalInvoice}
+    );
+
+    const parser=new DOMParser();
+
+    const parsed=parser.parseFromString(
+      html,
+      'text/html'
+    );
+
+    [...parsed.querySelectorAll('style')]
+      .forEach(node=>{
+        const clone=document.createElement('style');
+        clone.textContent=node.textContent||'';
+        host.appendChild(clone);
+      });
+
+    const sheet=parsed.querySelector('.sheet');
+
+    if(!sheet){
+      throw new Error(
+        'No se pudo preparar el recibo.'
+      );
+    }
+
+    const renderedSheet=sheet.cloneNode(true);
+
+    host.appendChild(renderedSheet);
+
+    await new Promise(resolve=>
+      requestAnimationFrame(()=>
+        requestAnimationFrame(resolve)
+      )
+    );
+
+    const imgs=[
+      ...renderedSheet.querySelectorAll('img')
+    ];
+
+    await Promise.all(
+      imgs.map(img=>{
+        if(img.complete){
+          return Promise.resolve();
+        }
+
+        return new Promise(resolve=>{
+          img.onload=resolve;
+          img.onerror=resolve;
+        });
+      })
+    );
+
+    await new Promise(
+      resolve=>setTimeout(resolve,250)
+    );
+
+    const baseName=k.invoiceNumber||('AGR-'+k.id);
+
+    const filename=finalInvoice
+      ? baseName+'-Factura-Final.pdf'
+      : paymentReceiptDocumentNumber(k,p)+'-Recibo-de-Pago.pdf';
+
+    const dataUri=await html2pdf()
+      .set({
+        margin:0,
+        filename,
+        image:{
+          type:'jpeg',
+          quality:0.98
+        },
+        html2canvas:{
+          scale:2,
+          useCORS:true,
+          backgroundColor:'#ffffff',
+          scrollX:0,
+          scrollY:0
+        },
+        jsPDF:{
+          unit:'in',
+          format:'letter',
+          orientation:'portrait'
+        },
+        pagebreak:{
+          mode:['css','legacy']
+        }
+      })
+      .from(renderedSheet)
+      .outputPdf('datauristring');
+
+    return String(dataUri).split(',').pop();
+
+  }finally{
+    host.remove();
+  }
+}
+
+async function finalInvoicePdfBase64(k,p){
+  return paymentDocumentPdfBase64(
+    k,
+    p,
+    true
+  );
 }
 
 function todayISO(){return new Date().toISOString().slice(0,10)}
@@ -879,18 +1058,105 @@ function cashbookTotals(){
   const monthTotal=data.cashbook.filter(x=>String(x.date||'').startsWith(month)).reduce((s,x)=>s+Number(x.amount||0),0);
   return {todayTotal,monthTotal,total};
 }
-function populateCashbookClients(){
-  const clientSelect=$('#cashbookClient');
-  if(!clientSelect) return;
-  const current=clientSelect.value;
-  const options=data.clients
-    .slice()
-    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-    .map(c=>'<option value="'+Number(c.id)+'">'+esc(c.name)+(c.isCompany?' · Empresa':'')+'</option>')
-    .join('');
-  clientSelect.innerHTML='<option value="">Sin cliente vinculado</option>'+options;
-  if(current && data.clients.some(c=>String(c.id)===String(current))) clientSelect.value=current;
+
+function clearCashbookClient(){
+  const id=$('#cashbookClientId');
+  const selected=$('#cashbookClientSelected');
+
+  if(id) id.value='';
+  if(selected) selected.textContent='';
 }
+
+function selectCashbookClient(client){
+  const search=$('#cashbookClientSearch');
+  const id=$('#cashbookClientId');
+  const results=$('#cashbookClientResults');
+  const selected=$('#cashbookClientSelected');
+
+  if(!client) return;
+
+  if(search) search.value=client.name||'';
+  if(id) id.value=client.id;
+
+  if(selected){
+    selected.textContent='Seleccionado: '+(client.name||'Cliente');
+  }
+
+  if(results){
+    results.innerHTML='';
+    results.hidden=true;
+  }
+}
+
+function renderCashbookClientMatches(query){
+  const results=$('#cashbookClientResults');
+  if(!results) return;
+
+  const q=String(query||'').trim().toLowerCase();
+
+  if(q.length<2){
+    results.innerHTML='';
+    results.hidden=true;
+    return;
+  }
+
+  const matches=data.clients
+    .filter(c=>{
+      const text=[
+        c.name||'',
+        c.phone||'',
+        c.email||''
+      ].join(' ').toLowerCase();
+
+      return text.includes(q);
+    })
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+    .slice(0,10);
+
+  if(!matches.length){
+    results.innerHTML='<div class="pending-client-empty">No se encontraron clientes.</div>';
+    results.hidden=false;
+    return;
+  }
+
+  results.innerHTML=matches.map(c=>{
+    const extra=[c.phone||'',c.email||''].filter(Boolean).join(' \u00B7 ');
+
+    return '<button type="button" class="pending-client-option" data-client-id="'+c.id+'">'+
+      '<strong>'+esc(c.name||'Cliente')+'</strong>'+
+      (extra?'<small>'+esc(extra)+'</small>':'')+
+      '</button>';
+  }).join('');
+
+  results.hidden=false;
+
+  results.querySelectorAll('.pending-client-option').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const client=data.clients.find(c=>String(c.id)===String(btn.dataset.clientId));
+      selectCashbookClient(client);
+    });
+  });
+}
+
+function bindCashbookClientSearch(){
+  const search=$('#cashbookClientSearch');
+
+  if(!search || search.dataset.bound==='1') return;
+
+  search.dataset.bound='1';
+
+  search.addEventListener('input',()=>{
+    clearCashbookClient();
+    renderCashbookClientMatches(search.value);
+  });
+
+  search.addEventListener('focus',()=>{
+    if(search.value.trim().length>=2){
+      renderCashbookClientMatches(search.value);
+    }
+  });
+}
+
 function cashbookItemRowHTML(item={}){
   const qty=Math.max(1,Number(item.quantity||1));
   const unit=Math.max(0,Number(item.unitPrice||0));
@@ -944,10 +1210,1608 @@ function ensureCashbookItemRow(){
   bindCashbookItems();
   refreshCashbookItems();
 }
+
+
+function pendingAccountPaid(account){
+  return Array.isArray(account.payments)
+    ? account.payments.reduce((sum,p)=>sum+Number(p.amount||0),0)
+    : 0;
+}
+
+function renderPendingAccounts(){
+  const summary=$('#pendingSummary');
+  const table=$('#pendingTable');
+  const form=$('#pendingForm');
+
+  if(!summary||!table||!form) return;
+
+  bindPendingClientSearch();
+
+  const rows=[...data.pendingAccounts].sort(
+    (a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.id||0)-Number(a.id||0)
+  );
+
+  const totalDue=rows.reduce((sum,a)=>{
+    const paid=pendingAccountPaid(a);
+    return sum+Math.max(0,Number(a.total||0)-paid);
+  },0);
+
+  const openCount=rows.filter(a=>Number(a.total||0)-pendingAccountPaid(a)>0.009).length;
+
+  summary.innerHTML=
+    '<div><span>Por cobrar</span><strong>'+money(totalDue)+'</strong></div>'+
+    '<div><span>Cuentas abiertas</span><strong>'+openCount+'</strong></div>'+
+    '<div><span>Total registradas</span><strong>'+rows.length+'</strong></div>';
+
+  table.innerHTML=rows.length
+    ? rows.map(a=>{
+        const client=data.clients.find(c=>Number(c.id)===Number(a.clientId));
+        const paid=pendingAccountPaid(a);
+        const balance=Math.max(0,Number(a.total||0)-paid);
+        const status=balance<=0.009?'Pagado':(paid>0?'Parcial':'Pendiente');
+
+        const accountPayments=Array.isArray(a.payments)
+          ? [...a.payments].sort((x,y)=>Number(x.id||0)-Number(y.id||0))
+          : [];
+
+        const receiptsHtml=accountPayments.length
+          ? '<button type="button" class="secondary pending-receipts-btn" data-pending-receipts-account="'+a.id+'" style="margin-left:6px">Recibos ('+accountPayments.length+')</button>'
+          : '';
+
+        return '<tr>'+
+          '<td>'+esc(a.date||'?')+'</td>'+
+          '<td>'+esc(client?.name||'?')+'</td>'+
+          '<td>'+esc(a.description||'?')+'</td>'+
+          '<td><strong>'+money(a.total||0)+'</strong></td>'+
+          '<td>'+money(paid)+'</td>'+
+          '<td><strong>'+money(balance)+'</strong></td>'+
+          '<td>'+esc(a.dueDate||'?')+'</td>'+
+          '<td>'+esc(status)+'</td>'+
+          '<td>'+
+            (balance>0.009
+              ? '<button type="button" class="secondary pending-payment-btn" data-pending-id="'+a.id+'">Registrar pago</button>'
+              : '<button type="button" class="secondary pending-invoice-btn" data-pending-id="'+a.id+'">Factura final</button> <button type="button" class="secondary pending-invoice-email-btn" data-pending-id="'+a.id+'">Correo</button>'
+            )+
+            receiptsHtml+
+          '</td>'+
+        '</tr>';
+      }).join('')
+    : '<tr><td colspan="9">No hay cuentas pendientes registradas.</td></tr>';
+
+  table.querySelectorAll('[data-pending-receipts-account]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      openPendingReceiptsModal(
+        Number(btn.dataset.pendingReceiptsAccount)
+      );
+    });
+  });
+
+  table.querySelectorAll('[data-pending-receipt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      openCashbookReceipt(Number(btn.dataset.pendingReceipt));
+    });
+  });
+
+  table.querySelectorAll('[data-pending-receipt-email]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      emailCashbookReceipt(
+        Number(btn.dataset.pendingReceiptEmail),
+        btn
+      );
+    });
+  });
+
+  table.querySelectorAll('.pending-receipt-search').forEach(input=>{
+    input.addEventListener('input',()=>{
+      const q=String(input.value||'').trim().toLowerCase();
+      const box=input.closest('details')?.querySelector('.pending-old-receipts');
+      if(!box) return;
+
+      box.querySelectorAll('[data-pending-receipt-row]').forEach(row=>{
+        row.style.display=!q || String(row.dataset.search||'').includes(q)
+          ? 'flex'
+          : 'none';
+      });
+    });
+  });
+
+  if($('#pendingDate') && !$('#pendingDate').value){
+    $('#pendingDate').value=todayISO();
+  }
+}
+
+
+
+
+
+function openPendingReceiptsModal(accountId){
+  const account=(data.pendingAccounts||[])
+    .find(a=>Number(a.id)===Number(accountId));
+
+  if(!account) return;
+
+  const client=clientById(account.clientId);
+
+  const payments=Array.isArray(account.payments)
+    ? [...account.payments].sort((a,b)=>Number(b.id||0)-Number(a.id||0))
+    : [];
+
+  const rows=payments.map((p,index)=>{
+    const cashbookId=Number(p.cashbookId||0) || (Number(p.id||0)+1);
+
+    const entry=(data.cashbook||[])
+      .find(x=>Number(x.id)===Number(cashbookId));
+
+    let docNo='Recibo '+String(payments.length-index).padStart(2,'0');
+
+    if(entry){
+      try{
+        docNo=ensureCashbookDocumentNumber(entry)||docNo;
+      }catch(_){}
+    }
+
+    return '<div style="display:grid;grid-template-columns:minmax(180px,1fr) 110px 110px auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #e4e9f0">'+
+      '<strong>'+esc(docNo)+'</strong>'+
+      '<span>'+esc(p.date||'')+'</span>'+
+      '<strong>'+money(p.amount||0)+'</strong>'+
+      '<div style="display:flex;gap:7px;justify-content:flex-end">'+
+        '<button type="button" class="secondary" data-modal-pending-receipt="'+cashbookId+'">Ver</button>'+
+        '<button type="button" class="secondary" data-modal-pending-email="'+cashbookId+'">Correo</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  const overlay=document.createElement('div');
+
+  overlay.style.cssText=
+    'position:fixed;inset:0;background:rgba(9,25,50,.42);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px';
+
+  overlay.innerHTML=
+    '<div style="background:#fff;width:min(850px,96vw);max-height:80vh;border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.22);padding:26px;overflow:hidden">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:18px">'+
+        '<div>'+
+          '<div style="font-size:12px;font-weight:800;letter-spacing:.18em;color:#d39100;text-transform:uppercase">Recibos de la cuenta</div>'+
+          '<h2 style="margin:6px 0 2px;color:#10264a">'+esc(client?.name||'Cliente')+'</h2>'+
+          '<div style="color:#64748b">'+esc(account.description||'')+'</div>'+
+        '</div>'+
+        '<button type="button" data-close-pending-receipts style="border:0;background:#f2f4f7;width:40px;height:40px;border-radius:50%;font-size:22px;cursor:pointer">×</button>'+
+      '</div>'+
+
+      (payments.length>5
+        ? '<input type="search" data-pending-modal-search placeholder="Buscar por recibo, fecha o monto..." style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #d7deea;border-radius:10px;margin-bottom:10px">'
+        : '')+
+
+      '<div style="display:grid;grid-template-columns:minmax(180px,1fr) 110px 110px auto;gap:12px;padding:8px 0;color:#7b8798;font-size:12px;font-weight:800;text-transform:uppercase">'+
+        '<span>Recibo</span><span>Fecha</span><span>Monto</span><span></span>'+
+      '</div>'+
+
+      '<div data-pending-modal-list style="max-height:52vh;overflow-y:auto">'+rows+'</div>'+
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('[data-close-pending-receipts]')?.addEventListener('click',()=>{
+    overlay.remove();
+  });
+
+  overlay.addEventListener('click',e=>{
+    if(e.target===overlay) overlay.remove();
+  });
+
+  overlay.querySelectorAll('[data-modal-pending-receipt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      openCashbookReceipt(Number(btn.dataset.modalPendingReceipt));
+    });
+  });
+
+  overlay.querySelectorAll('[data-modal-pending-email]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      emailCashbookReceipt(
+        Number(btn.dataset.modalPendingEmail),
+        btn
+      );
+    });
+  });
+
+  const search=overlay.querySelector('[data-pending-modal-search]');
+
+  if(search){
+    search.addEventListener('input',()=>{
+      const q=String(search.value||'').trim().toLowerCase();
+
+      overlay.querySelectorAll('[data-pending-modal-list] > div').forEach(row=>{
+        row.style.display=!q || row.textContent.toLowerCase().includes(q)
+          ? 'grid'
+          : 'none';
+      });
+    });
+  }
+}
+
+async function registerPendingAccountPayment(accountId){
+  const account=data.pendingAccounts.find(a=>Number(a.id)===Number(accountId));
+
+  if(!account){
+    alert('No se encontr? la cuenta pendiente.');
+    return;
+  }
+
+  if(!Array.isArray(account.payments)){
+    account.payments=[];
+  }
+
+  const alreadyPaid=pendingAccountPaid(account);
+  const balance=Math.max(0,Number(account.total||0)-alreadyPaid);
+
+  if(balance<=0.009){
+    alert('Esta cuenta ya est? pagada.');
+    renderPendingAccounts();
+    return;
+  }
+
+  const client=clientById(account.clientId);
+
+  const amountText=prompt(
+    'Registrar pago\n\nCliente: '+(client?.name||'Cliente')+
+    '\nConcepto: '+(account.description||'')+
+    '\nSaldo pendiente: '+money(balance)+
+    '\n\n¿Cuánto pagó?',
+    balance.toFixed(2)
+  );
+
+  if(amountText===null) return;
+
+  const amount=Number(
+    String(amountText)
+      .replace(/[$,]/g,'')
+      .trim()
+  );
+
+  if(!Number.isFinite(amount) || amount<=0){
+    alert('Escribe un monto v?lido mayor que $0.');
+    return;
+  }
+
+  if(amount>balance+0.009){
+    alert('El pago no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
+    return;
+  }
+
+  const methodText=prompt(
+    'Método de pago:\n\nCash\nZelle\nStripe/Tarjeta\nOtro',
+    'Cash'
+  );
+
+  if(methodText===null) return;
+
+  const method=methodText.trim()||'Cash';
+
+  const noteText=prompt(
+    'Nota del pago (opcional):',
+    ''
+  );
+
+  if(noteText===null) return;
+
+  const paymentId=Date.now();
+  const paymentDate=todayISO();
+
+  account.payments.push({
+    id:paymentId,
+    date:paymentDate,
+    amount:Number(amount.toFixed(2)),
+    method,
+    note:noteText.trim(),
+    cashbookId:paymentId+1
+  });
+
+  data.cashbook.push({
+    id:paymentId+1,
+    date:paymentDate,
+    clientId:Number(account.clientId),
+    concept:account.description||'Pago de cuenta pendiente',
+    items:[{
+      service:account.description||'Pago de cuenta pendiente',
+      quantity:1,
+      unitPrice:Number(amount.toFixed(2))
+    }],
+    category:'Cobro de cuenta pendiente',
+    method,
+    amount:Number(amount.toFixed(2)),
+    note:noteText.trim()
+  });
+
+  save();
+
+  renderPendingAccounts();
+
+  if(typeof renderCashbook==='function'){
+    renderCashbook();
+  }
+
+  const newBalance=Math.max(
+    0,
+    Number(account.total||0)-pendingAccountPaid(account)
+  );
+
+  if(newBalance<=0.009){
+    alert(
+      'Pago registrado correctamente.\n\n'+
+      'Cuenta PAGADA.\n'+
+      'Total pagado: '+money(account.total)
+    );
+  }else{
+    alert(
+      'Pago registrado correctamente.\n\n'+
+      'Pago: '+money(amount)+'\n'+
+      'Saldo restante: '+money(newBalance)
+    );
+  }
+}
+
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.pending-payment-btn');
+  if(!btn) return;
+
+  registerPendingAccountPayment(
+    Number(btn.dataset.pendingId)
+  );
+});
+
+
+
+function nextPendingInvoiceNumber(){
+  const year=new Date().getFullYear();
+
+  const nums=(data.pendingAccounts||[])
+    .map(a=>String(a.invoiceNumber||''))
+    .map(v=>v.match(/^AGR-CP-(\d{4})-(\d+)$/))
+    .filter(Boolean)
+    .filter(m=>Number(m[1])===year)
+    .map(m=>Number(m[2]));
+
+  const next=(nums.length?Math.max(...nums):0)+1;
+
+  return 'AGR-CP-'+year+'-'+String(next).padStart(4,'0');
+}
+
+function pendingAccountInvoiceHTML(account){
+  const client=clientById(account.clientId);
+
+  const payments=Array.isArray(account.payments)
+    ? [...account.payments].sort(
+        (a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
+               Number(a.id||0)-Number(b.id||0)
+      )
+    : [];
+
+  const paid=payments.reduce(
+    (sum,p)=>sum+Number(p.amount||0),
+    0
+  );
+
+  const balance=Math.max(
+    0,
+    Number(account.total||0)-paid
+  );
+
+  const invoiceNo=account.invoiceNumber||'AGR';
+  const invoiceDate=account.invoiceDate||todayISO();
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Factura final ? ${esc(invoiceNo)}</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  color:#10264a;
+  margin:0;
+  background:#fff
+}
+.sheet{
+  max-width:820px;
+  margin:0 auto;
+  padding:48px
+}
+.invoice-actions{
+  max-width:820px;
+  margin:18px auto 0;
+  padding:0 48px;
+  display:flex;
+  justify-content:flex-end
+}
+.invoice-actions button{
+  border:1px solid #dfe5ee;
+  border-radius:10px;
+  padding:10px 14px;
+  background:#10264a;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  border-bottom:2px solid #d9b45b;
+  padding-bottom:22px
+}
+.brand-logo{
+  width:210px;
+  height:auto;
+  display:block
+}
+.brand-copy{
+  margin-top:10px
+}
+.brand-copy p{
+  margin:3px 0;
+  color:#5d687b
+}
+.doc{
+  text-align:right
+}
+.doc h2{
+  margin:0 0 6px;
+  font-size:24px
+}
+
+.paid{
+  display:inline-block;
+  margin-top:8px;
+  padding:6px 11px;
+  border:1px solid #1d7a56;
+  border-radius:999px;
+  color:#1d7a56;
+  font-weight:700
+}
+.paid{
+  display:inline-block;
+  margin-top:8px;
+  padding:6px 11px;
+  border:1px solid #1d7a56;
+  border-radius:999px;
+  color:#1d7a56;
+  font-weight:700
+}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin:28px 0
+}
+.box{
+  padding:16px;
+  border:1px solid #e3e7ee;
+  border-radius:12px
+}
+.box span{
+  display:block;
+  color:#6b768a;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:5px
+}
+.box strong{
+  font-size:17px
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin:24px 0
+}
+th,td{
+  text-align:left;
+  padding:12px;
+  border-bottom:1px solid #e3e7ee
+}
+th{
+  font-size:12px;
+  text-transform:uppercase;
+  color:#6b768a
+}
+.totals{
+  margin-left:auto;
+  max-width:360px
+}
+.totals div{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0
+}
+.totals .grand{
+  border-top:2px solid #10264a;
+  margin-top:6px;
+  padding-top:12px;
+  font-size:18px;
+  font-weight:700
+}
+.footer{
+  margin-top:42px;
+  padding-top:18px;
+  border-top:1px solid #e3e7ee;
+  color:#6b768a;
+  font-size:12px;
+  line-height:1.6
+}
+@media print{
+  .sheet{max-width:none;padding:28px}
+  .no-print{display:none!important}
+}
+</style>
+</head>
+
+<body>
+
+<div class="invoice-actions no-print">
+  <button type="button" onclick="window.print()">
+    Imprimir / Guardar PDF
+  </button>
+</div>
+
+<div class="sheet">
+
+  <div class="top">
+    <div>
+      <img
+        class="brand-logo"
+        src="https://agrsolutionsllc.com/logo-agr.jpeg.jpeg"
+        alt="AGR Solutions LLC"
+      >
+      <div class="brand-copy">
+        <p>294 Tyler Street, East Haven, CT 06512</p>
+        <p>203-824-0351 &middot; agrsolutionsllc.com</p>
+      </div>
+    </div>
+
+    <div class="doc">
+      <h2>FACTURA FINAL</h2>
+      <div>${esc(invoiceNo)}</div>
+      <div>${esc(invoiceDate)}</div>
+      <span class="paid">PAID IN FULL</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="box">
+      <span>Cliente</span>
+      <strong>${esc(client?.name||'Cliente')}</strong>
+      <br>
+      ${client?.email?esc(client.email):''}
+    </div>
+
+    <div class="box">
+      <span>Servicio / trabajo</span>
+      <strong>${esc(account.description||'Servicio')}</strong>
+      <br>
+      Fecha del trabajo: ${esc(account.date||'?')}
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>M?todo</th>
+        <th>Pago recibido</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      ${payments.map(p=>`
+        <tr>
+          <td>${esc(p.date||'?')}</td>
+          <td>${esc(p.method||'?')}</td>
+          <td><strong>${money(Number(p.amount||0))}</strong></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div>
+      <span>Total del servicio</span>
+      <strong>${money(Number(account.total||0))}</strong>
+    </div>
+
+    <div>
+      <span>Total recibido</span>
+      <strong>${money(paid)}</strong>
+    </div>
+
+    <div class="grand">
+      <span>Saldo restante</span>
+      <strong>${money(balance)}</strong>
+    </div>
+  </div>
+
+  <div class="footer">
+    Esta factura confirma que el balance correspondiente al servicio indicado
+    ha sido pagado en su totalidad.
+    <br>
+    Gracias por confiar en AGR Solutions LLC.
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
+
+
+async function pendingAccountInvoicePdfBase64(account){
+  if(typeof html2pdf!=='function'){
+    throw new Error('El generador de PDF no est? disponible. Recarga el CRM.');
+  }
+
+  const host=document.createElement('div');
+
+  host.style.position='fixed';
+  host.style.left='-12000px';
+  host.style.top='0';
+  host.style.width='816px';
+  host.style.background='#ffffff';
+  host.style.zIndex='-1';
+
+  document.body.appendChild(host);
+
+  try{
+    const html=pendingAccountInvoiceHTML(account);
+
+    const parser=new DOMParser();
+    const parsed=parser.parseFromString(html,'text/html');
+
+    const styleNodes=[
+      ...parsed.querySelectorAll('style')
+    ];
+
+    styleNodes.forEach(node=>{
+      const clone=document.createElement('style');
+      clone.textContent=node.textContent||'';
+      host.appendChild(clone);
+    });
+
+    const sheet=parsed.querySelector('.sheet');
+
+    if(!sheet){
+      throw new Error('No se pudo preparar la factura.');
+    }
+
+    const renderedSheet=sheet.cloneNode(true);
+    host.appendChild(renderedSheet);
+
+    await new Promise(resolve=>
+      requestAnimationFrame(()=>
+        requestAnimationFrame(resolve)
+      )
+    );
+
+    const imgs=[...renderedSheet.querySelectorAll('img')];
+
+    await Promise.all(
+      imgs.map(img=>{
+        if(img.complete) return Promise.resolve();
+
+        return new Promise(r=>{
+          img.onload=r;
+          img.onerror=r;
+        });
+      })
+    );
+
+    await new Promise(resolve=>setTimeout(resolve,250));
+
+    const dataUri=await html2pdf().set({
+      margin:0,
+      filename:(account.invoiceNumber||'AGR')+'-Factura-Final.pdf',
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{
+        scale:2,
+        useCORS:true,
+        backgroundColor:'#ffffff',
+        scrollX:0,
+        scrollY:0
+      },
+      jsPDF:{
+        unit:'in',
+        format:'letter',
+        orientation:'portrait'
+      },
+      pagebreak:{
+        mode:['css','legacy']
+      }
+    }).from(renderedSheet).outputPdf('datauristring');
+
+    return String(dataUri).split(',').pop();
+
+  }finally{
+    host.remove();
+  }
+}
+
+async function emailPendingAccountInvoice(accountId,button){
+  const account=(data.pendingAccounts||[])
+    .find(a=>Number(a.id)===Number(accountId));
+
+  if(!account){
+    alert('No se encontr? la cuenta.');
+    return;
+  }
+
+  const balance=Math.max(
+    0,
+    Number(account.total||0)-pendingAccountPaid(account)
+  );
+
+  if(balance>0.009){
+    alert('Esta cuenta todav?a tiene saldo pendiente.');
+    return;
+  }
+
+  const client=clientById(account.clientId);
+
+  if(!client?.email){
+    alert('Este cliente no tiene un correo registrado.');
+    return;
+  }
+
+  if(!account.invoiceNumber){
+    account.invoiceNumber=nextPendingInvoiceNumber();
+    account.invoiceDate=todayISO();
+    save();
+  }
+
+  const ok=window.confirm(
+    '?Enviar la factura final '+account.invoiceNumber+
+    ' a '+client.email+'?\n\nEl PDF se adjuntar? autom?ticamente.'
+  );
+
+  if(!ok) return;
+
+  const original=button?.textContent||'Correo';
+
+  if(button){
+    button.disabled=true;
+    button.textContent='Enviando...';
+  }
+
+  try{
+    const pdfBase64=await pendingAccountInvoicePdfBase64(account);
+
+    const response=await fetch(FINAL_INVOICE_EMAIL_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        to:client.email,
+        clientName:client.name||'',
+        invoiceNumber:account.invoiceNumber,
+        service:account.description||'Servicio',
+        pdfBase64
+      })
+    });
+
+    const result=await response.json().catch(()=>({}));
+
+    if(!response.ok || !result.sent){
+      throw new Error(
+        result.error||
+        'No se pudo enviar la factura.'
+      );
+    }
+
+    alert(
+      'Factura enviada correctamente a '+
+      client.email+'.'
+    );
+
+  }catch(err){
+    alert(
+      err.message||
+      'No se pudo enviar la factura.'
+    );
+
+  }finally{
+    if(button){
+      button.disabled=false;
+      button.textContent=original;
+    }
+  }
+}
+
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.pending-invoice-email-btn');
+
+  if(!btn) return;
+
+  emailPendingAccountInvoice(
+    Number(btn.dataset.pendingId),
+    btn
+  );
+});
+
+function openPendingAccountInvoice(accountId){
+  const account=(data.pendingAccounts||[])
+    .find(a=>Number(a.id)===Number(accountId));
+
+  if(!account){
+    alert('No se encontr? la cuenta.');
+    return;
+  }
+
+  const balance=Math.max(
+    0,
+    Number(account.total||0)-pendingAccountPaid(account)
+  );
+
+  if(balance>0.009){
+    alert(
+      'Esta cuenta todav?a tiene un saldo pendiente de '+
+      money(balance)+'.'
+    );
+    return;
+  }
+
+  if(!account.invoiceNumber){
+    account.invoiceNumber=nextPendingInvoiceNumber();
+    account.invoiceDate=todayISO();
+    save();
+  }
+
+  const w=window.open('','_blank');
+
+  if(!w){
+    alert('Permite ventanas emergentes para abrir la factura.');
+    return;
+  }
+
+  try{w.opener=null;}catch(_){}
+
+  w.document.open();
+  w.document.write(
+    pendingAccountInvoiceHTML(account)
+  );
+  w.document.close();
+}
+
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.pending-invoice-btn');
+
+  if(!btn) return;
+
+  openPendingAccountInvoice(
+    Number(btn.dataset.pendingId)
+  );
+});
+
+function clearPendingClient(){
+  const id=$('#pendingClientId');
+  const selected=$('#pendingClientSelected');
+
+  if(id) id.value='';
+  if(selected) selected.textContent='';
+}
+
+function selectPendingClient(client){
+  const search=$('#pendingClientSearch');
+  const id=$('#pendingClientId');
+  const results=$('#pendingClientResults');
+  const selected=$('#pendingClientSelected');
+
+  if(!client) return;
+
+  if(search) search.value=client.name||'';
+  if(id) id.value=client.id;
+
+  if(selected){
+    selected.textContent='Seleccionado: '+(client.name||'Cliente');
+  }
+
+  if(results){
+    results.innerHTML='';
+    results.hidden=true;
+  }
+}
+
+function renderPendingClientMatches(query){
+  const results=$('#pendingClientResults');
+  if(!results) return;
+
+  const q=String(query||'').trim().toLowerCase();
+
+  if(q.length<2){
+    results.innerHTML='';
+    results.hidden=true;
+    return;
+  }
+
+  const matches=data.clients
+    .filter(c=>{
+      const text=[
+        c.name||'',
+        c.phone||'',
+        c.email||''
+      ].join(' ').toLowerCase();
+
+      return text.includes(q);
+    })
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+    .slice(0,10);
+
+  if(!matches.length){
+    results.innerHTML='<div class="pending-client-empty">No se encontraron clientes.</div>';
+    results.hidden=false;
+    return;
+  }
+
+  results.innerHTML=matches.map(c=>{
+    const extra=[c.phone||'',c.email||''].filter(Boolean).join(' \u00B7 ');
+
+    return '<button type="button" class="pending-client-option" data-client-id="'+c.id+'">'+
+      '<strong>'+esc(c.name||'Cliente')+'</strong>'+
+      (extra?'<small>'+esc(extra)+'</small>':'')+
+      '</button>';
+  }).join('');
+
+  results.hidden=false;
+
+  results.querySelectorAll('.pending-client-option').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const client=data.clients.find(c=>String(c.id)===String(btn.dataset.clientId));
+      selectPendingClient(client);
+    });
+  });
+}
+
+function bindPendingClientSearch(){
+  const search=$('#pendingClientSearch');
+  if(!search || search.dataset.bound==='1') return;
+
+  search.dataset.bound='1';
+
+  search.addEventListener('input',()=>{
+    clearPendingClient();
+    renderPendingClientMatches(search.value);
+  });
+
+  search.addEventListener('focus',()=>{
+    if(search.value.trim().length>=2){
+      renderPendingClientMatches(search.value);
+    }
+  });
+}
+
+
+function nextCashbookDocumentNumber(){
+  const year=new Date().getFullYear();
+
+  const nums=(data.cashbook||[])
+    .map(x=>String(x.documentNumber||''))
+    .map(v=>v.match(/^AGR-CJ-(\\d{4})-(\\d+)$/))
+    .filter(Boolean)
+    .filter(m=>Number(m[1])===year)
+    .map(m=>Number(m[2]));
+
+  const next=(nums.length?Math.max(...nums):0)+1;
+
+  return 'AGR-CJ-'+year+'-'+String(next).padStart(4,'0');
+}
+
+function ensureCashbookDocumentNumber(entry){
+  if(!entry.documentNumber){
+    entry.documentNumber=nextCashbookDocumentNumber();
+    save();
+  }
+
+  return entry.documentNumber;
+}
+
+function cashbookReceiptHTML(entry){
+  const client=entry.clientId
+    ? clientById(entry.clientId)
+    : null;
+
+  const docNo=ensureCashbookDocumentNumber(entry);
+
+  const items=Array.isArray(entry.items) && entry.items.length
+    ? entry.items
+    : [{
+        service:entry.concept||'Servicio',
+        subservice:'',
+        quantity:1,
+        unitPrice:Number(
+          entry.serviceTotal||
+          entry.amount||
+          0
+        )
+      }];
+
+  const serviceTotal=Number(
+    entry.serviceTotal!==undefined
+      ? entry.serviceTotal
+      : items.reduce(
+          (sum,x)=>sum+
+          Number(x.quantity||1)*Number(x.unitPrice||0),
+          0
+        )
+  );
+
+  const credit=Number(entry.referralCreditApplied||0);
+  const paid=Number(entry.amount||0);
+
+  const itemRows=items.map(x=>`
+    <tr>
+      <td>
+        <strong>${esc(x.service||'Servicio')}</strong>
+        ${x.subservice
+          ? '<br><span class="muted">'+esc(x.subservice)+'</span>'
+          : ''
+        }
+      </td>
+      <td class="num">${Number(x.quantity||1)}</td>
+      <td class="num">${money(x.unitPrice||0)}</td>
+      <td class="num">${money(
+        Number(x.quantity||1)*Number(x.unitPrice||0)
+      )}</td>
+    </tr>
+  `).join('');
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Recibo ${esc(docNo)}</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  padding:0;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#10264a;
+  background:#ffffff;
+}
+
+.sheet{
+  width:816px;
+  min-height:1056px;
+  margin:0 auto;
+  padding:52px 58px;
+  background:#ffffff;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:30px;
+  border-bottom:3px solid #c99828;
+  padding-bottom:24px;
+}
+
+.brand h1{
+  margin:0;
+  font-family:Georgia,serif;
+  font-size:34px;
+  color:#10264a;
+}
+
+.brand p{
+  margin:7px 0 0;
+  color:#68758c;
+  font-size:14px;
+}
+
+.doc{
+  text-align:right;
+}
+
+.doc .title{
+  font-size:22px;
+  font-weight:800;
+  color:#10264a;
+}
+
+.doc .number{
+  margin-top:7px;
+  color:#c18b10;
+  font-weight:700;
+}
+
+.section{
+  margin-top:32px;
+}
+
+.label{
+  color:#7a8599;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.client-name{
+  margin-top:6px;
+  font-size:21px;
+  font-weight:800;
+}
+
+.small{
+  color:#69768b;
+  font-size:13px;
+  line-height:1.5;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:25px;
+}
+
+th{
+  padding:12px 10px;
+  text-align:left;
+  border-bottom:2px solid #dfe5ed;
+  color:#768196;
+  font-size:12px;
+  text-transform:uppercase;
+}
+
+td{
+  padding:15px 10px;
+  border-bottom:1px solid #e7ebf1;
+  font-size:14px;
+}
+
+.num{
+  text-align:right;
+  white-space:nowrap;
+}
+
+.muted{
+  color:#7c8798;
+  font-size:12px;
+}
+
+.totals{
+  width:340px;
+  margin:28px 0 0 auto;
+}
+
+.total-row{
+  display:flex;
+  justify-content:space-between;
+  gap:30px;
+  padding:9px 0;
+  font-size:15px;
+}
+
+.credit{
+  color:#167044;
+}
+
+.grand{
+  margin-top:6px;
+  border-top:2px solid #10264a;
+  padding-top:14px;
+  font-size:21px;
+  font-weight:800;
+}
+
+.payment-box{
+  margin-top:34px;
+  border:1px solid #dce3ec;
+  border-radius:12px;
+  padding:18px 20px;
+  background:#f8fafc;
+}
+
+.payment-box strong{
+  color:#10264a;
+}
+
+.referral-note{
+  margin-top:15px;
+  padding:14px 16px;
+  border-radius:10px;
+  background:#f8f3e8;
+  color:#65501b;
+  font-size:13px;
+}
+
+.footer{
+  margin-top:55px;
+  border-top:1px solid #e1e6ed;
+  padding-top:20px;
+  text-align:center;
+  color:#7b8698;
+  font-size:12px;
+  line-height:1.5;
+}
+
+@media print{
+  body{background:#fff}
+  .sheet{margin:0}
+}
+</style>
+</head>
+
+<body>
+<div class="sheet">
+
+  <div class="top">
+
+    <div class="brand">
+      <h1>AGR Solutions LLC</h1>
+      <p>Organizamos tu presente, construimos tu futuro</p>
+    </div>
+
+    <div class="doc">
+      <div class="title">RECIBO DE PAGO</div>
+      <div class="number">${esc(docNo)}</div>
+      <div class="small" style="margin-top:7px">
+        Fecha: ${esc(entry.date||todayISO())}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section">
+    <div class="label">Cliente</div>
+    <div class="client-name">
+      ${esc(client?.name||'Cliente')}
+    </div>
+
+    ${client?.email
+      ? '<div class="small">'+esc(client.email)+'</div>'
+      : ''
+    }
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Servicio / detalle</th>
+        <th class="num">Cant.</th>
+        <th class="num">Valor</th>
+        <th class="num">Total</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      ${itemRows}
+    </tbody>
+  </table>
+
+  <div class="totals">
+
+    <div class="total-row">
+      <span>Valor de servicios</span>
+      <strong>${money(serviceTotal)}</strong>
+    </div>
+
+    ${credit>0
+      ? `
+        <div class="total-row credit">
+          <span>Crédito AGR aplicado</span>
+          <strong>-${money(credit)}</strong>
+        </div>
+      `
+      : ''
+    }
+
+    <div class="total-row grand">
+      <span>Total pagado</span>
+      <span>${money(paid)}</span>
+    </div>
+
+  </div>
+
+  <div class="payment-box">
+    <div>
+      <strong>Método de pago:</strong>
+      ${esc(entry.method||'—')}
+    </div>
+
+    ${entry.note
+      ? '<div style="margin-top:8px"><strong>Nota:</strong> '+esc(entry.note)+'</div>'
+      : ''
+    }
+  </div>
+
+  ${credit>0
+    ? `
+      <div class="referral-note">
+        <strong>Beneficio AGR:</strong>
+        Se aplicaron ${money(credit)} de crédito disponible
+        del Programa de Referidos AGR.
+      </div>
+    `
+    : ''
+  }
+
+  <div class="footer">
+    Gracias por confiar en AGR Solutions LLC.<br>
+    Este documento confirma el pago recibido por los servicios
+    detallados anteriormente.
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
+function openCashbookReceipt(entryId){
+  const entry=(data.cashbook||[])
+    .find(x=>Number(x.id)===Number(entryId));
+
+  if(!entry){
+    alert('No se encontró el ingreso.');
+    return;
+  }
+
+  ensureCashbookDocumentNumber(entry);
+
+  const w=window.open('','_blank');
+
+  if(!w){
+    alert('Permite ventanas emergentes para abrir el recibo.');
+    return;
+  }
+
+  try{w.opener=null;}catch(_){}
+
+  w.document.open();
+  w.document.write(cashbookReceiptHTML(entry));
+  w.document.close();
+}
+
+async function cashbookReceiptPdfBase64(entry){
+
+  if(typeof html2pdf!=='function'){
+    throw new Error(
+      'El generador de PDF no está disponible. Recarga el CRM.'
+    );
+  }
+
+  const host=document.createElement('div');
+
+  host.style.position='fixed';
+  host.style.left='-12000px';
+  host.style.top='0';
+  host.style.width='816px';
+  host.style.background='#ffffff';
+  host.style.zIndex='-1';
+
+  document.body.appendChild(host);
+
+  try{
+
+    const html=cashbookReceiptHTML(entry);
+
+    const parser=new DOMParser();
+    const parsed=parser.parseFromString(
+      html,
+      'text/html'
+    );
+
+    [...parsed.querySelectorAll('style')]
+      .forEach(node=>{
+        const clone=document.createElement('style');
+        clone.textContent=node.textContent||'';
+        host.appendChild(clone);
+      });
+
+    const sheet=parsed.querySelector('.sheet');
+
+    if(!sheet){
+      throw new Error(
+        'No se pudo preparar el recibo.'
+      );
+    }
+
+    const renderedSheet=sheet.cloneNode(true);
+
+    host.appendChild(renderedSheet);
+
+    await new Promise(resolve=>
+      requestAnimationFrame(()=>
+        requestAnimationFrame(resolve)
+      )
+    );
+
+    const imgs=[
+      ...renderedSheet.querySelectorAll('img')
+    ];
+
+    await Promise.all(
+      imgs.map(img=>{
+        if(img.complete){
+          return Promise.resolve();
+        }
+
+        return new Promise(resolve=>{
+          img.onload=resolve;
+          img.onerror=resolve;
+        });
+      })
+    );
+
+    await new Promise(
+      resolve=>setTimeout(resolve,250)
+    );
+
+    const dataUri=await html2pdf()
+      .set({
+        margin:0,
+
+        filename:
+          (entry.documentNumber||'AGR-CJ')+
+          '-Recibo.pdf',
+
+        image:{
+          type:'jpeg',
+          quality:0.98
+        },
+
+        html2canvas:{
+          scale:2,
+          useCORS:true,
+          backgroundColor:'#ffffff',
+          scrollX:0,
+          scrollY:0
+        },
+
+        jsPDF:{
+          unit:'in',
+          format:'letter',
+          orientation:'portrait'
+        },
+
+        pagebreak:{
+          mode:['css','legacy']
+        }
+      })
+      .from(renderedSheet)
+      .outputPdf('datauristring');
+
+    return String(dataUri)
+      .split(',')
+      .pop();
+
+  }finally{
+    host.remove();
+  }
+}
+
+async function emailCashbookReceipt(entryId,button=null){
+  const entry=(data.cashbook||[])
+    .find(x=>Number(x.id)===Number(entryId));
+
+  if(!entry){
+    alert('No se encontró el ingreso.');
+    return;
+  }
+
+  const client=entry.clientId
+    ? clientById(entry.clientId)
+    : null;
+
+  if(!client){
+    alert('Este ingreso no tiene un cliente asociado.');
+    return;
+  }
+
+  if(!client.email){
+    alert(
+      'El cliente '+(client.name||'')+
+      ' no tiene correo electrónico registrado.'
+    );
+    return;
+  }
+
+  const docNo=ensureCashbookDocumentNumber(entry);
+
+  const ok=confirm(
+    '¿Enviar el recibo '+docNo+
+    ' a '+client.email+'?\n\n'+
+    'El PDF se adjuntará automáticamente.'
+  );
+
+  if(!ok) return;
+
+  const original=button?.textContent||'';
+
+  if(button){
+    button.disabled=true;
+    button.textContent='Enviando...';
+  }
+
+  try{
+
+    const pdfBase64=await cashbookReceiptPdfBase64(entry);
+
+    const response=await fetch(
+      FINAL_INVOICE_EMAIL_URL,
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+          to:client.email,
+          clientName:client.name||'',
+          invoiceNumber:docNo,
+          service:entry.concept||'Servicios AGR',
+          pdfBase64
+        })
+      }
+    );
+
+    const result=await response.json().catch(()=>({}));
+
+    if(!response.ok || !result.sent){
+      throw new Error(
+        result.error||
+        'No se pudo enviar el recibo.'
+      );
+    }
+
+    alert(
+      'Recibo enviado correctamente a '+
+      client.email+'.'
+    );
+
+  }catch(err){
+    alert(
+      err.message||
+      'No se pudo enviar el recibo.'
+    );
+
+  }finally{
+    if(button){
+      button.disabled=false;
+      button.textContent=original;
+    }
+  }
+}
+
+document.addEventListener('click',e=>{
+
+  const viewBtn=e.target.closest(
+    '[data-cashbook-receipt]'
+  );
+
+  if(viewBtn){
+    e.stopPropagation();
+    openCashbookReceipt(
+      Number(viewBtn.dataset.cashbookReceipt)
+    );
+    return;
+  }
+
+  const emailBtn=e.target.closest(
+    '[data-cashbook-email]'
+  );
+
+  if(emailBtn){
+    e.stopPropagation();
+    emailCashbookReceipt(
+      Number(emailBtn.dataset.cashbookEmail),
+      emailBtn
+    );
+  }
+});
+
 function renderCashbook(){
   const summary=$('#cashbookSummary'), table=$('#cashbookTable'), form=$('#cashbookForm');
   if(!summary||!table||!form) return;
-  populateCashbookClients();
+  bindCashbookClientSearch();
   const t=cashbookTotals();
   summary.innerHTML=`
     <div><span>Hoy</span><strong>${money(t.todayTotal)}</strong></div>
@@ -955,11 +2819,44 @@ function renderCashbook(){
     <div><span>Total registrado</span><strong>${money(t.total)}</strong></div>
   `;
   const rows=[...data.cashbook].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.id||0)-Number(a.id||0));
-  table.innerHTML=rows.length?rows.map(x=>{
+const visibleRows=rows.slice(0,5);
+const olderRows=rows.slice(5);
+  table.innerHTML=rows.length?visibleRows.map(x=>{
     const items=Array.isArray(x.items)&&x.items.length?x.items:[{service:x.concept||'Ingreso',subservice:'',quantity:1,unitPrice:Number(x.amount||0)}];
     const detail=items.map(i=>esc(i.service)+(i.subservice?' · '+esc(i.subservice):'')+' · '+Number(i.quantity||1)+' × '+money(i.unitPrice||0)).join('<br>');
-    return `<tr><td>${esc(x.date||'—')}</td><td>${x.clientId?esc(clientName(x.clientId)):'—'}</td><td>${detail}</td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`;
-  }).join(''):'<tr><td colspan="7">No hay ingresos rápidos registrados.</td></tr>';
+    const registeredBy=x.registeredBy
+      ? '<strong>'+esc(x.registeredBy)+'</strong>'+
+        (x.registeredAt
+          ? '<br><small>'+new Date(x.registeredAt).toLocaleTimeString('es-US',{hour:'numeric',minute:'2-digit'})+'</small>'
+          : '')
+      : '—';
+
+    const documentActions=x.clientId
+      ? '<div style="margin-top:8px;display:flex;gap:7px;align-items:center;flex-wrap:nowrap;white-space:nowrap">'+
+          '<button type="button" class="secondary" data-cashbook-receipt="'+x.id+'" title="Ver recibo" aria-label="Ver recibo" style="width:40px;height:40px;padding:0;min-width:40px;display:inline-flex;align-items:center;justify-content:center;background:#f4f8ff"><svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true"><path fill="#17366b" d="M7 2h8l4 4v14l-2-1.2L15 20l-3-1.2L9 20l-2-1.2L5 20V4a2 2 0 0 1 2-2z"/><path fill="#ffffff" d="M14 2v5h5"/><rect x="8" y="9" width="8" height="1.7" rx=".8" fill="#d7a62a"/><rect x="8" y="12" width="8" height="1.5" rx=".7" fill="#8ea3c7"/><rect x="8" y="15" width="6" height="1.5" rx=".7" fill="#8ea3c7"/></svg></button>'+
+          '<button type="button" class="secondary" data-cashbook-email="'+x.id+'" title="Enviar correo" aria-label="Enviar correo" style="width:40px;height:40px;padding:0;min-width:40px;display:inline-flex;align-items:center;justify-content:center;background:#fff9ed"><svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.4" fill="#e0aa22"/><path d="M4.5 7l7.5 5.7L19.5 7" fill="none" stroke="#17366b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 17l5.4-4.7M19.5 17l-5.4-4.7" fill="none" stroke="#fff7da" stroke-width="1.4" stroke-linecap="round"/></svg></button>'+
+        '</div>'
+      : '';
+
+    return `<tr><td>${esc(x.date||'—')}</td><td>${x.clientId?esc(clientName(x.clientId)):'—'}</td><td>${detail}</td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td><td>${registeredBy}</td><td>${documentActions}</td></tr>`;
+  }).join('')+
+(olderRows.length
+  ? '<tr><td colspan="9" style="padding:14px 8px;text-align:center"><details><summary style="cursor:pointer;font-weight:800;color:#17366b">Ver ingresos anteriores ('+olderRows.length+')</summary><div style="margin-top:12px;max-height:420px;overflow-y:auto"><table style="width:100%"><tbody>'+olderRows.map(x=>{
+      const items=Array.isArray(x.items)&&x.items.length?x.items:[{service:x.concept||'Ingreso',subservice:'',quantity:1,unitPrice:Number(x.amount||0)}];
+      const detail=items.map(i=>esc(i.service)+(i.subservice?' · '+esc(i.subservice):'')+' · '+Number(i.quantity||1)+' × '+money(i.unitPrice||0)).join('<br>');
+      const registeredBy=x.registeredBy
+        ? '<strong>'+esc(x.registeredBy)+'</strong>'+(x.registeredAt?'<br><small>'+new Date(x.registeredAt).toLocaleTimeString('es-US',{hour:'numeric',minute:'2-digit'})+'</small>':'')
+        : '—';
+      const documentActions=x.clientId
+        ? '<div style="display:flex;gap:7px;align-items:center;flex-wrap:nowrap;white-space:nowrap">'+
+            '<button type="button" class="secondary" data-cashbook-receipt="'+x.id+'" title="Ver recibo" aria-label="Ver recibo" style="width:38px;height:38px;padding:0;min-width:38px;display:inline-flex;align-items:center;justify-content:center;background:#f8fafc"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path fill="#17366b" d="M7 2h8l4 4v14l-2-1.2L15 20l-3-1.2L9 20l-2-1.2L5 20V4a2 2 0 0 1 2-2z"/><path fill="#ffffff" d="M14 2v5h5"/><rect x="8" y="9" width="8" height="1.7" rx=".8" fill="#d7a62a"/><rect x="8" y="12" width="8" height="1.5" rx=".7" fill="#8ea3c7"/><rect x="8" y="15" width="6" height="1.5" rx=".7" fill="#8ea3c7"/></svg></button>'+
+            '<button type="button" class="secondary" data-cashbook-email="'+x.id+'" title="Enviar correo" aria-label="Enviar correo" style="width:38px;height:38px;padding:0;min-width:38px;display:inline-flex;align-items:center;justify-content:center;background:#f8fafc"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.4" fill="#e0aa22"/><path d="M4.5 7l7.5 5.7L19.5 7" fill="none" stroke="#17366b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 17l5.4-4.7M19.5 17l-5.4-4.7" fill="none" stroke="#fff7da" stroke-width="1.4" stroke-linecap="round"/></svg></button>'+
+          '</div>'
+        : '';
+      return '<tr><td>'+esc(x.date||'—')+'</td><td>'+(x.clientId?esc(clientName(x.clientId)):'—')+'</td><td>'+detail+'</td><td>'+esc(x.category||'—')+'</td><td>'+esc(x.method||'—')+'</td><td><strong>'+money(x.amount)+'</strong></td><td>'+esc(x.note||'—')+'</td><td>'+registeredBy+'</td><td>'+documentActions+'</td></tr>';
+    }).join('')+'</tbody></table></div></details></td></tr>'
+  : '')
+:'<tr><td colspan="9">No hay ingresos rápidos registrados.</td></tr>';
   const dateInput=$('#cashbookDate');
   if(dateInput && !dateInput.value) dateInput.value=todayISO();
   ensureCashbookItemRow();
@@ -1036,7 +2933,7 @@ function renderExpenses(){
     <div><span>Total registrado</span><strong>${money(t.total)}</strong></div>
   `;
   const rows=[...data.expenses].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.id||0)-Number(a.id||0));
-  table.innerHTML=rows.length?rows.map(x=>{
+  table.innerHTML=rows.length?visibleRows.map(x=>{
     const items=Array.isArray(x.items)&&x.items.length?x.items:[{service:x.concept||'Gasto',subservice:'',quantity:1,unitPrice:Number(x.amount||0)}];
     const detail=items.map(i=>esc(i.service)+(i.subservice?' · '+esc(i.subservice):'')+' · '+Number(i.quantity||1)+' × '+money(i.unitPrice||0)).join('<br>');
     return `<tr><td>${esc(x.date||'—')}</td><td>${esc(x.payee||'—')}</td><td>${detail}</td><td>${esc(x.category||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`;
@@ -1049,6 +2946,7 @@ function switchCashTab(tab){
   document.querySelectorAll('[data-cash-tab]').forEach(btn=>btn.classList.toggle('active',btn.dataset.cashTab===tab));
   document.querySelectorAll('[data-cash-pane]').forEach(pane=>pane.classList.toggle('active',pane.dataset.cashPane===tab));
   if(tab==='expense') requestAnimationFrame(()=>renderExpenses());
+  else if(tab==='pending') requestAnimationFrame(()=>renderPendingAccounts());
   else requestAnimationFrame(()=>renderCashbook());
 }
 
@@ -1168,6 +3066,394 @@ function ensureDeleteIconStyle(){
   document.head.appendChild(style);
 }
 
+function referralRevenueForClient(clientId){
+  const id=Number(clientId);
+
+  const caseIds=data.cases
+    .filter(k=>Number(k.clientId)===id)
+    .map(k=>Number(k.id));
+
+  const caseRevenue=data.payments
+    .filter(p=>caseIds.includes(Number(p.caseId)))
+    .reduce((sum,p)=>sum+Number(p.amount||0),0);
+
+  const cashRevenue=data.cashbook
+    .filter(x=>Number(x.clientId)===id)
+    .reduce((sum,x)=>sum+Number(x.amount||0),0);
+
+  const accountRevenue=data.clientAccountPayments
+    .filter(x=>Number(x.clientId)===id)
+    .reduce((sum,x)=>sum+Number(x.amount||0),0);
+
+  return caseRevenue+cashRevenue+accountRevenue;
+}
+
+function referralProgramStats(referrerId){
+  const referred=data.clients
+    .filter(c=>Number(c.referredByClientId)===Number(referrerId))
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(
+      String(b.name||''),
+      undefined,
+      {sensitivity:'base'}
+    ));
+
+  const effective=referred.filter(
+    c=>referralRevenueForClient(c.id)>=100
+  );
+
+  const generated=referred.reduce(
+    (sum,c)=>sum+referralRevenueForClient(c.id),
+    0
+  );
+
+  const baseCredit=effective.length*25;
+  const bonusCredit=effective.length>=5?50:0;
+  const earned=baseCredit+bonusCredit;
+
+  const used=data.referralCreditUses
+    .filter(x=>Number(x.clientId)===Number(referrerId))
+    .reduce((sum,x)=>sum+Number(x.amount||0),0);
+
+  const available=Math.max(0,earned-used);
+
+  const level=
+    effective.length>=10
+      ? 'Embajador AGR'
+      : effective.length>=5
+        ? 'Aliado AGR'
+        : 'Cliente AGR';
+
+  const gift=data.referralGiftCards.find(
+    x=>Number(x.clientId)===Number(referrerId)
+  );
+
+  return {
+    referred,
+    effective,
+    generated,
+    baseCredit,
+    bonusCredit,
+    earned,
+    used,
+    available,
+    level,
+    giftEligible:effective.length>=10,
+    gift
+  };
+}
+
+function referralCurrentRole(){
+  const text=String(
+    document.getElementById('currentUserRole')?.textContent||''
+  ).toLowerCase();
+
+  if(text.includes('administradora')) return 'admin';
+  if(text.includes('asistente')) return 'assistant';
+  return 'readonly';
+}
+
+function referralWhatsAppNumber(phone=''){
+  let digits=String(phone||'').replace(/\D/g,'');
+
+  if(digits.length===10){
+    digits='1'+digits;
+  }
+
+  return digits;
+}
+
+function referralWhatsAppMessage(client,stats){
+  return [
+    '¡Hola '+(client.name||'')+'!',
+    '',
+    'Queremos agradecerte por recomendar AGR Solutions LLC.',
+    '',
+    'Referidos efectivos: '+stats.effective.length,
+    'Crédito AGR ganado: '+money(stats.earned),
+    'Crédito AGR utilizado: '+money(stats.used),
+    'Saldo disponible: '+money(stats.available),
+    '',
+    'Tu nivel actual es '+stats.level+'.',
+    '',
+    'Tu crédito AGR puede utilizarse en servicios elegibles. Al momento de usarlo, solo pagas la diferencia correspondiente.',
+    '',
+    '¡Gracias por confiar en AGR Solutions y recomendarnos!'
+  ].join('\n');
+}
+
+function openReferralDetails(referrerId){
+  const referrer=clientById(referrerId);
+  if(!referrer) return;
+
+  const stats=referralProgramStats(referrerId);
+  const isAdmin=referralCurrentRole()==='admin';
+
+  let dlg=document.getElementById('referralDetailsDialog');
+
+  if(!dlg){
+    dlg=document.createElement('dialog');
+    dlg.id='referralDetailsDialog';
+    document.body.appendChild(dlg);
+  }
+
+  const giftStatus=stats.giftEligible
+    ? (
+        stats.gift?.status==='delivered'
+          ? 'Entregada'
+          : 'Pendiente'
+      )
+    : 'Aún no disponible';
+
+  dlg.innerHTML=`
+    <div class="client-account-dialog">
+
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">PROGRAMA DE REFERIDOS</p>
+          <h2>${esc(referrer.name||'Cliente')}</h2>
+          <small>${esc(stats.level)}</small>
+        </div>
+
+        <button
+          type="button"
+          class="close-btn"
+          id="closeReferralDetails"
+          aria-label="Cerrar"
+        >×</button>
+      </div>
+
+      <div class="cashbook-summary referral-program-summary">
+        <div>
+          <span>Referidos efectivos</span>
+          <strong>${stats.effective.length}</strong>
+        </div>
+
+        <div>
+          <span>Ingresos generados</span>
+          <strong>${money(stats.generated)}</strong>
+        </div>
+
+        <div>
+          <span>Crédito disponible</span>
+          <strong>${money(stats.available)}</strong>
+        </div>
+
+        <div>
+          <span>Nivel</span>
+          <strong style="font-size:20px">${esc(stats.level)}</strong>
+        </div>
+      </div>
+
+      <div class="account-entry-grid" style="margin:18px 0">
+        <div>
+          <small>Crédito por referidos</small>
+          <strong>${money(stats.baseCredit)}</strong>
+        </div>
+
+        <div>
+          <small>Bono 5 referidos</small>
+          <strong>${money(stats.bonusCredit)}</strong>
+        </div>
+
+        <div>
+          <small>Crédito usado</small>
+          <strong>${money(stats.used)}</strong>
+        </div>
+
+        <div>
+          <small>Gift Card $50</small>
+          <strong>${esc(giftStatus)}</strong>
+        </div>
+      </div>
+
+      <div class="toolbar-actions" style="margin-bottom:18px">
+        <button
+          type="button"
+          class="secondary"
+          id="sendReferralWhatsApp"
+        >
+          WhatsApp → saldo
+        </button>
+
+
+        ${isAdmin && stats.giftEligible && stats.gift?.status!=='delivered'
+          ? `
+            <button
+              type="button"
+              class="secondary"
+              id="markGiftCardDelivered"
+            >
+              Marcar Gift Card entregada
+            </button>
+          `
+          : ''
+        }
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente referido</th>
+              <th>Estado</th>
+              <th>Ingresos generados</th>
+              <th>Crédito AGR</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${stats.referred.length
+              ? stats.referred.map(c=>{
+                  const revenue=referralRevenueForClient(c.id);
+                  const effective=revenue>=100;
+
+                  return `
+                    <tr>
+                      <td>
+                        <strong>${esc(c.name||'Cliente')}</strong>
+                        <br>
+                        <small>${esc(c.folderNumber||'')}</small>
+                      </td>
+
+                      <td>
+                        ${effective
+                          ? '<strong>✓ Efectivo</strong>'
+                          : 'Pendiente'
+                        }
+                      </td>
+
+                      <td>
+                        <strong>${money(revenue)}</strong>
+                      </td>
+
+                      <td>
+                        ${effective
+                          ? '<strong>$25.00</strong>'
+                          : '$0.00'
+                        }
+                      </td>
+                    </tr>
+                  `;
+                }).join('')
+              : '<tr><td colspan="4">No hay referidos registrados.</td></tr>'
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="section-subtext" style="margin-top:16px">
+        Un referido se vuelve efectivo cuando alcanza al menos $100 en pagos o ingresos acumulados.
+      </p>
+
+    </div>
+  `;
+
+  dlg.querySelector('#closeReferralDetails').onclick=()=>dlg.close();
+
+  const waBtn=dlg.querySelector('#sendReferralWhatsApp');
+
+  if(waBtn){
+    waBtn.onclick=()=>{
+      const number=referralWhatsAppNumber(referrer.phone||'');
+
+      if(!number){
+        alert('Este cliente no tiene un teléfono registrado.');
+        return;
+      }
+
+      const msg=referralWhatsAppMessage(referrer,stats);
+
+      window.open(
+        'https://wa.me/'+number+'?text='+encodeURIComponent(msg),
+        '_blank',
+        'noopener'
+      );
+    };
+  }
+
+  const useBtn=dlg.querySelector('#useReferralCredit');
+
+  if(useBtn){
+    useBtn.onclick=()=>{
+      const raw=prompt(
+        'Saldo disponible: '+money(stats.available)+
+        '\n\n¿Cuánto crédito AGR deseas aplicar?'
+      );
+
+      if(raw===null) return;
+
+      const amount=Number(raw);
+
+      if(!Number.isFinite(amount) || amount<=0){
+        alert('Ingresa un monto válido.');
+        return;
+      }
+
+      if(amount>stats.available+0.009){
+        alert('El monto supera el crédito disponible.');
+        return;
+      }
+
+      const note=prompt(
+        '¿En qué servicio se utilizará este crédito?\n\nEj. Taxes 2026',
+        ''
+      );
+
+      if(note===null) return;
+
+      data.referralCreditUses.push({
+        id:Date.now(),
+        clientId:Number(referrerId),
+        date:todayISO(),
+        amount:Number(amount.toFixed(2)),
+        note:String(note||'').trim()
+      });
+
+      save();
+      openReferralDetails(referrerId);
+    };
+  }
+
+  const giftBtn=dlg.querySelector('#markGiftCardDelivered');
+
+  if(giftBtn){
+    giftBtn.onclick=()=>{
+      const ok=confirm(
+        '¿Confirmas que entregaste la Gift Card de $50 a '+
+        (referrer.name||'este cliente')+'?'
+      );
+
+      if(!ok) return;
+
+      let gift=data.referralGiftCards.find(
+        x=>Number(x.clientId)===Number(referrerId)
+      );
+
+      if(!gift){
+        gift={
+          id:Date.now(),
+          clientId:Number(referrerId),
+          amount:50,
+          status:'delivered',
+          deliveredAt:new Date().toISOString()
+        };
+
+        data.referralGiftCards.push(gift);
+      }else{
+        gift.amount=50;
+        gift.status='delivered';
+        gift.deliveredAt=new Date().toISOString();
+      }
+
+      save();
+      openReferralDetails(referrerId);
+    };
+  }
+
+  dlg.showModal();
+}
+
 function renderClients(filter=''){
   ensureDeleteIconStyle();
   const q=filter.toLowerCase();
@@ -1179,10 +3465,23 @@ function renderClients(filter=''){
     .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
     .map(c=>{
       const cases=data.cases.filter(x=>x.clientId===c.id).length;
+      const referrals=data.clients.filter(
+        x=>Number(x.referredByClientId)===Number(c.id)
+      ).length;
       const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
-      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td><strong>${money(caseBal)}</strong></td><td><button type="button" class="danger delete-icon-btn" data-delete-client-id="${c.id}" title="Eliminar" aria-label="Eliminar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" fill="currentColor"/></svg></button></td></tr>`
-    }).join('')||'<tr><td colspan="7">No hay clientes personales registrados.</td></tr>';
+      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td>${referrals>0
+  ? '<button type="button" class="text-btn referral-count-btn" data-referral-client-id="'+c.id+'"><strong>'+referrals+'</strong></button>'
+  : '<strong>0</strong>'
+}</td><td><strong>${money(caseBal)}</strong></td><td><button type="button" class="danger delete-icon-btn" data-delete-client-id="${c.id}" title="Eliminar" aria-label="Eliminar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" fill="currentColor"/></svg></button></td></tr>`
+    }).join('')||'<tr><td colspan="8">No hay clientes personales registrados.</td></tr>';
   table.querySelectorAll('[data-delete-client-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();deleteClientRecord(Number(btn.dataset.deleteClientId));});
+
+  table.querySelectorAll('[data-referral-client-id]').forEach(btn=>{
+    btn.onclick=e=>{
+      e.stopPropagation();
+      openReferralDetails(Number(btn.dataset.referralClientId));
+    };
+  });
 }
 function renderCompanies(filter=''){
   ensureDeleteIconStyle();
@@ -1250,10 +3549,10 @@ let editingPaymentId=null;
 let editingServiceId=null;
 
 const templates={
-  client:()=>[['folderNumber','No. de carpeta física','text',''],['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email',''],['isCompany','Tipo de cliente','clientType','']],
+  client:()=>[['folderNumber','No. de carpeta física','text',''],['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email',''],['referredByClientId','Referido por','referrerSearch','full'],['isCompany','Tipo de cliente','clientType','']],
   company:()=>[['folderNumber','No. de carpeta física','text',''],['name','Nombre de la empresa','text','full'],['phone','Teléfono','tel',''],['email','Email','email','']],
   case:()=>[
-    ['clientId','Cliente','client',''],
+    ['clientId','Cliente','caseClientSearch',''],
     ['service','Servicio / trámite','serviceSelect','full'],
     ['status','Estado inicial','status',''],
     ['deadline','Deadline / fecha límite','date',''],
@@ -1288,7 +3587,58 @@ const templates={
 function fieldHTML([name,label,type,cls],values={}){
   let input='';
   const val=values[name] ?? '';
-  if(type==='client') {
+  if(type==='referrerSearch') {
+    const selectedReferrer=data.clients.find(
+      c=>Number(c.id)===Number(val)
+    );
+
+    input=`
+      <div class="pending-client-search">
+        <input
+          id="referrerSearch"
+          type="text"
+          autocomplete="off"
+          placeholder="Buscar cliente que lo refirió"
+          value="${selectedReferrer?esc(selectedReferrer.name):''}"
+        >
+
+        <input
+          id="referredByClientId"
+          type="hidden"
+          name="${name}"
+          value="${selectedReferrer?selectedReferrer.id:''}"
+        >
+
+        <div
+          id="referrerResults"
+          class="pending-client-results"
+          hidden
+        ></div>
+
+        <small id="referrerSelected">
+          ${selectedReferrer?'Seleccionado: '+esc(selectedReferrer.name):''}
+        </small>
+
+        <input
+          id="referredByExternal"
+          name="referredByExternal"
+          type="text"
+          placeholder="O escribe aquí si fue una persona externa / otro"
+          style="margin-top:10px"
+        >
+      </div>`;
+  } else if(type==='caseClientSearch') {
+    const selectedClient=data.clients.find(c=>Number(c.id)===Number(val));
+    input=`
+      <div class="pending-client-search">
+        <input id="caseClientSearch" type="text" autocomplete="off"
+          placeholder="Buscar por nombre, telefono o email"
+          value="${selectedClient?esc(selectedClient.name):''}">
+        <input id="caseClientId" type="hidden" name="${name}" value="${selectedClient?selectedClient.id:''}">
+        <div id="caseClientResults" class="pending-client-results" hidden></div>
+        <small id="caseClientSelected">${selectedClient?'Seleccionado: '+esc(selectedClient.name):''}</small>
+      </div>`;
+  } else if(type==='client') {
     input=`<select name="${name}" required><option value="">Selecciona</option>${data.clients.map(c=>`<option value="${c.id}" ${Number(val)===c.id?'selected':''}>${c.name}</option>`).join('')}</select>`;
   } else if(type==='status') {
     input=`<select name="${name}" required>${statusOrder.map(s=>`<option value="${s}" ${val===s?'selected':''}>${statusLabel(s)}</option>`).join('')}</select>`;
@@ -1403,7 +3753,16 @@ async function syncStripePaymentsForCase(k,{silent=true}={}){
   const existing=new Set(data.payments.map(p=>p.stripePaymentIntentId).filter(Boolean));
   let added=0;
   for(const p of (payload.payments||[])){
-    if(!p?.id || existing.has(p.id) || Number(p.amount||0)<=0) continue;
+    if(!p?.id || Number(p.amount||0)<=0) continue;
+    const existingPayment=data.payments.find(x=>x.stripePaymentIntentId===p.id);
+    if(existingPayment){
+      const correctedAmount=Number(p.amount||0);
+      if(Math.abs(Number(existingPayment.amount||0)-correctedAmount)>0.001){
+        existingPayment.amount=correctedAmount;
+        added++;
+      }
+      continue;
+    }
     data.payments.push({
       id:Date.now()+added,
       caseId:Number(k.id),
@@ -1427,7 +3786,7 @@ async function syncStripePaymentsForCase(k,{silent=true}={}){
 }
 
 async function createStripePaymentLinkForCase(values){
-  const amount=Number(values.initialPayment||0);
+  const amount=Number(values.cardPrice||values.initialPayment||0);
   if(!amount || amount<=0) return '';
   if(values.stripePaymentLink) return values.stripePaymentLink;
 
@@ -1585,24 +3944,44 @@ function renderCaseDocuments(k){
 function buildBalanceReminder(k,requestedAmount){
   const client=clientById(k.clientId);
   const name=client?.name||'cliente';
-  const balance=caseBalance(k);
+  const cashBalance=caseBalanceForMethod(k,'Cash');
   const invoice=k.invoiceNumber?.trim();
-  const requested=Math.min(balance,Math.max(0,Number(requestedAmount||balance)));
-  const hasLiveLink=k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(requested);
-  const paymentLink=hasLiveLink?(k.balancePaymentLink||'').trim():'';
-  const paymentText=requested<balance
-    ? 'En este momento puede realizar un pago parcial de '+money(requested)+'. Después de este pago, su saldo restante será de '+money(balance-requested)+'.'
-    : 'Puede realizar el pago completo de '+money(requested)+'.';
-  return 'Hola '+name+', le recordamos que actualmente tiene un saldo pendiente total de '+money(balance)+' con AGR Solutions LLC'+(invoice?' correspondiente a la referencia '+invoice:'')+'.\n\n'+paymentText+'\n\nPuede realizar su pago por:\n• Cash\n• Zelle\n• Credit / Debit Card'+(paymentLink?'\n\nPara pagar con tarjeta de crédito o débito, utilice este enlace seguro de pago:\n'+paymentLink:'\n\nEl enlace seguro para pago con tarjeta se generará desde el CRM por el monto seleccionado.')+'\n\nSi ya realizó este pago, por favor ignore este mensaje o envíenos su comprobante.\n\nGracias,\nAGR Solutions LLC\n294 Tyler Street, East Haven, CT 06512\n203-824-0351';
-}
 
+  const requested=Math.min(cashBalance,Math.max(0,Number(requestedAmount||cashBalance)));
+  const cardAmount=stripeGrossAmount(requested);
+  const isPartial=requested>0 && requested<cashBalance;
+
+  const hasLiveLink=k.balancePaymentLinkMode==='live' &&
+    k.balancePaymentLink &&
+    Number(k.balancePaymentNetAmount||0)===Number(requested);
+
+  const paymentLink=hasLiveLink?(k.balancePaymentLink||'').trim():'';
+
+  const amountText=isPartial
+    ? 'En este momento puede realizar un pago parcial de '+money(requested)+'. Despues de este pago, su saldo restante sera de '+money(cashBalance-requested)+'.'
+    : 'Puede realizar el pago completo de '+money(requested)+'.';
+
+  return 'Hola '+name+', le recordamos que tiene un saldo pendiente con AGR Solutions LLC'+
+    (invoice?' correspondiente a la referencia '+invoice:'')+'.\n\n'+
+    amountText+
+    '\n\nPuede realizar su pago por:\n'+
+    '\u2022 Cash - '+money(requested)+'\n'+
+    '\u2022 Zelle - '+money(requested)+'\n'+
+    '\u2022 Credit / Debit Card - '+money(cardAmount)+
+    (paymentLink
+      ? '\n\nPara pagar con tarjeta de credito o debito, utilice este enlace seguro de Stripe:\n'+paymentLink
+      : '\n\nSi desea pagar con tarjeta, AGR Solutions LLC le enviara un enlace seguro de Stripe.')+
+    '\n\nSi ya realizo este pago, por favor ignore este mensaje o envienos su comprobante.'+
+    '\n\nGracias,\nAGR Solutions LLC\n294 Tyler Street, East Haven, CT 06512\n203-824-0351';
+}
 async function ensureBalancePaymentLink(k,requestedAmount){
-  const balance=caseBalance(k);
-  const amount=Number(requestedAmount||0);
+  const balance=caseBalanceForMethod(k,'Cash');
+  const netAmount=Number(requestedAmount||0);
+  const amount=stripeGrossAmount(netAmount);
   if(balance<=0) return '';
-  if(!Number.isFinite(amount) || amount<=0) throw new Error('Ingresa un monto válido.');
-  if(amount>balance) throw new Error('El monto no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
-  if(k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(amount)) return k.balancePaymentLink;
+  if(!Number.isFinite(netAmount) || netAmount<=0) throw new Error('Ingresa un monto válido.');
+  if(netAmount>balance) throw new Error('El monto no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
+  if(k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentNetAmount||0)===Number(netAmount)) return k.balancePaymentLink;
   const client=clientById(k.clientId);
   const syncToken=ensureCaseSyncToken(k);
   const response=await fetch(STRIPE_BACKEND_URL,{
@@ -1610,6 +3989,7 @@ async function ensureBalancePaymentLink(k,requestedAmount){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       amount,
+      netAmount,
       caseId:k.id,
       clientName:client?.name||'',
       clientEmail:client?.email||'',
@@ -1626,6 +4006,7 @@ async function ensureBalancePaymentLink(k,requestedAmount){
   if(payload.livemode!==true) throw new Error('Stripe devolvió un enlace de prueba. No se guardó.');
   k.balancePaymentLink=url;
   k.balancePaymentLinkAmount=amount;
+  k.balancePaymentNetAmount=netAmount;
   k.balancePaymentLinkMode='live';
   k.balancePaymentLinkCreatedAt=new Date().toISOString();
   save();
@@ -1638,10 +4019,12 @@ function balanceReminderHTML(k){
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
   const email=(client?.email||'').trim();
-  const savedAmount=(k.balancePaymentLinkMode==='live' && Number(k.balancePaymentLinkAmount||0)>0 && Number(k.balancePaymentLinkAmount||0)<=balance)
-    ? Number(k.balancePaymentLinkAmount)
+  const cardBalance=caseBalanceForMethod(k,'Card');
+  const savedAmount=(k.balancePaymentLinkMode==='live' && Number(k.balancePaymentNetAmount||0)>0 && Number(k.balancePaymentNetAmount||0)<=balance)
+    ? Number(k.balancePaymentNetAmount)
     : balance;
-  const hasBalanceLink=Boolean(k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===savedAmount);
+  const stripeSavedAmount=stripeGrossAmount(savedAmount);
+  const hasBalanceLink=Boolean(k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentNetAmount||0)===savedAmount);
   const message=buildBalanceReminder(k,savedAmount);
   const normalized=phone?(phone.length===10?'1'+phone:phone):'';
   const waHref=normalized?'https://wa.me/'+normalized+'?text='+encodeURIComponent(message):'#';
@@ -1660,7 +4043,7 @@ function balanceReminderHTML(k){
       (hasBalanceLink
         ? '<a class="balance-card-link" href="'+esc(k.balancePaymentLink)+'" target="_blank" rel="noopener">Abrir enlace por '+money(savedAmount)+' ↗</a>'
         : '<button type="button" class="primary balance-create-link">Crear enlace para pagar '+money(savedAmount)+'</button>')+
-      '<small class="balance-link-status" aria-live="polite">'+(hasBalanceLink?'Enlace Stripe listo por '+money(savedAmount)+'.':'')+'</small>'+
+      '<small class="balance-link-status" aria-live="polite">'+(hasBalanceLink?'Enlace Stripe listo por '+money(stripeSavedAmount)+'.':'')+'</small>'+
     '</div>'+
     '<div class="notification-actions">'+
       '<a class="notify-btn notify-whatsapp balance-wa '+(phone?'':'disabled')+'" href="'+waHref+'" target="_blank" rel="noopener">WhatsApp · saldo</a>'+
@@ -1686,6 +4069,7 @@ function bindBalanceReminder(k,root){
   const linkStatus=root.querySelector('.balance-link-status');
   const preview=root.querySelector('.balance-preview');
   const balance=caseBalance(k);
+  const cardBalance=caseBalanceForMethod(k,'Card');
   const client=clientById(k.clientId);
   const phone=(client?.phone||'').replace(/\D/g,'');
   const email=(client?.email||'').trim();
@@ -1694,6 +4078,7 @@ function bindBalanceReminder(k,root){
     const n=Number(amountInput?.value||balance);
     return Number.isFinite(n)?n:0;
   };
+  const stripeAmount=()=>stripeGrossAmount(currentAmount());
   const subjectForAmount=()=> 'Recordatorio de pago · '+(k.invoiceNumber||'AGR')+' · '+money(currentAmount());
 
   const refreshDraft=()=>{
@@ -1707,8 +4092,8 @@ function bindBalanceReminder(k,root){
     if(mail && !mail.classList.contains('disabled')) mail.href='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subjectForAmount())+'&body='+encodeURIComponent(message);
     if(createLink) createLink.textContent=valid?'Crear enlace para pagar '+money(amount):'Ingresa un monto válido';
     if(linkStatus){
-      const matches=k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentLinkAmount||0)===Number(amount);
-      linkStatus.textContent=matches?'Enlace Stripe listo por '+money(amount)+'.':'';
+      const matches=k.balancePaymentLinkMode==='live' && k.balancePaymentLink && Number(k.balancePaymentNetAmount||0)===Number(amount);
+      linkStatus.textContent=matches?'Enlace Stripe listo por '+money(stripeAmount())+'.':'';
     }
   };
 
@@ -1730,9 +4115,10 @@ function bindBalanceReminder(k,root){
     createLink.textContent='Creando enlace seguro...';
     if(linkStatus) linkStatus.textContent='';
     try{
+      const chargeAmount=stripeAmount();
       await ensureBalancePaymentLink(k,amount);
       data.communications.unshift({id:Date.now(),caseId:k.id,channel:'Stripe',action:'Enlace de pago creado · '+money(amount)+(amount<balance?' de '+money(balance)+' pendientes':''),at:new Date().toISOString()});
-      save(); logCaseEvent(k.id,'Enlace Stripe creado por '+money(amount),'payment');
+      save(); logCaseEvent(k.id,'Enlace Stripe creado por '+money(chargeAmount),'payment');
       renderCasePayments(k);
       renderCommunicationHistory(k);
     }catch(err){
@@ -1773,6 +4159,830 @@ function bindBalanceReminder(k,root){
     }
   };
   refreshDraft();
+}
+function intakeTypeForCase(k){
+  const s=String(k?.service||'').toLowerCase();
+  if(s.includes('i-130') || s.includes('i130') || s.includes('petición familiar') || s.includes('peticion familiar')){
+    return {code:'i130',label:'I-130 · Petición Familiar'};
+  }
+  if(s.includes('i-864') || s.includes('i864') || s.includes('affidavit of support') || s.includes('patrocinador financiero')){
+  return {code:'i864',label:'I-864 · Affidavit of Support'};
+}
+if(s.includes('i-765') || s.includes('i765') || s.includes('permiso de trabajo') || s.includes('autorizacion de empleo') || s.includes('autorización de empleo')){
+  return {code:'i765',label:'I-765 · Autorización de Empleo'};
+}
+if(s.includes('i-485') || s.includes('i485') || s.includes('ajuste de estatus')){
+    return {code:'i485',label:'I-485 · Ajuste de Estatus'};
+  }
+  return {code:'general',label:String(k?.service||'Intake general')};
+}
+
+function newIntakeToken(){
+  try{
+    return crypto.randomUUID().replace(/-/g,'');
+  }catch(_){
+    return Date.now().toString(36)+Math.random().toString(36).slice(2);
+  }
+}
+
+function caseIntakeFor(k){
+  if(!data.intakes || typeof data.intakes!=='object') data.intakes={};
+
+  const key=String(k.id);
+  const type=intakeTypeForCase(k);
+
+  if(!data.intakes[key]){
+    data.intakes[key]={
+      type:type.code,
+      typeLabel:type.label,
+      status:'No enviado',
+      token:'',
+      clientLink:'',
+      progress:0,
+      answers:{},
+      createdAt:'',
+      sentAt:'',
+      clientUpdatedAt:'',
+      submittedAt:'',
+      reviewed:false,
+      reviewedAt:'',
+      reviewedBy:''
+    };
+    save();
+  }
+
+  const rec=data.intakes[key];
+
+  if(!rec.type) rec.type=type.code;
+  if(!rec.typeLabel) rec.typeLabel=type.label;
+  if(!rec.answers || typeof rec.answers!=='object') rec.answers={};
+
+  return rec;
+}
+
+function intakeProgress(rec){
+  return Number(rec?.progress||0);
+}
+
+function intakeStatusLabel(rec){
+  if(rec?.reviewed) return 'Revisado por AGR';
+  return rec?.status||'No enviado';
+}
+
+function renderCaseIntake(k){
+  const pane=$('#caseIntakePane');
+  if(!pane) return;
+
+  const client=clientById(k.clientId)||{};
+  const rec=caseIntakeFor(k);
+  const type=intakeTypeForCase(k);
+  const progress=intakeProgress(rec);
+  const status=intakeStatusLabel(rec);
+
+  rec.progress=progress;
+
+  const linkReady=Boolean(rec.clientLink);
+  const submitted=Boolean(rec.submittedAt) || status==='Pendiente de revisión';
+
+  pane.innerHTML=`
+    <div style="display:grid;gap:18px">
+
+      <section style="border:1px solid #dce4ef;border-radius:18px;padding:20px;background:#fff">
+        <div class="workspace-head" style="margin-bottom:16px">
+          <div>
+            <span class="workspace-kicker">CENTRO DE INTAKE</span>
+            <h3 style="margin:4px 0">${esc(type.label)}</h3>
+            <small>${esc(client.name||'Cliente')} · ${esc(k.service||'')}</small>
+          </div>
+          <span class="contract-status">${esc(status)}</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+          <div class="box">
+            <span>Estado</span>
+            <strong>${esc(status)}</strong>
+          </div>
+
+          <div class="box">
+            <span>Progreso del cliente</span>
+            <strong>${progress}%</strong>
+          </div>
+
+          <div class="box">
+            <span>Última actualización</span>
+            <strong>${rec.clientUpdatedAt?dt(rec.clientUpdatedAt):'Sin actividad'}</strong>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;background:#eef3f9;border-radius:999px;height:12px;overflow:hidden">
+          <div style="height:100%;width:${Math.max(0,Math.min(100,progress))}%;background:#d7a62a"></div>
+        </div>
+      </section>
+
+      <section style="border:1px solid #dce4ef;border-radius:18px;padding:20px;background:#fff">
+        <div class="workspace-head">
+          <div>
+            <span class="workspace-kicker">ENLACE DEL CLIENTE</span>
+            <h3>Formulario privado de intake</h3>
+            <small>El cliente no tendrá acceso al CRM.</small>
+          </div>
+        </div>
+
+        ${
+          linkReady
+          ? `
+            <div style="display:grid;gap:10px">
+              <input id="intakeClientLink" type="text" readonly value="${esc(rec.clientLink)}">
+              <div class="contract-actions">
+                <button type="button" class="primary" id="copyIntakeLink">Copiar enlace</button>
+                <button type="button" class="secondary" id="openIntakeLink">Abrir enlace</button>
+              </div>
+              <small id="intakeCopyStatus"></small>
+            </div>
+          `
+          : `
+            <p class="section-subtext">
+              Crea un enlace único para este caso. Todavía no lo envíes al cliente hasta que conectemos la página pública I-130.
+            </p>
+            <button type="button" class="primary" id="createIntakeLink">Crear enlace de intake</button>
+          `
+        }
+      </section>
+
+      <section style="border:1px solid #dce4ef;border-radius:18px;padding:20px;background:#fff">
+        <div class="workspace-head">
+          <div>
+            <span class="workspace-kicker">RESPUESTAS</span>
+            <h3>Información recibida del cliente</h3>
+          </div>
+          <button type="button" class="secondary" id="toggleIntakeAnswers">Abrir respuestas</button>
+        </div>
+
+        
+<div style="
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:14px
+">
+  <div>
+    <div style="
+      color:#c89013;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:1.4px;
+      text-transform:uppercase
+    ">
+      Hoja de trabajo I-130
+    </div>
+
+    <div style="
+      margin-top:4px;
+      font-size:13px;
+      color:#64748b
+    ">
+      Cliente: ${esc(k.clientName || k.name || 'Cliente')}
+      &nbsp; · &nbsp;
+      Caso #${esc(String(k.id || ''))}
+      &nbsp; · &nbsp;
+      ${new Date().toLocaleDateString('en-US')}
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="secondary"
+    id="printIntakeAnswers"
+  >
+    Imprimir Intake
+  </button>
+</div>
+
+<div id="intakeAnswersBox" hidden style="margin-top:16px">
+          ${
+            (()=>{
+
+              const answers=rec.answers||{};
+
+              const labels={
+                relationship:'Relación con el beneficiario',
+                childRelationship:'Tipo de relación hijo/a',
+
+                petitionerFirstName:'Nombre',
+                petitionerMiddleName:'Segundo nombre',
+                petitionerLastName:'Apellido',
+                petitionerDOB:'Fecha de nacimiento',
+                petitionerANumber:'A-Number',
+                petitionerUSCIS:'USCIS Online Account Number',
+                petitionerSSN:'Número de Seguro Social',
+                petitionerStatus:'Estatus migratorio',
+                petitionerBirthCountry:'País de nacimiento',
+                petitionerPhone:'Teléfono',
+                petitionerEmail:'Correo electrónico',
+                petitionerAddress:'Dirección física actual',
+                petitionerCity:'Ciudad',
+                petitionerState:'Estado / Provincia',
+                petitionerZip:'ZIP / Código postal',
+                petitionerCountry:'País',
+
+                beneficiaryFirstName:'Nombre',
+                beneficiaryMiddleName:'Segundo nombre',
+                beneficiaryLastName:'Apellido',
+                beneficiaryDOB:'Fecha de nacimiento',
+                beneficiarySex:'Sexo',
+                beneficiaryBirthCountry:'País de nacimiento',
+                beneficiaryCitizenship:'País de ciudadanía o nacionalidad',
+                beneficiaryANumber:'A-Number',
+                beneficiaryAddress:'Dirección física actual',
+                beneficiaryCity:'Ciudad',
+                beneficiaryState:'Estado / Provincia',
+                beneficiaryPostal:'Código postal',
+                beneficiaryCountry:'País',
+                beneficiaryPhone:'Teléfono',
+                beneficiaryEmail:'Correo electrónico',
+
+                beneficiaryInUS:'¿Se encuentra actualmente en Estados Unidos?',
+                entryDate:'Última fecha de entrada a Estados Unidos',
+                i94Number:'Número de I-94',
+                passportNumber:'Número de pasaporte',
+                passportCountry:'País que emitió el pasaporte',
+                processingPreference:'Tipo de procesamiento',
+                consulate:'Consulado',
+
+                priorPetition:'¿Petición migratoria previa?',
+                priorPetitionDetails:'Detalles de petición previa',
+                additionalNotes:'Información adicional'
+              };
+
+              const valueLabels={
+                spouse:'Esposo/a',
+                parent:'Padre o madre',
+                child:'Hijo/a',
+                sibling:'Hermano/a',
+
+                marriedParents:'Nació de padres casados entre sí',
+                unmarriedParents:'Nació de padres no casados entre sí',
+                stepchild:'Hijastro/a',
+                adopted:'Hijo/a adoptivo/a',
+
+                uscitizen:'Ciudadano estadounidense',
+                lpr:'Residente permanente',
+                usnational:'U.S. National no ciudadano',
+
+                male:'Masculino',
+                female:'Femenino',
+
+                yes:'Sí',
+                no:'No',
+                unknown:'No estoy seguro/a',
+
+                adjustment:'Ajuste de estatus dentro de Estados Unidos',
+                consular:'Proceso consular fuera de Estados Unidos'
+              };
+
+              const groups=[
+                {
+                  title:'Relación familiar',
+                  keys:[
+                    'relationship',
+                    'childRelationship'
+                  ]
+                },
+                {
+                  title:'Peticionario',
+                  keys:[
+                    'petitionerFirstName',
+                    'petitionerMiddleName',
+                    'petitionerLastName',
+                    'petitionerDOB',
+                    'petitionerANumber',
+                    'petitionerUSCIS',
+                    'petitionerSSN',
+                    'petitionerStatus',
+                    'petitionerBirthCountry',
+                    'petitionerPhone',
+                    'petitionerEmail',
+                    'petitionerAddress',
+                    'petitionerCity',
+                    'petitionerState',
+                    'petitionerZip',
+                    'petitionerCountry'
+                  ]
+                },
+                {
+                  title:'Beneficiario',
+                  keys:[
+                    'beneficiaryFirstName',
+                    'beneficiaryMiddleName',
+                    'beneficiaryLastName',
+                    'beneficiaryDOB',
+                    'beneficiarySex',
+                    'beneficiaryBirthCountry',
+                    'beneficiaryCitizenship',
+                    'beneficiaryANumber',
+                    'beneficiaryAddress',
+                    'beneficiaryCity',
+                    'beneficiaryState',
+                    'beneficiaryPostal',
+                    'beneficiaryCountry',
+                    'beneficiaryPhone',
+                    'beneficiaryEmail'
+                  ]
+                },
+                {
+                  title:'Información migratoria',
+                  keys:[
+                    'beneficiaryInUS',
+                    'entryDate',
+                    'i94Number',
+                    'passportNumber',
+                    'passportCountry',
+                    'processingPreference',
+                    'consulate'
+                  ]
+                },
+                {
+                  title:'Información adicional',
+                  keys:[
+                    'priorPetition',
+                    'priorPetitionDetails',
+                    'additionalNotes'
+                  ]
+                }
+              ];
+
+              const formatValue=(key,value)=>{
+                if(value===null || value===undefined) return '';
+
+                let text=Array.isArray(value)
+                  ? value.join(', ')
+                  : String(value).trim();
+
+                if(!text) return '';
+
+                if(valueLabels[text]){
+                  text=valueLabels[text];
+                }
+
+                if(
+                  (key.endsWith('DOB') || key==='entryDate') &&
+                  /^\d{4}-\d{2}-\d{2}$/.test(text)
+                ){
+                  const parts=text.split('-');
+                  text=parts[1]+'/'+parts[2]+'/'+parts[0];
+                }
+
+                return text;
+              };
+
+              const renderedGroups=groups.map(group=>{
+
+                const rows=group.keys.map(key=>{
+
+                  const value=formatValue(key,answers[key]);
+
+                  if(!value) return '';
+
+                  return `
+                    <div style="
+                      padding:12px 0;
+                      border-bottom:1px solid #e5e7eb
+                    ">
+                      <small style="
+                        display:block;
+                        color:#64748b;
+                        margin-bottom:3px
+                      ">
+                        ${esc(labels[key]||key)}
+                      </small>
+
+                      <strong style="
+                        color:#0f172a;
+                        font-size:16px
+                      ">
+                        ${esc(value)}
+                      </strong>
+                    </div>
+                  `;
+
+                }).join('');
+
+                if(!rows) return '';
+
+                return `
+                  <section style="
+                    margin-bottom:26px;
+                    page-break-inside:avoid
+                  ">
+                    <div style="
+                      color:#c89013;
+                      font-size:12px;
+                      font-weight:800;
+                      letter-spacing:1.5px;
+                      text-transform:uppercase;
+                      margin-bottom:6px
+                    ">
+                      ${esc(group.title)}
+                    </div>
+
+                    <div style="
+                      border-top:2px solid #0b2148
+                    ">
+                      ${rows}
+                    </div>
+                  </section>
+                `;
+
+              }).join('');
+
+              const knownKeys=new Set(groups.flatMap(group=>group.keys));
+
+              const extraRows=[];
+
+              const humanizeKey=(key)=>String(key||'')
+                .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
+                .replace(/[._-]+/g,' ')
+                .replace(/\[(\d+)\]/g,' $1 ')
+                .replace(/\s+/g,' ')
+                .trim()
+                .replace(/^./,c=>c.toUpperCase());
+
+              const walkAnswer=(value,path)=>{
+                if(value===null || value===undefined || value==='') return;
+                if(Array.isArray(value)){
+                  value.forEach((item,index)=>walkAnswer(item,path+'['+(index+1)+']'));
+                  return;
+                }
+                if(typeof value==='object'){
+                  Object.entries(value).forEach(([childKey,childValue])=>{
+                    walkAnswer(childValue,path ? path+'.'+childKey : childKey);
+                  });
+                  return;
+                }
+                let text=String(value).trim();
+                if(!text) return;
+                if(valueLabels[text]) text=valueLabels[text];
+                extraRows.push({label:humanizeKey(path),value:text});
+              };
+
+              Object.entries(answers).forEach(([key,value])=>{
+                if(knownKeys.has(key)) return;
+                walkAnswer(value,key);
+              });
+
+              const renderedExtras=extraRows.length ? `
+                <section style="margin-bottom:26px;">
+                 <div style="color:#c89013;font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">
+                   Informacion adicional del formulario
+                 </div>
+                 <div style="border-top:2px solid #0b2148;">
+                   ${extraRows.map(item=>`
+                    <div style="padding:12px 0;border-bottom:1px solid #e5e7eb;">
+                       <small style="display:block;color:#64748b;margin-bottom:3px;">${esc(item.label)}</small>
+                       <strong style="color:#0f172a;font-size:16px;">${esc(item.value)}</strong>
+                    </div>
+                  `).join('')}
+                 </div>
+                </section>
+             `
+                : '';
+ return (renderedGroups+renderedExtras) ||
+                '<p class="empty-state">Todavía no hay respuestas recibidas.</p>';
+
+            })()
+          }
+        </div>
+      </section>
+
+      <section style="border:1px solid #dce4ef;border-radius:18px;padding:20px;background:#fff">
+        <div class="workspace-head">
+          <div>
+            <span class="workspace-kicker">REVISIÓN AGR</span>
+            <h3>Versión final de trabajo</h3>
+            <small>Después de revisar las respuestas, aprueba el intake para usarlo como información final del caso.</small>
+          </div>
+        </div>
+
+        ${
+          rec.reviewed
+          ? `
+            <div class="notice">
+              <strong>✓ Revisado por AGR</strong><br>
+              <small>${rec.reviewedAt?dt(rec.reviewedAt):''}</small>
+            </div>
+          `
+          : `
+            <button type="button" class="primary" id="approveCaseIntake" ${submitted?'':'disabled'}>
+              ✓ Marcar como Revisado por AGR
+            </button>
+            ${submitted?'':'<small style="display:block;margin-top:8px">Disponible cuando el cliente envíe el intake.</small>'}
+          `
+        }
+      </section>
+
+    </div>
+  `;
+
+
+  $('#createIntakeLink')?.addEventListener('click',async function(){
+    const btn=$('#createIntakeLink');
+
+    if(btn){
+      btn.disabled=true;
+      btn.textContent='Creando enlace...';
+    }
+
+    try{
+      const response=await fetch('/api/intakes/create',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          caseId:String(k.id),
+          intakeType:type.code==='i130'?'I-130':(type.code==='i485'?'I-485':(type.code==='i765'?'I-765':(type.code==='i864'?'I-864':type.label))),
+          prefill:{
+            clientName:client.name||'',
+            email:client.email||'',
+            phone:client.phone||'',
+            service:k.service||'',
+            aNumber:k.aNumber||''
+          }
+        })
+      });
+
+      const result=await response.json().catch(function(){
+        return {};
+      });
+
+      if(!response.ok || !result.ok || !result.token){
+        throw new Error(result.error || 'No se pudo crear el enlace de intake.');
+      }
+
+      rec.token=result.token;
+      rec.clientLink='https://agrsolutionsllc.com/intake/'+type.code+'/?token='+encodeURIComponent(result.token);
+      rec.createdAt=(result.intake && result.intake.created_at) || new Date().toISOString();
+      rec.status='No enviado';
+      rec.progress=Number((result.intake && result.intake.progress) || 0);
+
+      save();
+      logCaseEvent(k.id,'Enlace de intake '+type.label+' creado','intake');
+      renderCaseIntake(k);
+
+    }catch(err){
+      console.error('Intake create error:',err);
+      alert(err.message || 'No se pudo crear el enlace de intake.');
+
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='Crear enlace de intake';
+      }
+    }
+  });
+
+  $('#copyIntakeLink')?.addEventListener('click',async()=>{
+    const statusBox=$('#intakeCopyStatus');
+
+    try{
+      await navigator.clipboard.writeText(rec.clientLink||'');
+      if(statusBox) statusBox.textContent='✓ Enlace copiado.';
+    }catch(_){
+      const input=$('#intakeClientLink');
+      input?.select();
+      document.execCommand('copy');
+      if(statusBox) statusBox.textContent='✓ Enlace copiado.';
+    }
+  });
+
+  $('#openIntakeLink')?.addEventListener('click',()=>{
+    if(rec.clientLink) window.open(rec.clientLink,'_blank','noopener');
+  });
+
+
+  $('#printIntakeAnswers')?.addEventListener('click',async function(){
+
+    try{
+      const response=await fetch('/api/intakes/'+encodeURIComponent(String(k.id)),{method:'GET',headers:{'Accept':'application/json'}});
+      const result=await response.json();
+      if(response.ok===false) throw new Error('No se pudo obtener el intake actualizado.');
+      if(result.ok!==true) throw new Error(result.error || 'No se pudo obtener el intake actualizado.');
+      if(result.intake==null) throw new Error('No se recibio el intake actualizado.');
+      let latestAnswers=result.intake.answers;
+      if(typeof latestAnswers!=='object') latestAnswers={};
+      if(latestAnswers===null) latestAnswers={};
+      rec.answers=latestAnswers;
+      rec.progress=Number(result.intake.progress || 0);
+      save();
+      renderCaseIntake(k);
+    }catch(err){
+      console.error('Intake print refresh error:',err);
+      alert(err.message || 'No se pudo actualizar el intake antes de imprimir.');
+      return;
+    }
+
+    const box=$('#intakeAnswersBox');
+
+    if(!box){
+      alert('No hay respuestas disponibles para imprimir.');
+      return;
+    }
+
+    const w=window.open('','','width=980,height=800');
+
+    if(!w){
+      alert('El navegador bloqueó la ventana de impresión.');
+      return;
+    }
+
+    const clientName=esc(k.clientName || k.name || 'Cliente');
+    const caseId=esc(String(k.id || ''));
+    const status=esc(rec.status || 'No enviado');
+    const today=new Date().toLocaleDateString('en-US');
+
+    w.document.write(`
+      <!doctype html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <title>Intake I-130 - ${clientName}</title>
+
+        <style>@page{size:auto;margin:12mm 11mm;}*{box-sizing:border-box;}body{font-family:Arial,Helvetica,sans-serif;color:#111827;margin:0;background:#fff;font-size:11px;line-height:1.3;}.header{border-bottom:2px solid #0b2148;padding-bottom:8px;margin-bottom:12px;}.brand{color:#0b2148;font-size:20px;font-weight:800;}.gold{color:#c89013;font-size:10px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;margin-top:2px;}.meta{margin-top:7px;font-size:10px;color:#475569;line-height:1.35;}h1{color:#0b2148;font-size:18px;margin:0 0 10px;}section{margin-bottom:12px!important;break-inside:auto!important;page-break-inside:auto!important;}section>div:first-child{font-size:10px!important;margin-bottom:4px!important;letter-spacing:1.1px!important;}section>div:nth-child(2){display:grid!important;grid-template-columns:1fr 1fr!important;column-gap:18px!important;row-gap:0!important;border-top:2px solid #0b2148!important;}section>div:nth-child(2)>div{padding:6px 0!important;min-width:0;break-inside:avoid!important;page-break-inside:avoid!important;}small{font-size:9px!important;line-height:1.2!important;margin-bottom:1px!important;}strong{font-size:11px!important;line-height:1.25!important;overflow-wrap:anywhere;}@media print{body{margin:0;}section>div:nth-child(2)>div{break-inside:avoid!important;page-break-inside:avoid!important;}}</style>
+      </head>
+
+      <body>
+
+        <div class="header">
+          <div class="brand">AGR SOLUTIONS LLC</div>
+          <div class="gold">Hoja de trabajo I-130</div>
+
+          <div class="meta">
+            <strong>Cliente:</strong> ${clientName}<br>
+            <strong>Caso:</strong> #${caseId}<br>
+            <strong>Estado:</strong> ${status}<br>
+            <strong>Fecha de impresión:</strong> ${today}
+          </div>
+        </div>
+
+        <h1>Información recibida del cliente</h1>
+
+        ${box.innerHTML}
+
+        <script>
+          window.onload=function(){
+            window.print();
+          };
+        </script>
+
+      </body>
+      </html>
+    `);
+
+    w.document.close();
+
+  });
+
+
+  $('#toggleIntakeAnswers')?.addEventListener('click',async function(){
+    const box=$('#intakeAnswersBox');
+    const btn=$('#toggleIntakeAnswers');
+
+    if(!box) return;
+
+    if(!box.hidden){
+      box.hidden=true;
+      if(btn) btn.textContent='Abrir respuestas';
+      return;
+    }
+
+    if(btn){
+      btn.disabled=true;
+      btn.textContent='Cargando...';
+    }
+
+    try{
+      const response=await fetch('/api/intakes/'+encodeURIComponent(String(k.id)),{
+        method:'GET',
+        headers:{'Accept':'application/json'}
+      });
+
+      const result=await response.json().catch(function(){
+        return {};
+      });
+
+      if(!response.ok || !result.ok || !result.intake){
+        throw new Error(result.error || 'No se pudo cargar el intake.');
+      }
+
+      const remote=result.intake;
+
+      rec.answers=remote.answers && typeof remote.answers==='object'
+        ? remote.answers
+        : {};
+
+      rec.progress=Number(remote.progress || 0);
+      rec.clientUpdatedAt=remote.client_updated_at || '';
+      rec.submittedAt=remote.submitted_at || '';
+      rec.reviewedAt=remote.reviewed_at || '';
+      rec.reviewedBy=remote.reviewed_by || '';
+      rec.reviewed=remote.status==='reviewed';
+
+      if(remote.status==='reviewed'){
+        rec.status='Revisado por AGR';
+      }else if(remote.status==='pending_review'){
+        rec.status='Pendiente de revisión';
+      }else if(remote.status==='draft'){
+        rec.status='Borrador del cliente';
+      }else{
+        rec.status='No enviado';
+      }
+
+      save();
+      renderCaseIntake(k);
+
+      const refreshedBox=$('#intakeAnswersBox');
+      const refreshedBtn=$('#toggleIntakeAnswers');
+
+      if(refreshedBox) refreshedBox.hidden=false;
+      if(refreshedBtn){
+        refreshedBtn.disabled=false;
+        refreshedBtn.textContent='Cerrar respuestas';
+      }
+
+    }catch(err){
+      console.error('Intake load error:',err);
+      alert(err.message || 'No se pudo cargar el intake.');
+
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='Abrir respuestas';
+      }
+    }
+  });
+
+
+  $('#approveCaseIntake')?.addEventListener('click',async function(){
+    if(!submitted) return;
+
+    const btn=$('#approveCaseIntake');
+
+    if(btn){
+      btn.disabled=true;
+      btn.textContent='Guardando revisión...';
+    }
+
+    try{
+      const response=await fetch(
+        '/api/intakes/'+encodeURIComponent(String(k.id))+'/review',
+        {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            reviewedBy:'AGR Solutions LLC'
+          })
+        }
+      );
+
+      const result=await response.json().catch(function(){
+        return {};
+      });
+
+      if(!response.ok || !result.ok || !result.intake){
+        throw new Error(
+          result.error || 'No se pudo marcar el intake como revisado.'
+        );
+      }
+
+      rec.status='Revisado por AGR';
+      rec.reviewed=true;
+      rec.reviewedAt=
+        result.intake.reviewed_at || new Date().toISOString();
+      rec.reviewedBy=
+        result.intake.reviewed_by || 'AGR Solutions LLC';
+
+      save();
+      logCaseEvent(
+        k.id,
+        'Intake I-130 revisado por AGR',
+        'intake'
+      );
+
+      renderCaseIntake(k);
+
+    }catch(err){
+      console.error('Intake review error:',err);
+
+      alert(
+        err.message ||
+        'No se pudo marcar el intake como revisado.'
+      );
+
+      if(btn){
+        btn.disabled=false;
+        btn.textContent='✓ Marcar como Revisado por AGR';
+      }
+    }
+  });
+
 }
 function renderCasePayments(k){
   const pane=$('#casePaymentsPane'); if(!pane) return;
@@ -1815,9 +5025,9 @@ function renderCasePayments(k){
     </div>
 
     <div class="workspace-table"><table>
-      <thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th><th>Documento</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Nota</th><th>Registrado por</th><th>Documento</th></tr></thead>
       <tbody>
-        ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td><td><button type="button" class="secondary payment-doc-btn" data-payment-doc="${p.id}" data-final="${isFinalPayment(k,p)?'1':'0'}">${isFinalPayment(k,p)?'Factura final':'Recibo'}</button>${isFinalPayment(k,p)?' <button type="button" class="secondary payment-email-btn" data-payment-email="'+p.id+'">Correo</button>':''}</td></tr>`).join(''):'<tr><td colspan="5">No hay pagos registrados.</td></tr>'}
+        ${rows.length?rows.map(p=>`<tr><td>${esc(p.date||'—')}</td><td><strong>${money(p.amount)}</strong>${Number(p.discountCredit||0)>0?'<small class="payment-credit"> + '+money(p.discountCredit)+' descuento</small>':''}${Number(p.referralCreditApplied||0)>0?'<small class="payment-credit"> + '+money(p.referralCreditApplied)+' Crédito AGR</small>':''}</td><td>${esc(p.method||'—')}</td><td>${esc(p.note||'—')}</td><td>${p.registeredBy?'<strong>'+esc(p.registeredBy)+'</strong>'+(p.registeredAt?'<br><small>'+new Date(p.registeredAt).toLocaleTimeString('es-US',{hour:'numeric',minute:'2-digit'})+'</small>':''):''}</td><td><button type="button" class="secondary payment-doc-btn" data-payment-doc="${p.id}" data-final="${isFinalPayment(k,p)?'1':'0'}">${isFinalPayment(k,p)?'Factura final':'Recibo'}</button> <button type="button" class="secondary payment-email-btn" data-payment-email="${p.id}" data-final="${isFinalPayment(k,p)?'1':'0'}">Correo</button></td></tr>`).join(''):'<tr><td colspan="6">No hay pagos registrados.</td></tr>'}
       </tbody>
     </table></div>
     ${balanceReminderHTML(k)}`;
@@ -1831,43 +5041,116 @@ function renderCasePayments(k){
   });
   pane.querySelectorAll('.payment-email-btn').forEach(btn=>{
     btn.onclick=async()=>{
-      const p=data.payments.find(x=>String(x.id)===String(btn.dataset.paymentEmail));
+      const p=data.payments.find(
+        x=>String(x.id)===String(btn.dataset.paymentEmail)
+      );
+
       const client=clientById(k.clientId);
-      if(!p || !client?.email){alert('Este cliente no tiene un correo registrado.');return;}
-      const docNo=k.invoiceNumber||('AGR-'+k.id);
-      const ok=window.confirm('¿Enviar la factura final '+docNo+' a '+client.email+'?\n\nEl PDF se adjuntará automáticamente.');
+
+      if(!p || !client?.email){
+        alert(
+          'Este cliente no tiene un correo registrado.'
+        );
+        return;
+      }
+
+      const finalInvoice=btn.dataset.final==='1';
+
+      const baseNo=k.invoiceNumber||('AGR-'+k.id);
+
+      const docNo=finalInvoice
+        ? baseNo
+        : paymentReceiptDocumentNumber(k,p);
+
+      const docLabel=finalInvoice
+        ? 'factura final'
+        : 'recibo';
+
+      const ok=window.confirm(
+        '¿Enviar el '+docLabel+' '+docNo+
+        ' a '+client.email+'?\n\n'+
+        'El PDF se adjuntará automáticamente.'
+      );
+
       if(!ok) return;
+
       const original=btn.textContent;
+
       btn.disabled=true;
       btn.textContent='Enviando...';
+
       try{
-        const pdfBase64=await finalInvoicePdfBase64(k,p);
-        const response=await fetch(FINAL_INVOICE_EMAIL_URL,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            to:client.email,
-            clientName:client.name||'',
-            invoiceNumber:docNo,
-            service:k.service||'',
-            pdfBase64
-          })
-        });
-        const result=await response.json().catch(()=>({}));
-        if(!response.ok || !result.sent) throw new Error(result.error||'No se pudo enviar la factura.');
+        const pdfBase64=await paymentDocumentPdfBase64(
+          k,
+          p,
+          finalInvoice
+        );
+
+        const response=await fetch(
+          FINAL_INVOICE_EMAIL_URL,
+          {
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json'
+            },
+            body:JSON.stringify({
+              to:client.email,
+              clientName:client.name||'',
+              invoiceNumber:docNo,
+              service:k.service||'',
+              pdfBase64
+            })
+          }
+        );
+
+        const result=await response
+          .json()
+          .catch(()=>({}));
+
+        if(!response.ok || !result.sent){
+          throw new Error(
+            result.error||
+            'No se pudo enviar el '+docLabel+'.'
+          );
+        }
+
         data.communications.unshift({
           id:Date.now(),
           caseId:k.id,
           channel:'Correo',
-          action:'Factura final '+docNo+' enviada a '+client.email+' con PDF adjunto',
+          action:
+            (finalInvoice?'Factura final ':'Recibo ')+
+            docNo+
+            ' enviado a '+
+            client.email+
+            ' con PDF adjunto',
           at:new Date().toISOString()
         });
+
         save();
-        logCaseEvent(k.id,'Factura final '+docNo+' enviada por correo','communication');
+
+        logCaseEvent(
+          k.id,
+          (finalInvoice?'Factura final ':'Recibo ')+
+          docNo+
+          ' enviado por correo',
+          'communication'
+        );
+
         renderCommunicationHistory(k);
-        alert('Factura enviada correctamente a '+client.email+'.');
+
+        alert(
+          (finalInvoice?'Factura':'Recibo')+
+          ' enviado correctamente a '+
+          client.email+'.'
+        );
+
       }catch(err){
-        alert(err.message||'No se pudo enviar la factura.');
+        alert(
+          err.message||
+          'No se pudo enviar el '+docLabel+'.'
+        );
+
       }finally{
         btn.disabled=false;
         btn.textContent=original;
@@ -1909,20 +5192,22 @@ function renderCasePayments(k){
   const refreshPricingEditor=()=>{
     const standard=Math.max(0,Number(standardInput?.value||0));
     const cash=Math.max(0,Number(cashInput?.value||standard));
-    const card=Math.max(0,Number(cardInput?.value||standard));
+    const card=stripeGrossAmount(cash);
+    if(cardInput) cardInput.value=card.toFixed(2);
     if(preview) preview.innerHTML=
       '<span>Precio estándar</span><strong>'+money(standard)+'</strong>'+
       '<span>Cash / Zelle</span><strong>'+money(cash)+'</strong>'+
       '<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
   };
   if(toggle && editor) toggle.onclick=()=>{editor.hidden=!editor.hidden;toggle.textContent=editor.hidden?'Editar precios':'Ocultar';refreshPricingEditor();};
-  [standardInput,cashInput,cardInput].forEach(el=>el?.addEventListener('input',refreshPricingEditor));
+  [standardInput,cashInput].forEach(el=>el?.addEventListener('input',refreshPricingEditor));
+  if(cardInput){cardInput.readOnly=true;cardInput.title='Calculado automaticamente para cubrir la comision de Stripe';}
 
   if(saveBtn) saveBtn.onclick=()=>{
     const standard=Math.max(0,Number(standardInput?.value||0));
     const cash=Math.max(0,Number(cashInput?.value||0));
     const zelle=cash;
-    const card=Math.max(0,Number(cardInput?.value||0));
+    const card=stripeGrossAmount(cash);
     const collected=caseCollected(k.id);
     if(!Number.isFinite(standard)||standard<=0){if(priceStatus)priceStatus.textContent='Ingresa un precio estándar mayor que $0.00.';return;}
     if([cash,card].some(v=>!Number.isFinite(v)||v<=0)){if(priceStatus)priceStatus.textContent='Todos los precios deben ser mayores que $0.00.';return;}
@@ -2099,7 +5384,7 @@ async function contractPdfForFoxit(k,c){
     pdf.setFontSize(8.2);
     pdf.setTextColor(100,116,139);
     pdf.text('Nombre: '+(client?.name||'Cliente'),left,344);
-    pdf.text('Firma electrónica mediante Foxit eSign',left,359);
+    pdf.text('Firma del cliente',left,359);
     pdf.text('Fecha de firma: se completa al firmar',left,374);
 
     pdf.text('Representante: '+(data.esignSettings?.agrSignerName||'Ariana G Reinoso'),rightX,344);
@@ -2221,6 +5506,14 @@ async function showSignedFoxitPdf(k,c){
 function refreshEmbeddedContractPreview(k,c){
   const frame=$('#caseContractPreview');
   if(!frame) return;
+  if(c?.status==='Firmado' && c?.signedPdfUrl){
+    frame.removeAttribute('srcdoc');
+    frame.src=c.signedPdfUrl+'?t='+Date.now();
+    const head=document.querySelector('.contract-master-preview-wrap .workspace-head h3');
+    if(head) head.textContent='Contrato final firmado';
+    return;
+  }
+
   if(c?.status==='Firmado' && c?.foxitFolderId){
     showSignedFoxitPdf(k,c).then(ok=>{
       if(ok) return;
@@ -2247,6 +5540,10 @@ function renderCaseContract(k){
     return;
   }
   const c=caseContractFor(k);
+  if(!c.date){
+    c.date=todayISO();
+    save();
+  }
   pane.innerHTML=`
     <div class="contract-card contract-editor-compact">
       <div class="contract-head">
@@ -2260,15 +5557,13 @@ function renderCaseContract(k){
 
       <div class="contract-quick-grid">
         <label>Estado
-          <div class="system-field" id="contractStatusDisplay">${esc(c.status||'No enviado')}</div>
+          <div class="system-field" id="contractStatusDisplay">${esc(c.status==='Firmado'?'Firmado':'Aún no firmado')}</div>
         </label>
         <label>Fecha del contrato
-          <div class="system-field" id="contractDateDisplay">${esc(c.date||'Se asignará al enviar')}</div>
+          <div class="system-field" id="contractDateDisplay">${esc(c.date||todayISO())}</div>
         </label>
         <label>Pago inicial<input id="contractInitial" type="number" min="0" step="0.01" value="${Number(c.initialPayment||0)}"></label>
-        <label>Fecha de firma
-          <div class="system-field" id="contractSignedDateDisplay">${esc(c.signedDate||'Pendiente')}</div>
-        </label>
+
       </div>
 
       <details class="contract-custom-details">
@@ -2298,17 +5593,22 @@ function renderCaseContract(k){
       </details>
 
       <div class="contract-actions">
-        <button type="button" class="primary" id="saveCaseContract">Guardar contrato</button>
-        <button type="button" class="secondary" id="refreshCaseContractPreview">Actualizar vista</button>
+        <button type="button" class="primary" id="saveCaseContract">Guardar cambios</button>
         <button type="button" class="secondary" id="printCaseContract">Probar PDF · no usa Foxit</button>
-        <button type="button" class="primary" id="sendCaseContractFoxit">Enviar a Foxit eSign</button>
+        <button type="button" class="secondary" id="printContractIcon" title="Imprimir contrato" aria-label="Imprimir contrato" style="width:40px;height:40px;padding:0;min-width:40px;display:inline-flex;align-items:center;justify-content:center;background:#f8fafc">
+<svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true">
+  <rect x="6" y="3" width="12" height="6" rx="1.3" fill="#17366b"/>
+  <rect x="4" y="9" width="16" height="8" rx="2" fill="#d7a62a"/>
+  <rect x="7" y="14" width="10" height="7" rx="1.2" fill="#17366b"/>
+  <rect x="9" y="16" width="6" height="1.4" rx=".7" fill="#ffffff"/>
+  <circle cx="17" cy="12" r="1" fill="#17366b"/>
+</svg>
+</button>
+        <label class="primary" for="uploadSignedContractPdf" style="cursor:pointer">Subir contrato firmado</label>
+        <input type="file" id="uploadSignedContractPdf" accept="application/pdf" hidden>
 
       </div>
-      <div class="contract-foxit-status" id="contractFoxitStatus">
-        ${c.foxitFolderId
-          ? '<strong>Foxit eSign:</strong> '+esc(foxitStatusLabel(c.foxitStatus||'Pendiente de firma'))+' · Folder '+esc(c.foxitFolderId)
-          : '<strong>Foxit eSign:</strong> Aún no enviado'}
-      </div>
+
     </div>
 
     <div class="contract-master-preview-wrap">
@@ -2335,61 +5635,132 @@ function renderCaseContract(k){
   }
   $('#agrSignerName')?.addEventListener('change',()=>{
     persistAgrSignerSettings();
-    updatePreview();
   });
-  $('#agrSignatureFile')?.addEventListener('change',event=>{
-    const file=event.target.files?.[0];
+  $('#uploadSignedContractPdf')?.addEventListener('change',async(event)=>{
+    const input=event.currentTarget;
+    const file=input.files && input.files[0];
+
     if(!file) return;
-    if(!/^image\/(png|jpeg|webp)$/i.test(file.type)){
-      alert('Usa una imagen PNG, JPG o WEBP para la firma.');
-      event.target.value='';
+
+    if(!file.name.toLowerCase().endsWith('.pdf')){
+      alert('Selecciona un archivo PDF.');
+      input.value='';
       return;
     }
-    const reader=new FileReader();
-    reader.onload=()=>{
-      const img=new Image();
-      img.onload=()=>{
-        const canvas=document.createElement('canvas');
-        canvas.width=720;
-        canvas.height=220;
-        const ctx=canvas.getContext('2d');
-        ctx.clearRect(0,0,canvas.width,canvas.height);
 
-        const scale=Math.min((canvas.width-40)/img.naturalWidth,(canvas.height-30)/img.naturalHeight,1);
-        const w=Math.max(1,Math.round(img.naturalWidth*scale));
-        const h=Math.max(1,Math.round(img.naturalHeight*scale));
-        const x=Math.round((canvas.width-w)/2);
-        const y=Math.round((canvas.height-h)/2);
-        ctx.drawImage(img,x,y,w,h);
+    try{
+      input.disabled=true;
 
-        data.esignSettings={
-          ...(data.esignSettings||{}),
-          agrSignerName:$('#agrSignerName')?.value?.trim()||data.esignSettings?.agrSignerName||'Ariana G Reinoso',
-          agrSignatureDataUrl:canvas.toDataURL('image/png')
-        };
-        save();
+      const response=await fetch(
+        '/api/contracts/'+encodeURIComponent(k.id)+'/signed',
+        {
+          method:'POST',
+          headers:{'Content-Type':'application/pdf'},
+          body:file
+        }
+      );
+
+      let result={};
+
+      try{
+        result=await response.json();
+      }catch(_){}
+
+      if(!response.ok){
+        throw new Error(
+          (result && result.error)
+            ? result.error
+            : 'Error del servidor '+response.status
+        );
+      }
+
+      const rec=caseContractFor(k);
+
+      rec.signedPdfUrl=result.url;
+      rec.signedPdfName=file.name;
+      rec.status='Firmado';
+      rec.signedDate=todayISO();
+      rec.completedAt=new Date().toISOString();
+
+      save();
+
+      setTimeout(()=>{
         renderCaseContract(k);
-      };
-      img.onerror=()=>alert('No se pudo procesar la imagen de la firma.');
-      img.src=String(reader.result||'');
-    };
-    reader.readAsDataURL(file);
-  });
-  $('#removeAgrSignature')?.addEventListener('click',()=>{
-    if(!data.esignSettings) data.esignSettings={};
-    data.esignSettings.agrSignatureDataUrl='';
-    save();
-    renderCaseContract(k);
+      },400);
+
+      alert('Contrato firmado subido correctamente.');
+
+    }catch(err){
+      alert('ERROR AL SUBIR: '+err.message);
+    }finally{
+      input.disabled=false;
+      input.value='';
+    }
   });
 
-  $('#saveCaseContract')?.addEventListener('click',()=>{
+
+  $('#printContractIcon')?.addEventListener('click',()=>{
     const rec=caseContractFor(k);
-    Object.assign(rec,contractFormRecord(k,c));
-    persistAgrSignerSettings();
-    save();
-    logCaseEvent(k.id,'Contrato migratorio actualizado · '+rec.status,'contract');
-    renderCaseContract(k);
+
+    if(rec.signedPdfUrl){
+
+      const oldFrame=document.getElementById('agrContractPrintFrame');
+      if(oldFrame) oldFrame.remove();
+
+      const frame=document.createElement('iframe');
+      frame.id='agrContractPrintFrame';
+      frame.style.position='fixed';
+      frame.style.right='0';
+      frame.style.bottom='0';
+      frame.style.width='1px';
+      frame.style.height='1px';
+      frame.style.border='0';
+      frame.style.opacity='0';
+
+      frame.onload=()=>{
+        setTimeout(()=>{
+          try{
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+          }catch(err){
+            window.open(rec.signedPdfUrl,'_blank');
+          }
+        },1000);
+      };
+
+      frame.src=rec.signedPdfUrl+'?print='+Date.now();
+
+      document.body.appendChild(frame);
+
+      return;
+    }
+
+    Object.assign(rec,contractFormRecord(k,rec));
+
+    if(!rec.date){
+      rec.date=todayISO();
+    }
+
+    const html=caseContractDraftHTML(k,rec);
+    const win=window.open('','_blank');
+
+    if(!win){
+      alert('El navegador bloqueó la ventana de impresión.');
+      return;
+    }
+
+    win.document.open();
+
+    win.document.write(
+      html.replace(
+        '</body>',
+        '<script>window.addEventListener("load",function(){setTimeout(function(){window.focus();window.print();},500);});<\/script></body>'
+      )
+    );
+
+    win.document.close();
   });
+
 
   $('#refreshCaseContractPreview')?.addEventListener('click',updatePreview);
 
@@ -2439,11 +5810,12 @@ function renderCaseContract(k){
       persistAgrSignerSettings();
       const result=await sendContractToFoxit(k,rec);
       if(!result?.folderId) throw new Error('Foxit no devolvió un Folder ID; el contrato no se marcará como enviado.');
-      rec.foxitFolderId=String(result.folderId);
-      rec.foxitStatus=result.status||'SENT';
-      rec.foxitSentAt=new Date().toISOString();
-      rec.status='Pendiente de firma';
-      rec.signedDate='';
+      const currentRec=caseContractFor(k);
+      currentRec.foxitFolderId=String(result.folderId);
+      currentRec.foxitStatus=result.status||'SENT';
+      currentRec.foxitSentAt=new Date().toISOString();
+      currentRec.status='Pendiente de firma';
+      currentRec.signedDate='';
       save();
       logCaseEvent(k.id,'Contrato enviado a Foxit eSign · Folder '+result.folderId,'contract');
       renderCaseContract(k);
@@ -2488,7 +5860,7 @@ function caseContractDraftHTML(k,c){
     .section ol{padding-left:18px;margin:6px 0}.section li{margin:4px 0}
     .status{display:inline-block;padding:4px 8px;border:1px solid #c9a227;border-radius:999px;font-size:8.5pt;font-weight:700;color:#8a6b00}
     .notice{padding:9px 11px;border:1px solid #d8dde6;border-radius:8px;background:#f8fafc;margin:8px 0;font-size:9.5pt;line-height:1.4}
-    .sign-page{page-break-before:always;break-before:page;min-height:0;padding:.25in .08in 0;break-inside:avoid;page-break-inside:avoid}
+    .sign-page{min-height:0;padding:.12in .08in 0;break-inside:avoid;page-break-inside:avoid}
     .sign-title{text-align:center;margin-bottom:.22in}.sign-title h2{border:0;margin:0 0 5px;font-size:15pt}.sign-title p{margin:0;color:#64748b}
     .sign-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:.18in 0 .18in}
     .sign-summary .box{min-height:58px;background:#f8fafc}
@@ -2601,8 +5973,8 @@ function caseContractDraftHTML(k,c){
           <div class="signature-slot client-signature-slot"></div>
           <div class="line">Firma del cliente
             <small>Nombre: ${esc(client?.name||'________________')}</small>
-            <small>Firma electrónica mediante Foxit eSign</small>
-            <small>Fecha de firma: ${c.status==='Firmado'?esc(c.signedDate||'Registrada por Foxit'):'Se completa al firmar'}</small>
+            <small>Firma del cliente</small>
+            <small>Fecha de firma: ${c.status==='Firmado'?esc(c.signedDate||'Registrada'):'Se completa al firmar'}</small>
           </div>
         </div>
         <div class="signature-card">
@@ -2615,7 +5987,7 @@ function caseContractDraftHTML(k,c){
           <div class="line">Firma autorizada de AGR
             <small>Representante: ${esc(data.esignSettings?.agrSignerName||'Ariana G Reinoso')}</small>
             <small>Firma predeterminada de AGR Solutions LLC</small>
-            <small>Fecha del acuerdo: ${esc(c.date||'Se asignará al enviar')}</small>
+            <small>Fecha del acuerdo: ${esc(c.date||todayISO())}</small>
           </div>
         </div>
       </div>
@@ -2635,8 +6007,8 @@ function openCaseContractDraft(k,c){
 function renderCaseWorkspace(k){
   const tabs=$('#caseWorkspaceTabs'); if(!tabs) return;
   tabs.hidden=false;
-  $$('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='contract')renderCaseContract(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
-  renderCaseSetupCard(k); renderCaseSummarySnapshot(k); renderCaseDocuments(k); renderCasePayments(k); renderCaseContract(k); renderCaseHistory(k); renderCaseNotes(k); renderCommunicationHistory(k); setCaseTab('summary');
+  $$('.case-tab').forEach(b=>b.onclick=()=>{setCaseTab(b.dataset.caseTab); if(b.dataset.caseTab==='documents')renderCaseDocuments(k); if(b.dataset.caseTab==='intake')renderCaseIntake(k); if(b.dataset.caseTab==='payments')renderCasePayments(k); if(b.dataset.caseTab==='contract')renderCaseContract(k); if(b.dataset.caseTab==='history')renderCaseHistory(k); if(b.dataset.caseTab==='notes')renderCaseNotes(k); if(b.dataset.caseTab==='communications'){refreshClientNotification();renderCommunicationHistory(k);}});
+  renderCaseSetupCard(k); renderCaseSummarySnapshot(k); renderCaseDocuments(k); renderCaseIntake(k); renderCasePayments(k); renderCaseContract(k); renderCaseHistory(k); renderCaseNotes(k); renderCommunicationHistory(k); setCaseTab('summary');
   const wa=$('.notify-whatsapp'), mail=$('.notify-email');
   if(wa) wa.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'WhatsApp',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de WhatsApp abierto','communication');renderCommunicationHistory(k);};
   if(mail) mail.onclick=()=>{data.communications.unshift({id:Date.now(),caseId:k.id,channel:'Correo',action:'Borrador abierto',at:new Date().toISOString()});save();logCaseEvent(k.id,'Borrador de correo abierto','communication');renderCommunicationHistory(k);};
@@ -2665,6 +6037,226 @@ function deleteCaseFromCRM(caseId){
   return true;
 }
 
+
+function clearCaseClientSearch(){
+  const id=$('#caseClientId');
+  const selected=$('#caseClientSelected');
+
+  if(id) id.value='';
+  if(selected) selected.textContent='';
+}
+
+function selectCaseClient(client){
+  const search=$('#caseClientSearch');
+  const id=$('#caseClientId');
+  const results=$('#caseClientResults');
+  const selected=$('#caseClientSelected');
+
+  if(!client) return;
+
+  if(search) search.value=client.name||'';
+  if(id) id.value=client.id;
+
+  if(selected){
+    selected.textContent='Seleccionado: '+(client.name||'Cliente');
+  }
+
+  if(results){
+    results.innerHTML='';
+    results.hidden=true;
+  }
+}
+
+function renderCaseClientMatches(query){
+  const results=$('#caseClientResults');
+  if(!results) return;
+
+  const q=String(query||'').trim().toLowerCase();
+
+  if(q.length<2){
+    results.innerHTML='';
+    results.hidden=true;
+    return;
+  }
+
+  const matches=data.clients
+    .filter(c=>{
+      const text=[
+        c.name||'',
+        c.phone||'',
+        c.email||''
+      ].join(' ').toLowerCase();
+
+      return text.includes(q);
+    })
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+    .slice(0,10);
+
+  if(!matches.length){
+    results.innerHTML='<div class="pending-client-empty">No se encontraron clientes.</div>';
+    results.hidden=false;
+    return;
+  }
+
+  results.innerHTML=matches.map(c=>{
+    const extra=[c.phone||'',c.email||''].filter(Boolean).join(' \u00B7 ');
+
+    return '<button type="button" class="pending-client-option" data-client-id="'+c.id+'">'+
+      '<strong>'+esc(c.name||'Cliente')+'</strong>'+
+      (extra?'<small>'+esc(extra)+'</small>':'')+
+      '</button>';
+  }).join('');
+
+  results.hidden=false;
+
+  results.querySelectorAll('.pending-client-option').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const client=data.clients.find(c=>String(c.id)===String(btn.dataset.clientId));
+      selectCaseClient(client);
+    });
+  });
+}
+
+function bindCaseClientSearch(){
+  const search=$('#caseClientSearch');
+
+  if(!search || search.dataset.bound==='1') return;
+
+  search.dataset.bound='1';
+
+  search.addEventListener('input',()=>{
+    clearCaseClientSearch();
+    renderCaseClientMatches(search.value);
+  });
+
+  search.addEventListener('focus',()=>{
+    if(search.value.trim().length>=2){
+      renderCaseClientMatches(search.value);
+    }
+  });
+}
+
+function clearReferrerSearch(){
+  const id=$('#referredByClientId');
+  const selected=$('#referrerSelected');
+
+  if(id) id.value='';
+  if(selected) selected.textContent='';
+}
+
+function selectReferrerClient(client){
+  if(!client) return;
+
+  const search=$('#referrerSearch');
+  const id=$('#referredByClientId');
+  const results=$('#referrerResults');
+  const selected=$('#referrerSelected');
+  const external=$('#referredByExternal');
+
+  if(search) search.value=client.name||'';
+  if(id) id.value=client.id;
+
+  if(selected){
+    selected.textContent='Seleccionado: '+(client.name||'Cliente');
+  }
+
+  if(external){
+    external.value='';
+  }
+
+  if(results){
+    results.innerHTML='';
+    results.hidden=true;
+  }
+}
+
+function renderReferrerMatches(query){
+  const results=$('#referrerResults');
+  if(!results) return;
+
+  const q=String(query||'').trim().toLowerCase();
+
+  if(q.length<2){
+    results.innerHTML='';
+    results.hidden=true;
+    return;
+  }
+
+  const matches=data.clients
+    .filter(c=>!c.isCompany)
+    .filter(c=>[
+      c.name,
+      c.phone,
+      c.email
+    ].join(' ').toLowerCase().includes(q))
+    .slice(0,10);
+
+  results.innerHTML=matches.length
+    ? matches.map(c=>`
+        <button
+          type="button"
+          class="pending-client-result"
+          data-referrer-client-id="${c.id}"
+        >
+          <strong>${esc(c.name||'Cliente')}</strong>
+          <small>${esc(
+            [c.phone,c.email]
+              .filter(Boolean)
+              .join(' · ')
+          )}</small>
+        </button>
+      `).join('')
+    : '<div class="search-empty">Sin resultados. Puedes escribir un referido externo abajo.</div>';
+
+  results.hidden=false;
+
+  results
+    .querySelectorAll('[data-referrer-client-id]')
+    .forEach(btn=>{
+      btn.onclick=()=>{
+        const client=data.clients.find(
+          c=>String(c.id)===String(btn.dataset.referrerClientId)
+        );
+
+        selectReferrerClient(client);
+      };
+    });
+}
+
+function bindReferrerSearch(){
+  const search=$('#referrerSearch');
+  const external=$('#referredByExternal');
+
+  if(!search || search.dataset.bound==='1') return;
+
+  search.dataset.bound='1';
+
+  search.addEventListener('input',()=>{
+    clearReferrerSearch();
+    renderReferrerMatches(search.value);
+  });
+
+  search.addEventListener('focus',()=>{
+    if(search.value.trim().length>=2){
+      renderReferrerMatches(search.value);
+    }
+  });
+
+  if(external){
+    external.addEventListener('input',()=>{
+      if(external.value.trim()){
+        clearReferrerSearch();
+        if(search) search.value='';
+        const results=$('#referrerResults');
+        if(results){
+          results.innerHTML='';
+          results.hidden=true;
+        }
+      }
+    });
+  }
+}
+
 function openModal(kind,values={}){
   mode=kind;
   editingCaseId=kind==='case-edit'?values.id:null;
@@ -2674,6 +6266,8 @@ function openModal(kind,values={}){
   const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',caseEdit:'Seguimiento del caso',service:'Nuevo servicio',payment:'Agregar pago al caso',appointment:'Nueva cita',task:'Nueva tarea',company:'Nueva empresa'};
   modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
+  if(kind==='case') bindCaseClientSearch();
+  if(kind==='client') bindReferrerSearch();
   const workspaceTabs=$('#caseWorkspaceTabs');
   if(workspaceTabs) workspaceTabs.hidden=kind!=='case-edit';
   const modalActions=form.querySelector('.modal-actions');
@@ -2703,13 +6297,16 @@ function openModal(kind,values={}){
       cardPriceInput.insertAdjacentHTML('afterend','<div class="price-field-summary" id="cardPriceSummary"><span>Tarjeta / Stripe</span><strong>$0.00</strong></div>');
       const refreshPricingPreview=()=>{
         const standard=Math.max(0,Number(totalPriceInput?.value||0));
-        const card=Math.max(0,Number(cardPriceInput?.value||standard));
+        const card=stripeGrossAmount(standard);
+        cardPriceInput.value=card>0?card.toFixed(2):'';
         const cashBox=fields.querySelector('#cashPriceSummary');
         const cardBox=fields.querySelector('#cardPriceSummary');
         if(cashBox) cashBox.innerHTML='<span>Cash / Zelle</span><strong>'+money(standard)+'</strong>';
         if(cardBox) cardBox.innerHTML='<span>Tarjeta / Stripe</span><strong>'+money(card)+'</strong>';
       };
-      [totalPriceInput,cardPriceInput].forEach(el=>el?.addEventListener('input',refreshPricingPreview));
+      cardPriceInput.readOnly=true;
+      cardPriceInput.placeholder='Se calcula automaticamente';
+      totalPriceInput.addEventListener('input',refreshPricingPreview);
       refreshPricingPreview();
     }
     const invoiceInput=fields.querySelector('[name="invoiceNumber"]');
@@ -2731,7 +6328,7 @@ function openModal(kind,values={}){
     if(stripeInput){
       stripeInput.readOnly=true;
       stripeInput.placeholder='Se genera automáticamente';
-      stripeInput.insertAdjacentHTML('afterend','<button type="button" class="primary stripe-create-btn" id="createStripeLink">Crear enlace Stripe</button><small class="stripe-help">Usa el monto de “Pago inicial requerido”.</small>');
+      stripeInput.insertAdjacentHTML('afterend','<button type="button" class="primary stripe-create-btn" id="createStripeLink">Crear enlace Stripe</button><small class="stripe-help">El monto se calcula automaticamente para cubrir la comision de Stripe.</small>');
     }
   }
 
@@ -2839,10 +6436,10 @@ function openModal(kind,values={}){
     if(stripeBtn){
       stripeBtn.addEventListener('click', async ()=>{
         const fd=Object.fromEntries(new FormData(form));
-        const amount=Number(fd.initialPayment||0);
+        const amount=Number(fd.cardPrice||0);
         const client=clientById(fd.clientId);
         if(!amount || amount<=0){
-          alert('Primero ingresa el pago inicial requerido.');
+          alert('Primero ingresa el precio Tarjeta / Stripe.');
           return;
         }
         stripeBtn.disabled=true;
@@ -2853,7 +6450,7 @@ function openModal(kind,values={}){
             id:editingCaseId,
             clientId:Number(fd.clientId||0),
             service:fd.service||'',
-            initialPayment:amount,
+            cardPrice:amount,
             invoiceNumber:fd.invoiceNumber||'',
             stripePaymentLink:fd.stripePaymentLink||''
           });
@@ -2883,23 +6480,986 @@ function buildAccountInvoiceHTML(client,charges,payments,invoiceNo){
   const chargesTotal=charges.reduce((s,x)=>s+accountChargeTotal(x),0);
   const paymentsTotal=payments.reduce((s,x)=>s+Number(x.amount||0),0);
   const balance=Math.max(chargesTotal-paymentsTotal,0);
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${esc(invoiceNo)}</title><style>
-  body{font-family:Arial,Helvetica,sans-serif;color:#10264a;margin:0}.sheet{max-width:850px;margin:auto;padding:48px}.top{display:flex;justify-content:space-between;border-bottom:2px solid #d9b45b;padding-bottom:18px}.brand h1{margin:0}.muted{color:#6b768a}table{width:100%;border-collapse:collapse;margin-top:24px}th,td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:left}th{font-size:12px;text-transform:uppercase;color:#6b768a}.totals{max-width:360px;margin-left:auto;margin-top:24px}.totals div{display:flex;justify-content:space-between;padding:8px 0}.grand{border-top:2px solid #10264a;font-weight:700;font-size:18px}.footer{margin-top:38px;border-top:1px solid #e5e7eb;padding-top:14px;color:#6b768a;font-size:12px}</style></head><body><div class="sheet">
-  <div class="top"><div class="brand"><h1>AGR Solutions LLC</h1><div class="muted">294 Tyler Street, East Haven, CT 06512<br>203-824-0351 · agrsolutionsllc.com</div></div><div><h2>FACTURA</h2><strong>${esc(invoiceNo)}</strong><div>${new Date().toLocaleDateString('es-US')}</div></div></div>
-  <h3 style="margin-top:28px">${esc(client?.name||'Cliente')}</h3>
-  <div class="muted">${client?.email?esc(client.email):''}${client?.phone?' · '+esc(client.phone):''}</div>
-  <table><thead><tr><th>Concepto</th><th>Periodo</th><th>Cantidad</th><th>Precio unitario</th><th>Total</th></tr></thead><tbody>
-  ${grouped.map(g=>`<tr><td>${esc(g.concept)}</td><td>${esc(g.periods.join(', '))}</td><td>${g.quantity}</td><td>${money(g.unitPrice)}</td><td><strong>${money(g.total)}</strong></td></tr>`).join('')}
-  </tbody></table>
-  <div class="totals"><div><span>Cargos</span><strong>${money(chargesTotal)}</strong></div><div><span>Pagos aplicados</span><strong>${money(paymentsTotal)}</strong></div><div class="grand"><span>Saldo pendiente</span><strong>${money(balance)}</strong></div></div>
-  <div class="footer">Gracias por confiar en AGR Solutions LLC.</div>
-  </div><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));</script></body></html>`;
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Factura ${esc(invoiceNo)}</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  color:#10264a;
+  margin:0;
+  background:#fff
 }
+
+.sheet{
+  max-width:820px;
+  margin:0 auto;
+  padding:48px
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  border-bottom:2px solid #d9b45b;
+  padding-bottom:22px
+}
+
+.brand{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start
+}
+
+.brand-logo{
+  width:210px;
+  height:auto;
+  object-fit:contain;
+  border-radius:10px;
+  display:block
+}
+
+.brand-copy{
+  margin-top:10px
+}
+
+.brand-copy p{
+  margin:3px 0;
+  color:#5d687b;
+  line-height:1.18
+}
+
+.doc{
+  text-align:right
+}
+
+.doc h2{
+  margin:0 0 6px;
+  font-size:24px
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin:28px 0
+}
+
+.box{
+  padding:16px;
+  border:1px solid #e3e7ee;
+  border-radius:12px
+}
+
+.box span{
+  display:block;
+  color:#6b768a;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:5px
+}
+
+.box strong{
+  font-size:17px
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin:24px 0
+}
+
+th,td{
+  text-align:left;
+  padding:12px;
+  border-bottom:1px solid #e3e7ee
+}
+
+th{
+  font-size:12px;
+  text-transform:uppercase;
+  color:#6b768a
+}
+
+td:nth-child(3),
+td:nth-child(4),
+td:nth-child(5),
+th:nth-child(3),
+th:nth-child(4),
+th:nth-child(5){
+  text-align:right
+}
+
+.totals{
+  margin-left:auto;
+  max-width:360px
+}
+
+.totals div{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0
+}
+
+.totals .grand{
+  border-top:2px solid #10264a;
+  margin-top:6px;
+  padding-top:12px;
+  font-size:18px;
+  font-weight:700
+}
+
+.footer{
+  margin-top:42px;
+  padding-top:18px;
+  border-top:1px solid #e3e7ee;
+  color:#6b768a;
+  font-size:12px;
+  line-height:1.6
+}
+
+@media print{
+  .sheet{
+    max-width:none;
+    padding:28px
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="sheet">
+
+  <div class="top">
+
+    <div class="brand">
+      <img
+        class="brand-logo"
+        src="https://agrsolutionsllc.com/logo-agr.jpeg.jpeg"
+        alt="AGR Solutions LLC"
+      >
+
+      <div class="brand-copy">
+        <p>294 Tyler Street, East Haven, CT 06512</p>
+        <p>203-824-0351 · agrsolutionsllc.com</p>
+      </div>
+    </div>
+
+    <div class="doc">
+      <h2>${balance<=0.009?'FACTURA FINAL':'FACTURA'}</h2>
+      <div>${esc(invoiceNo)}</div>
+      <div>${new Date().toLocaleDateString('es-US')}</div>
+    </div>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="box">
+      <span>Cliente</span>
+      <strong>${esc(client?.name||'Cliente')}</strong>
+      <br>
+      ${client?.email?esc(client.email):''}
+      ${client?.phone?' · '+esc(client.phone):''}
+    </div>
+
+
+
+  </div>
+
+  <table>
+
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        <th>Periodo</th>
+        <th>Cantidad</th>
+        <th>Precio unitario</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      ${grouped.map(g=>`
+        <tr>
+          <td>${esc(g.concept)}</td>
+          <td>${esc(g.periods.join(', '))}</td>
+          <td>${g.quantity}</td>
+          <td>${money(g.unitPrice)}</td>
+          <td><strong>${money(g.total)}</strong></td>
+        </tr>
+      `).join('')}
+
+    </tbody>
+
+  </table>
+
+  <div class="totals">
+
+    <div>
+      <span>Cargos</span>
+      <strong>${money(chargesTotal)}</strong>
+    </div>
+
+    <div>
+      <span>Pagos aplicados</span>
+      <strong>${money(paymentsTotal)}</strong>
+    </div>
+
+    <div class="grand">
+      <span>${balance<=0.009?'Saldo restante':'Saldo pendiente'}</span>
+      <strong>${money(balance)}</strong>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Gracias por confiar en AGR Solutions LLC.
+  </div>
+
+</div>
+
+<script>
+window.addEventListener(
+  'load',
+  ()=>setTimeout(()=>window.print(),250)
+);
+</script>
+
+</body>
+</html>`;
+}
+
 function openAccountInvoice(client,charges,payments,invoiceNo){
   const w=window.open('','_blank'); if(!w){alert('Permite ventanas emergentes para abrir la factura.');return;}
   try{w.opener=null}catch(_){}
   w.document.open(); w.document.write(buildAccountInvoiceHTML(client,charges,payments,invoiceNo)); w.document.close();
 }
+
+function accountInvoiceById(invoiceId){
+  return (data.clientAccountInvoices||[])
+    .find(i=>Number(i.id)===Number(invoiceId));
+}
+
+function accountInvoiceCharges(invoice){
+  const ids=new Set(
+    (invoice?.chargeIds||[]).map(Number)
+  );
+
+  return (data.clientAccountCharges||[])
+    .filter(x=>ids.has(Number(x.id)));
+}
+
+function openSavedAccountInvoice(invoiceId){
+  const invoice=accountInvoiceById(invoiceId);
+
+  if(!invoice){
+    alert('No se encontró la factura.');
+    return;
+  }
+
+  const client=clientById(invoice.clientId);
+
+  if(!client){
+    alert('No se encontró el cliente.');
+    return;
+  }
+
+  const charges=accountInvoiceCharges(invoice);
+
+  const payments=accountPaymentsForClient(
+    invoice.clientId
+  );
+
+  openAccountInvoice(
+    client,
+    charges,
+    payments,
+    invoice.number
+  );
+}
+
+async function accountInvoicePdfBase64(invoice){
+  if(typeof html2pdf!=='function'){
+    throw new Error(
+      'El generador de PDF no está disponible. Recarga el CRM.'
+    );
+  }
+
+  const client=clientById(invoice.clientId);
+
+  if(!client){
+    throw new Error('No se encontró el cliente.');
+  }
+
+  const charges=accountInvoiceCharges(invoice);
+
+  const payments=accountPaymentsForClient(
+    invoice.clientId
+  );
+
+  const host=document.createElement('div');
+
+  host.style.position='fixed';
+  host.style.left='-12000px';
+  host.style.top='0';
+  host.style.width='816px';
+  host.style.background='#ffffff';
+  host.style.zIndex='-1';
+
+  document.body.appendChild(host);
+
+  try{
+    const html=buildAccountInvoiceHTML(
+      client,
+      charges,
+      payments,
+      invoice.number
+    );
+
+    const parser=new DOMParser();
+
+    const parsed=parser.parseFromString(
+      html,
+      'text/html'
+    );
+
+    [...parsed.querySelectorAll('style')]
+      .forEach(node=>{
+        const clone=document.createElement('style');
+        clone.textContent=node.textContent||'';
+        host.appendChild(clone);
+      });
+
+    const sheet=parsed.querySelector('.sheet');
+
+    if(!sheet){
+      throw new Error(
+        'No se pudo preparar la factura.'
+      );
+    }
+
+    const renderedSheet=sheet.cloneNode(true);
+
+    host.appendChild(renderedSheet);
+
+    await new Promise(resolve=>
+      requestAnimationFrame(()=>
+        requestAnimationFrame(resolve)
+      )
+    );
+
+    await new Promise(
+      resolve=>setTimeout(resolve,250)
+    );
+
+    const dataUri=await html2pdf()
+      .set({
+        margin:0,
+        filename:invoice.number+'.pdf',
+        image:{
+          type:'jpeg',
+          quality:0.98
+        },
+        html2canvas:{
+          scale:2,
+          useCORS:true,
+          backgroundColor:'#ffffff',
+          scrollX:0,
+          scrollY:0
+        },
+        jsPDF:{
+          unit:'in',
+          format:'letter',
+          orientation:'portrait'
+        },
+        pagebreak:{
+          mode:['css','legacy']
+        }
+      })
+      .from(renderedSheet)
+      .outputPdf('datauristring');
+
+    return String(dataUri).split(',').pop();
+
+  }finally{
+    host.remove();
+  }
+}
+
+async function emailSavedAccountInvoice(
+  invoiceId,
+  button
+){
+  const invoice=accountInvoiceById(invoiceId);
+
+  if(!invoice){
+    alert('No se encontró la factura.');
+    return;
+  }
+
+  const client=clientById(invoice.clientId);
+
+  if(!client){
+    alert('No se encontró el cliente.');
+    return;
+  }
+
+  if(!client.email){
+    alert(
+      'Este cliente o empresa no tiene correo registrado.'
+    );
+    return;
+  }
+
+  const ok=window.confirm(
+    '¿Enviar la factura '+invoice.number+
+    ' a '+client.email+'?\n\n'+
+    'El PDF se adjuntará automáticamente.'
+  );
+
+  if(!ok) return;
+
+  const original=button?.textContent||'Correo';
+
+  if(button){
+    button.disabled=true;
+    button.textContent='Enviando...';
+  }
+
+  try{
+    const pdfBase64=
+      await accountInvoicePdfBase64(invoice);
+
+    const response=await fetch(
+      FINAL_INVOICE_EMAIL_URL,
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+          to:client.email,
+          clientName:client.name||'',
+          invoiceNumber:invoice.number,
+          service:'Factura global',
+          pdfBase64
+        })
+      }
+    );
+
+    const result=await response
+      .json()
+      .catch(()=>({}));
+
+    if(!response.ok || !result.sent){
+      throw new Error(
+        result.error||
+        'No se pudo enviar la factura.'
+      );
+    }
+
+    alert(
+      'Factura enviada correctamente a '+
+      client.email+'.'
+    );
+
+  }catch(err){
+    alert(
+      err.message||
+      'No se pudo enviar la factura.'
+    );
+
+  }finally{
+    if(button){
+      button.disabled=false;
+      button.textContent=original;
+    }
+  }
+}
+
+
+function nextAccountPaymentReceiptNumber(){
+  const year=new Date().getFullYear();
+
+  const nums=(data.clientAccountPayments||[])
+    .map(p=>String(p.receiptNumber||''))
+    .map(v=>v.match(/^AGR-ACCT-R-(\\d{4})-(\\d+)$/))
+    .filter(Boolean)
+    .filter(m=>Number(m[1])===year)
+    .map(m=>Number(m[2]));
+
+  const next=(nums.length?Math.max(...nums):0)+1;
+
+  return 'AGR-ACCT-R-'+year+'-'+String(next).padStart(4,'0');
+}
+
+function ensureAccountPaymentReceiptNumber(payment){
+  if(!payment.receiptNumber){
+    payment.receiptNumber=nextAccountPaymentReceiptNumber();
+    save();
+  }
+
+  return payment.receiptNumber;
+}
+
+function accountPaymentById(paymentId){
+  return (data.clientAccountPayments||[])
+    .find(p=>Number(p.id)===Number(paymentId));
+}
+
+function accountPaymentReceiptHTML(payment){
+  const client=clientById(payment.clientId);
+  const docNo=ensureAccountPaymentReceiptNumber(payment);
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Recibo de pago · ${esc(docNo)}</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  color:#10264a;
+  margin:0;
+  background:#fff
+}
+
+.sheet{
+  max-width:820px;
+  margin:0 auto;
+  padding:48px
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  border-bottom:2px solid #d9b45b;
+  padding-bottom:22px
+}
+
+.brand{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start
+}
+
+.brand-logo{
+  width:210px;
+  height:auto;
+  display:block;
+  object-fit:contain;
+  border-radius:10px
+}
+
+.brand-copy{
+  margin-top:10px
+}
+
+.brand-copy p{
+  margin:3px 0;
+  color:#5d687b;
+  line-height:1.18
+}
+
+.doc{
+  text-align:right
+}
+
+.doc h2{
+  margin:0 0 6px;
+  font-size:24px
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:18px;
+  margin:28px 0
+}
+
+.box{
+  padding:16px;
+  border:1px solid #e3e7ee;
+  border-radius:12px
+}
+
+.box span{
+  display:block;
+  color:#6b768a;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:5px
+}
+
+.box strong{
+  font-size:17px
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin:24px 0
+}
+
+th,td{
+  padding:12px;
+  border-bottom:1px solid #e3e7ee;
+  text-align:left
+}
+
+th{
+  color:#6b768a;
+  font-size:12px;
+  text-transform:uppercase
+}
+
+th:last-child,
+td:last-child{
+  text-align:right
+}
+
+.totals{
+  margin-left:auto;
+  max-width:360px
+}
+
+.totals div{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0
+}
+
+.totals .grand{
+  border-top:2px solid #10264a;
+  margin-top:6px;
+  padding-top:12px;
+  font-size:18px;
+  font-weight:700
+}
+
+.footer{
+  margin-top:42px;
+  padding-top:18px;
+  border-top:1px solid #e3e7ee;
+  color:#6b768a;
+  font-size:12px;
+  line-height:1.6
+}
+</style>
+</head>
+
+<body>
+
+<div class="sheet">
+
+  <div class="top">
+
+    <div class="brand">
+
+      <img
+        class="brand-logo"
+        src="https://agrsolutionsllc.com/logo-agr.jpeg.jpeg"
+        alt="AGR Solutions LLC"
+      >
+
+      <div class="brand-copy">
+        <p>294 Tyler Street, East Haven, CT 06512</p>
+        <p>203-824-0351 · agrsolutionsllc.com</p>
+      </div>
+
+    </div>
+
+    <div class="doc">
+      <h2>RECIBO DE PAGO</h2>
+      <div>${esc(docNo)}</div>
+      <div>${esc(payment.date||todayISO())}</div>
+    </div>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="box">
+      <span>Cliente</span>
+      <strong>${esc(client?.name||'Cliente')}</strong>
+      <br>
+      ${client?.email?esc(client.email):''}
+      ${client?.phone?' · '+esc(client.phone):''}
+    </div>
+
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Método</th>
+        <th>Nota</th>
+        <th>Pago recibido</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td>${esc(payment.date||'—')}</td>
+        <td>${esc(payment.method||'—')}</td>
+        <td>${esc(payment.note||'—')}</td>
+        <td><strong>${money(Number(payment.amount||0))}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="grand">
+      <span>Total recibido</span>
+      <strong>${money(Number(payment.amount||0))}</strong>
+    </div>
+  </div>
+
+  <div class="footer">
+    Este documento confirma el pago recibido.
+    <br>
+    Gracias por confiar en AGR Solutions LLC.
+  </div>
+
+</div>
+
+</body>
+</html>`;
+}
+
+function openAccountPaymentReceipt(paymentId){
+  const payment=accountPaymentById(paymentId);
+
+  if(!payment){
+    alert('No se encontró el pago.');
+    return;
+  }
+
+  const w=window.open('','_blank');
+
+  if(!w){
+    alert('Permite ventanas emergentes para abrir el recibo.');
+    return;
+  }
+
+  try{w.opener=null;}catch(_){}
+
+  w.document.open();
+  w.document.write(
+    accountPaymentReceiptHTML(payment)
+  );
+  w.document.close();
+}
+
+async function accountPaymentReceiptPdfBase64(payment){
+  if(typeof html2pdf!=='function'){
+    throw new Error(
+      'El generador de PDF no está disponible. Recarga el CRM.'
+    );
+  }
+
+  const host=document.createElement('div');
+
+  host.style.position='fixed';
+  host.style.left='-12000px';
+  host.style.top='0';
+  host.style.width='816px';
+  host.style.background='#ffffff';
+  host.style.zIndex='-1';
+
+  document.body.appendChild(host);
+
+  try{
+    const html=accountPaymentReceiptHTML(payment);
+
+    const parser=new DOMParser();
+
+    const parsed=parser.parseFromString(
+      html,
+      'text/html'
+    );
+
+    [...parsed.querySelectorAll('style')]
+      .forEach(node=>{
+        const clone=document.createElement('style');
+        clone.textContent=node.textContent||'';
+        host.appendChild(clone);
+      });
+
+    const sheet=parsed.querySelector('.sheet');
+
+    if(!sheet){
+      throw new Error(
+        'No se pudo preparar el recibo.'
+      );
+    }
+
+    const renderedSheet=sheet.cloneNode(true);
+    host.appendChild(renderedSheet);
+
+    await new Promise(resolve=>
+      requestAnimationFrame(()=>
+        requestAnimationFrame(resolve)
+      )
+    );
+
+    const imgs=[...renderedSheet.querySelectorAll('img')];
+
+    await Promise.all(
+      imgs.map(img=>{
+        if(img.complete) return Promise.resolve();
+
+        return new Promise(resolve=>{
+          img.onload=resolve;
+          img.onerror=resolve;
+        });
+      })
+    );
+
+    await new Promise(
+      resolve=>setTimeout(resolve,250)
+    );
+
+    const dataUri=await html2pdf()
+      .set({
+        margin:0,
+        filename:
+          ensureAccountPaymentReceiptNumber(payment)+
+          '-Recibo.pdf',
+        image:{
+          type:'jpeg',
+          quality:0.98
+        },
+        html2canvas:{
+          scale:2,
+          useCORS:true,
+          backgroundColor:'#ffffff',
+          scrollX:0,
+          scrollY:0
+        },
+        jsPDF:{
+          unit:'in',
+          format:'letter',
+          orientation:'portrait'
+        },
+        pagebreak:{
+          mode:['css','legacy']
+        }
+      })
+      .from(renderedSheet)
+      .outputPdf('datauristring');
+
+    return String(dataUri).split(',').pop();
+
+  }finally{
+    host.remove();
+  }
+}
+
+async function emailAccountPaymentReceipt(paymentId,button){
+  const payment=accountPaymentById(paymentId);
+
+  if(!payment){
+    alert('No se encontró el pago.');
+    return;
+  }
+
+  const client=clientById(payment.clientId);
+
+  if(!client?.email){
+    alert(
+      'Este cliente o empresa no tiene correo registrado.'
+    );
+    return;
+  }
+
+  const docNo=ensureAccountPaymentReceiptNumber(payment);
+
+  const ok=window.confirm(
+    '¿Enviar el recibo '+docNo+
+    ' a '+client.email+'?\\n\\n'+
+    'El PDF se adjuntará automáticamente.'
+  );
+
+  if(!ok) return;
+
+  const original=button?.innerHTML||'Correo';
+
+  if(button){
+    button.disabled=true;
+    button.textContent='Enviando...';
+  }
+
+  try{
+    const pdfBase64=
+      await accountPaymentReceiptPdfBase64(payment);
+
+    const response=await fetch(
+      FINAL_INVOICE_EMAIL_URL,
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+          to:client.email,
+          clientName:client.name||'',
+          invoiceNumber:docNo,
+          service:'Pago de cuenta global',
+          pdfBase64
+        })
+      }
+    );
+
+    const result=await response
+      .json()
+      .catch(()=>({}));
+
+    if(!response.ok || !result.sent){
+      throw new Error(
+        result.error||
+        'No se pudo enviar el recibo.'
+      );
+    }
+
+    alert(
+      'Recibo enviado correctamente a '+
+      client.email+'.'
+    );
+
+  }catch(err){
+
+    alert(
+      err.message||
+      'No se pudo enviar el recibo.'
+    );
+
+  }finally{
+
+    if(button){
+      button.disabled=false;
+      button.innerHTML=original;
+    }
+
+  }
+}
+
 function openClientAccount(clientId){
   const client=clientById(clientId); if(!client) return;
   const dlg=$('#clientAccountDialog'), body=$('#clientAccountBody'), title=$('#clientAccountTitle');
@@ -2926,12 +7486,97 @@ function openClientAccount(clientId){
       <section><h3>Cargos / servicios</h3><div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Periodo</th><th>Cant.</th><th>Unitario</th><th>Total</th><th>Estado</th></tr></thead><tbody>
       ${charges.length?charges.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.concept||'—')}</td><td>${esc(normalizePeriodLabel(x.period)||'—')}</td><td>${Number(x.quantity||1)}</td><td>${money(x.unitPrice)}</td><td><strong>${money(accountChargeTotal(x))}</strong></td><td>${x.invoiceId?'Facturado':'Pendiente'}</td></tr>`).join(''):'<tr><td colspan="7">No hay cargos registrados.</td></tr>'}
       </tbody></table></div></section>
-      <section><h3>Pagos recibidos</h3><div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Método</th><th>Monto</th><th>Nota</th></tr></thead><tbody>
-      ${payments.length?payments.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td></tr>`).join(''):'<tr><td colspan="4">No hay pagos registrados.</td></tr>'}
+      <section><h3>Pagos recibidos</h3><div class="workspace-table"><table><thead><tr><th>Fecha</th><th>Método</th><th>Monto</th><th>Nota</th><th>Documento</th></tr></thead><tbody>
+      ${payments.length?payments.map(x=>`<tr><td>${esc(x.date||'—')}</td><td>${esc(x.method||'—')}</td><td><strong>${money(x.amount)}</strong></td><td>${esc(x.note||'—')}</td><td><div style="display:flex;gap:10px;align-items:center;white-space:nowrap"><button type="button" class="secondary" data-account-payment-receipt="${x.id}" title="Ver recibo" aria-label="Ver recibo" style="width:40px;height:40px;padding:0;min-width:40px;font-size:20px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#17366b" d="M7 2h8l4 4v14l-2-1.2L15 20l-3-1.2L9 20l-2-1.2L5 20V4a2 2 0 0 1 2-2z"/><path fill="#ffffff" d="M14 2v5h5"/><rect x="8" y="9" width="8" height="1.7" rx=".8" fill="#d7a62a"/><rect x="8" y="12" width="8" height="1.5" rx=".7" fill="#8ea3c7"/><rect x="8" y="15" width="6" height="1.5" rx=".7" fill="#8ea3c7"/></svg></button><button type="button" class="secondary" data-account-payment-email="${x.id}" title="Enviar por correo" aria-label="Enviar por correo" style="width:40px;height:40px;padding:0;min-width:40px;font-size:20px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.4" fill="#e0aa22"/><path d="M4.5 7l7.5 5.7L19.5 7" fill="none" stroke="#17366b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 17l5.4-4.7M19.5 17l-5.4-4.7" fill="none" stroke="#fff7da" stroke-width="1.4" stroke-linecap="round"/></svg></button></div></td></tr>`).join(''):'<tr><td colspan="5">No hay pagos registrados.</td></tr>'}
       </tbody></table></div></section>
     </div>
-    ${data.clientAccountInvoices.filter(x=>Number(x.clientId)===Number(clientId)).length?'<section class="account-invoices"><h3>Facturas generadas</h3>'+data.clientAccountInvoices.filter(x=>Number(x.clientId)===Number(clientId)).map(i=>'<div class="account-invoice-row"><strong>'+esc(i.number)+'</strong><span>'+esc(i.date)+'</span><span>'+money(i.total)+'</span></div>').join('')+'</section>':''}
+    ${(()=>{
+  const invoices=(data.clientAccountInvoices||[])
+    .filter(x=>Number(x.clientId)===Number(clientId))
+    .slice()
+    .sort((a,b)=>Number(b.id||0)-Number(a.id||0));
+
+  if(!invoices.length) return '';
+
+  const invoiceRow=i=>
+    '<div style="display:grid;grid-template-columns:minmax(180px,1.5fr) 110px 100px auto;gap:12px;align-items:center;padding:11px 8px;border-bottom:1px solid #e6eaf0">'+
+      '<strong>'+esc(i.number)+'</strong>'+
+      '<span>'+esc(i.date)+'</span>'+
+      '<span style="font-weight:700">'+money(i.total)+'</span>'+
+      '<span style="display:flex;gap:7px;justify-content:flex-end">'+
+        '<button type="button" class="secondary" data-account-invoice-open="'+i.id+'" title="Ver factura" aria-label="Ver factura" style="width:40px;height:40px;padding:0;min-width:40px;font-size:20px"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="#17366b" d="M7 2h8l4 4v14l-2-1.2L15 20l-3-1.2L9 20l-2-1.2L5 20V4a2 2 0 0 1 2-2z"/><path fill="#ffffff" d="M14 2v5h5"/><rect x="8" y="9" width="8" height="1.7" rx=".8" fill="#d7a62a"/><rect x="8" y="12" width="8" height="1.5" rx=".7" fill="#8ea3c7"/><rect x="8" y="15" width="6" height="1.5" rx=".7" fill="#8ea3c7"/></svg></button>'+
+        '<button type="button" class="secondary" data-account-invoice-email="'+i.id+'" title="Enviar por correo" aria-label="Enviar por correo" style="width:40px;height:40px;padding:0;min-width:40px;font-size:20px"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.4" fill="#e0aa22"/><path d="M4.5 7l7.5 5.7L19.5 7" fill="none" stroke="#17366b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 17l5.4-4.7M19.5 17l-5.4-4.7" fill="none" stroke="#fff7da" stroke-width="1.4" stroke-linecap="round"/></svg></button>'+
+      '</span>'+
+    '</div>';
+
+  const recent=invoices.slice(0,5);
+  const older=invoices.slice(5);
+
+  return '<section class="account-invoices">'+
+    '<h3>Facturas generadas</h3>'+
+    '<div style="border:1px solid #e3e7ee;border-radius:14px;overflow:hidden">'+
+      '<div style="display:grid;grid-template-columns:minmax(180px,1.5fr) 110px 100px auto;gap:12px;padding:10px 8px;background:#f8fafc;color:#7b8798;font-size:12px;font-weight:700;text-transform:uppercase">'+
+        '<span>Factura</span><span>Fecha</span><span>Total</span><span></span>'+
+      '</div>'+
+      recent.map(invoiceRow).join('')+
+    '</div>'+
+    (older.length
+      ? '<details style="margin-top:12px">'+
+          '<summary style="cursor:pointer;font-weight:700;color:#10264a">Ver facturas anteriores ('+older.length+')</summary>'+
+          '<div style="margin-top:10px;max-height:300px;overflow-y:auto;border:1px solid #e3e7ee;border-radius:14px">'+
+            older.map(invoiceRow).join('')+
+          '</div>'+
+        '</details>'
+      : '')+
+  '</section>';
+})()}
   `;
+  body.querySelectorAll('[data-account-invoice-open]')
+    .forEach(btn=>{
+      btn.onclick=e=>{
+        e.stopPropagation();
+
+        openSavedAccountInvoice(
+          Number(btn.dataset.accountInvoiceOpen)
+        );
+      };
+    });
+
+  body.querySelectorAll('[data-account-invoice-email]')
+    .forEach(btn=>{
+      btn.onclick=e=>{
+        e.stopPropagation();
+
+        emailSavedAccountInvoice(
+          Number(btn.dataset.accountInvoiceEmail),
+          btn
+        );
+      };
+    });
+
+  body.querySelectorAll('[data-account-payment-receipt]')
+    .forEach(btn=>{
+      btn.onclick=e=>{
+        e.stopPropagation();
+
+        openAccountPaymentReceipt(
+          Number(btn.dataset.accountPaymentReceipt)
+        );
+      };
+    });
+
+  body.querySelectorAll('[data-account-payment-email]')
+    .forEach(btn=>{
+      btn.onclick=e=>{
+        e.stopPropagation();
+
+        emailAccountPaymentReceipt(
+          Number(btn.dataset.accountPaymentEmail),
+          btn
+        );
+      };
+    });
+
   const entry=$('#accountEntryBox');
   $('#addAccountCharge').onclick=()=>{
     entry.hidden=false;
@@ -2949,7 +7594,7 @@ function openClientAccount(clientId){
       <label>Cantidad<input id="acctQty" type="number" min="1" step="1" value="1"></label>
       <label>Precio unitario<input id="acctUnit" type="number" min="0" step="0.01" placeholder="20.00"></label>
       <label class="full">Nota<input id="acctNote" type="text" placeholder="Opcional"></label>
-    </div><div class="account-entry-actions"><button class="primary" type="button" id="saveAcctCharge">Guardar y agregar otro</button><button class="ghost" type="button" id="finishAcctEntry">Terminar</button></div>`;
+    </div><div class="account-entry-actions"><button class="primary" type="button" id="saveAcctCharge">Guardar servicio</button></div>`;
     const serviceSelect=$('#acctServiceSelect');
     const customWrap=$('#acctCustomConceptWrap');
     const conceptInput=$('#acctConcept');
@@ -2967,7 +7612,6 @@ function openClientAccount(clientId){
         conceptInput.focus();
       }
     };
-    $('#finishAcctEntry').onclick=()=>{entry.hidden=true;entry.innerHTML='';};
     $('#saveAcctCharge').onclick=()=>{
       const selected=$('#acctServiceSelect').value;
       const concept=(selected==='__custom'?$('#acctConcept').value.trim():selected);
@@ -2990,7 +7634,7 @@ function openClientAccount(clientId){
       flash.className='account-save-flash';
       flash.textContent='✓ Cargo guardado. Pendientes para la factura global: '+pendingCount;
       entry.prepend(flash);
-      setTimeout(()=>flash.remove(),2200);
+      setTimeout(()=>{flash.remove();openClientAccount(clientId);},250);
     };
   };
   $('#addAccountPayment').onclick=()=>{
@@ -3102,6 +7746,10 @@ form.addEventListener('submit',async e=>{
       name:f.name,
       phone:f.phone,
       email:f.email,
+      referredByClientId:f.referredByClientId
+        ? Number(f.referredByClientId)
+        : null,
+      referredByExternal:String(f.referredByExternal||'').trim(),
       isCompany
     });
   }
@@ -3148,13 +7796,6 @@ form.addEventListener('submit',async e=>{
       stripePaymentLink:f.stripePaymentLink||'',
       syncToken:makeCaseSyncToken()
     };
-    if(newCase.initialPayment>0 && !newCase.stripePaymentLink){
-      try{
-        newCase.stripePaymentLink=await createStripePaymentLinkForCase(newCase);
-      }catch(err){
-        alert('El caso se guardará, pero no se pudo crear el enlace Stripe automáticamente: '+err.message);
-      }
-    }
     data.cases.push(newCase);
     ensureCaseDocs(newCase);
     logCaseEvent(newCase.id,'Caso creado','case');
@@ -3182,13 +7823,6 @@ form.addEventListener('submit',async e=>{
         stripePaymentLink:current.stripePaymentLink||'',
         updatedAt:new Date().toISOString()
       };
-      if(updatedCase.initialPayment>0 && !updatedCase.stripePaymentLink){
-        try{
-          updatedCase.stripePaymentLink=await createStripePaymentLinkForCase(updatedCase);
-        }catch(err){
-          alert('El caso se guardará, pero no se pudo crear el enlace Stripe automáticamente: '+err.message);
-        }
-      }
       const oldCase=data.cases[index];
       data.cases[index]=updatedCase;
       const changes=[];
@@ -3200,37 +7834,190 @@ form.addEventListener('submit',async e=>{
 
   if(mode==='payment'){
     const k=caseById(f.caseId);
+
     if(k){
-      const amount=Number(f.amount||0);
-      const method=f.method||'';
-      const balance=caseBalanceForMethod(k,method);
-      const isCash=method==='Cash';
-      const isZelle=method==='Zelle';
-      const discountAvailable=isCash?caseCashDiscount(k):(isZelle?caseZelleDiscount(k):0);
-      const discountedPayoff=isCash?caseCashPayoff(k):(isZelle?caseZellePayoff(k):balance);
+      let amount=Number(f.amount||0);
+      const originalMethod=f.method||'';
+      const balance=caseBalanceForMethod(k,originalMethod);
+
+      const isCash=originalMethod==='Cash';
+      const isZelle=originalMethod==='Zelle';
+
+      const discountAvailable=isCash
+        ? caseCashDiscount(k)
+        : (isZelle?caseZelleDiscount(k):0);
+
+      const discountedPayoff=isCash
+        ? caseCashPayoff(k)
+        : (isZelle?caseZellePayoff(k):balance);
+
       let discountCredit=0;
+      let referralCreditApplied=0;
+
       if(amount<=0){
         alert('Ingresa un monto mayor a $0.');
         return;
       }
+
       if(amount>balance){
-        alert('El pago no puede ser mayor que el saldo pendiente de '+money(balance)+'.');
+        alert(
+          'El pago no puede ser mayor que el saldo pendiente de '+
+          money(balance)+'.'
+        );
         return;
       }
-      if((isCash||isZelle) && discountAvailable>0 && Math.abs(amount-discountedPayoff)<0.01){
-        discountCredit=Math.min(discountAvailable,balance-amount);
+
+      if(
+        (isCash||isZelle) &&
+        discountAvailable>0 &&
+        Math.abs(amount-discountedPayoff)<0.01
+      ){
+        discountCredit=Math.min(
+          discountAvailable,
+          Math.max(balance-amount,0)
+        );
       }
+
+      if(typeof referralProgramStats==='function'){
+        const stats=referralProgramStats(k.clientId);
+        const availableCredit=Math.max(
+          0,
+          Number(stats?.available||0)
+        );
+
+        const maxCredit=Math.min(
+          availableCredit,
+          amount
+        );
+
+        if(maxCredit>0.009){
+          if(referralCurrentRole()==='admin'){
+
+            const useCredit=confirm(
+              'Este cliente tiene '+
+              money(availableCredit)+
+              ' de crédito AGR disponible.\n\n'+
+              'Pago registrado: '+money(amount)+'\n\n'+
+              '¿Deseas aplicar crédito AGR a este pago?'
+            );
+
+            if(useCredit){
+              const raw=prompt(
+                'Crédito AGR disponible: '+
+                money(availableCredit)+'\n'+
+                'Máximo aplicable: '+
+                money(maxCredit)+'\n\n'+
+                '¿Cuánto crédito AGR deseas aplicar?',
+                maxCredit.toFixed(2)
+              );
+
+              if(raw===null) return;
+
+              const requested=Number(
+                String(raw)
+                  .replace(/[$,]/g,'')
+                  .trim()
+              );
+
+              if(
+                !Number.isFinite(requested) ||
+                requested<=0
+              ){
+                alert('Ingresa un crédito AGR válido.');
+                return;
+              }
+
+              if(requested>maxCredit+0.009){
+                alert(
+                  'Puedes aplicar como máximo '+
+                  money(maxCredit)+'.'
+                );
+                return;
+              }
+
+              referralCreditApplied=Number(
+                requested.toFixed(2)
+              );
+
+              amount=Number(
+                Math.max(
+                  0,
+                  amount-referralCreditApplied
+                ).toFixed(2)
+              );
+            }
+
+          }else{
+            alert(
+              'Este cliente tiene '+
+              money(availableCredit)+
+              ' de crédito AGR disponible.\n\n'+
+              'La aplicación del crédito requiere autorización administrativa.'
+            );
+          }
+        }
+      }
+
+      const storedMethod=
+        amount<=0.009 && referralCreditApplied>0
+          ? 'Crédito AGR'
+          : originalMethod;
+
+      const notes=[];
+
+      if(f.note) notes.push(f.note);
+
+      if(discountCredit>0){
+        notes.push(
+          'Descuento Cash/Zelle aplicado: '+
+          money(discountCredit)
+        );
+      }
+
+      if(referralCreditApplied>0){
+        notes.push(
+          'Crédito AGR aplicado: '+
+          money(referralCreditApplied)
+        );
+      }
+
       data.payments.push({
         id,
         caseId:Number(f.caseId),
         clientId:k.clientId,
-        amount,
-        discountCredit,
-        method,
+        amount:Number(amount.toFixed(2)),
+        discountCredit:Number(discountCredit.toFixed(2)),
+        referralCreditApplied,
+        method:storedMethod,
         date:f.date||new Date().toISOString().slice(0,10),
-        note:f.note||(discountCredit>0?'Descuento Cash/Zelle aplicado':'')
+        note:notes.join(' · ')
       });
-      logCaseEvent(k.id,`Pago registrado: ${money(amount)} · ${method}${discountCredit>0?' · descuento '+money(discountCredit):''}`,'payment');
+
+      if(referralCreditApplied>0){
+        data.referralCreditUses.push({
+          id:id+1,
+          clientId:Number(k.clientId),
+          date:f.date||new Date().toISOString().slice(0,10),
+          amount:referralCreditApplied,
+          note:'Aplicado en caso · '+(k.service||'Servicio AGR'),
+          source:'case-payment',
+          sourceId:id,
+          caseId:Number(k.id)
+        });
+      }
+
+      logCaseEvent(
+        k.id,
+        'Pago registrado: '+money(amount)+
+        ' · '+storedMethod+
+        (discountCredit>0
+          ? ' · descuento '+money(discountCredit)
+          : '')+
+        (referralCreditApplied>0
+          ? ' · Crédito AGR '+money(referralCreditApplied)
+          : ''),
+        'payment'
+      );
     }
   }
 
@@ -3281,31 +8068,199 @@ const cashbookForm=$('#cashbookForm');
 if(cashbookForm){
   cashbookForm.addEventListener('submit',e=>{
     e.preventDefault();
+
     const items=getCashbookItems();
-    const amount=items.reduce((s,x)=>s+x.quantity*x.unitPrice,0);
-    if(!items.length || amount<=0){
+
+    const serviceTotal=items.reduce(
+      (sum,x)=>sum+x.quantity*x.unitPrice,
+      0
+    );
+
+    if(!items.length || serviceTotal<=0){
       alert('Agrega al menos un trámite con cantidad y valor.');
       return;
     }
+
+    const clientId=$('#cashbookClientId')?.value
+      ? Number($('#cashbookClientId').value)
+      : null;
+
+    let referralCreditApplied=0;
+
+    if(
+      clientId &&
+      typeof referralProgramStats==='function'
+    ){
+      const stats=referralProgramStats(clientId);
+
+      if(stats.available>0.009){
+
+        const maxCredit=Math.min(
+          Number(stats.available||0),
+          Number(serviceTotal||0)
+        );
+
+        if(referralCurrentRole()==='admin'){
+
+          const useCredit=confirm(
+            'Este cliente tiene '+money(stats.available)+
+            ' de crédito AGR disponible.\n\n'+
+            'Total del servicio: '+money(serviceTotal)+'\n\n'+
+            '¿Deseas aplicar crédito AGR a este cobro?'
+          );
+
+          if(useCredit){
+
+            const raw=prompt(
+              'Crédito disponible: '+money(stats.available)+'\n'+
+              'Total del servicio: '+money(serviceTotal)+'\n\n'+
+              '¿Cuánto crédito AGR deseas aplicar?',
+              maxCredit.toFixed(2)
+            );
+
+            if(raw===null) return;
+
+            const requested=Number(raw);
+
+            if(
+              !Number.isFinite(requested) ||
+              requested<0
+            ){
+              alert('Ingresa un monto de crédito válido.');
+              return;
+            }
+
+            if(requested>maxCredit+0.009){
+              alert(
+                'Puedes aplicar como máximo '+
+                money(maxCredit)+'.'
+              );
+              return;
+            }
+
+            referralCreditApplied=Number(
+              requested.toFixed(2)
+            );
+          }
+
+        }else{
+          alert(
+            'Este cliente tiene '+
+            money(stats.available)+
+            ' de crédito AGR disponible.\n\n'+
+            'La aplicación del crédito requiere autorización administrativa.'
+          );
+        }
+      }
+    }
+
+    const amount=Number(
+      Math.max(
+        0,
+        serviceTotal-referralCreditApplied
+      ).toFixed(2)
+    );
+
+    const cashbookId=Date.now();
+
+    let note=$('#cashbookNote')?.value?.trim()||'';
+
+    if(referralCreditApplied>0){
+      const creditNote=
+        'Crédito AGR aplicado: '+
+        money(referralCreditApplied);
+
+      note=note
+        ? note+' · '+creditNote
+        : creditNote;
+    }
+
     data.cashbook.push({
-      id:Date.now(),
+      id:cashbookId,
       date:$('#cashbookDate')?.value||todayISO(),
-      clientId:$('#cashbookClient')?.value?Number($('#cashbookClient').value):null,
-      concept:items.length===1?items[0].service:(items.length+' trámites / servicios'),
+      clientId,
+      concept:items.length===1
+        ? items[0].service
+        : (items.length+' trámites / servicios'),
       items,
       category:$('#cashbookCategory')?.value||'Otros servicios',
-      method:$('#cashbookMethod')?.value||'Cash',
+      method:amount<=0.009
+        ? 'Crédito AGR'
+        : ($('#cashbookMethod')?.value||'Cash'),
       amount,
-      note:$('#cashbookNote')?.value?.trim()||''
+
+      serviceTotal:Number(serviceTotal.toFixed(2)),
+      referralCreditApplied,
+
+      note
     });
+
+    if(referralCreditApplied>0){
+      data.referralCreditUses.push({
+        id:cashbookId+1,
+        clientId:Number(clientId),
+        date:$('#cashbookDate')?.value||todayISO(),
+        amount:referralCreditApplied,
+        note:
+          'Aplicado en Caja · '+
+          (
+            items.length===1
+              ? items[0].service
+              : items.length+' servicios'
+          ),
+        source:'cashbook',
+        sourceId:cashbookId
+      });
+    }
+
     save();
+
+    const summaryMessage=
+      'Ingreso registrado correctamente.\n\n'+
+      'Valor del servicio: '+money(serviceTotal)+'\n'+
+      (
+        referralCreditApplied>0
+          ? 'Crédito AGR aplicado: -'+money(referralCreditApplied)+'\n'
+          : ''
+      )+
+      'Total recibido: '+money(amount);
+
     cashbookForm.reset();
+    clearCashbookClient();
+
     $('#cashbookDate').value=todayISO();
+
     const wrap=$('#cashbookItems');
-    if(wrap) wrap.innerHTML=cashbookItemRowHTML();
+
+    if(wrap){
+      wrap.innerHTML=cashbookItemRowHTML();
+    }
+
     renderCashbook();
+
+    alert(summaryMessage);
+
+    const savedEntry=data.cashbook.find(
+      x=>Number(x.id)===Number(cashbookId)
+    );
+
+    const savedClient=clientId
+      ? clientById(clientId)
+      : null;
+
+    if(
+      savedEntry &&
+      savedClient?.email &&
+      confirm(
+        '¿Deseas enviar ahora el recibo al correo del cliente?\n\n'+
+        savedClient.email
+      )
+    ){
+      emailCashbookReceipt(savedEntry.id);
+    }
   });
 }
+
 document.querySelectorAll('[data-cash-tab]').forEach(btn=>btn.addEventListener('click',()=>switchCashTab(btn.dataset.cashTab)));
 
 const addExpenseItem=$('#addExpenseItem');
@@ -3318,6 +8273,56 @@ if(addExpenseItem){
     refreshExpenseItems();
   };
 }
+
+const pendingForm=$('#pendingForm');
+
+if(pendingForm){
+  pendingForm.addEventListener('submit',e=>{
+    e.preventDefault();
+
+    const clientId=Number($('#pendingClientId')?.value||0);
+    const total=Number($('#pendingTotal')?.value||0);
+    const description=$('#pendingDescription')?.value?.trim()||'';
+
+    if(!clientId){
+      alert('Busca y selecciona un cliente.');
+      return;
+    }
+
+    if(!description){
+      alert('Escribe el trabajo o concepto.');
+      return;
+    }
+
+    if(total<=0){
+      alert('El total debe ser mayor que $0.');
+      return;
+    }
+
+    data.pendingAccounts.push({
+      id:Date.now(),
+      date:$('#pendingDate')?.value||todayISO(),
+      clientId,
+      description,
+      total,
+      dueDate:$('#pendingDueDate')?.value||'',
+      note:$('#pendingNote')?.value?.trim()||'',
+      payments:[]
+    });
+
+    save();
+
+    pendingForm.reset();
+    clearPendingClient();
+
+    if($('#pendingDate')){
+      $('#pendingDate').value=todayISO();
+    }
+
+    renderPendingAccounts();
+  });
+}
+
 const expenseForm=$('#expenseForm');
 if(expenseForm){
   expenseForm.addEventListener('submit',e=>{
