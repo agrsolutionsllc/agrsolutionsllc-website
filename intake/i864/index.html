@@ -1,1 +1,2205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGR Solutions LLC | Intake I-864</title>
 
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:#f4f7fb;
+      color:#172033;
+    }
+
+    .top{
+      background:#071d45;
+      color:white;
+      padding:22px 18px;
+    }
+
+    .top-inner{
+      max-width:920px;
+      margin:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+    }
+
+    .brand{
+      font-size:22px;
+      font-weight:800;
+    }
+
+    .brand small{
+      display:block;
+      font-size:12px;
+      font-weight:400;
+      opacity:.8;
+      margin-top:4px;
+    }
+
+    .wrap{
+      max-width:920px;
+      margin:30px auto;
+      padding:0 16px 60px;
+    }
+
+    .card{
+      background:white;
+      border:1px solid #dce4ef;
+      border-radius:20px;
+      padding:26px;
+      margin-bottom:18px;
+      box-shadow:0 8px 25px rgba(9,30,66,.05);
+    }
+
+    h1{
+      margin:0 0 8px;
+      color:#071d45;
+      font-size:34px;
+    }
+
+    h2{
+      color:#071d45;
+      margin:0 0 18px;
+    }
+
+    .gold{
+      color:#c89013;
+      font-weight:800;
+      font-size:13px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+    }
+
+    .muted{
+      color:#637083;
+      line-height:1.5;
+    }
+
+    .progress-shell{
+      height:12px;
+      background:#eaf0f7;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:12px;
+    }
+
+    .progress-bar{
+      height:100%;
+      width:0;
+      background:#d6a020;
+      transition:.25s;
+    }
+
+    .progress-text{
+      margin-top:8px;
+      font-size:13px;
+      color:#596579;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+
+    .field.full{
+      grid-column:1/-1;
+    }
+
+    label{
+      font-weight:700;
+      font-size:14px;
+    }
+
+    input,select,textarea{
+      width:100%;
+      padding:13px 14px;
+      border:1px solid #b9c5d4;
+      border-radius:10px;
+      background:white;
+      font:inherit;
+      color:#172033;
+    }
+
+    textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+
+    input:focus,select:focus,textarea:focus{
+      outline:3px solid rgba(214,160,32,.15);
+      border-color:#c89013;
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:22px;
+    }
+
+    button{
+      border:0;
+      border-radius:12px;
+      padding:13px 20px;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer;
+    }
+
+    .primary{
+      background:#071d45;
+      color:white;
+    }
+
+    .secondary{
+      background:#edf2f8;
+      color:#071d45;
+    }
+
+    .submit{
+      background:#c89013;
+      color:#111;
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .notice{
+      border-radius:12px;
+      padding:14px 16px;
+      margin-bottom:16px;
+      background:#edf5ff;
+      border:1px solid #cddff5;
+    }
+
+    .success{
+      background:#ecf8ef;
+      border-color:#b9dfc1;
+    }
+
+    .error{
+      background:#fff0f0;
+      border-color:#efc3c3;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    .loading{
+      text-align:center;
+      padding:60px 20px;
+      color:#637083;
+    }
+
+    .footer-note{
+      font-size:12px;
+      color:#6f7988;
+      line-height:1.5;
+      margin-top:18px;
+    }
+
+    @media(max-width:700px){
+      .grid{grid-template-columns:1fr}
+      .field.full{grid-column:auto}
+      h1{font-size:28px}
+      .card{padding:20px}
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      AGR SOLUTIONS LLC
+      <small>Formulario privado del cliente</small>
+    </div>
+    <div>I-864</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div id="loading" class="card loading">
+    Cargando su formulario privado...
+  </div>
+
+  <div id="errorPage" class="card hidden">
+    <div class="gold">AGR Solutions LLC</div>
+    <h1>Enlace no disponible</h1>
+    <p id="errorMessage" class="muted">
+      No pudimos abrir este formulario.
+    </p>
+  </div>
+
+  <div id="formArea" class="hidden">
+
+    <section class="card">
+      <div class="gold">Intake de inmigración</div>
+      <h1>I-864 · Affidavit of Support</h1>
+
+      <p class="muted">
+        Complete la información solicitada con el mayor detalle posible.
+        Puede guardar su progreso y continuar más tarde usando este mismo enlace privado.
+      </p>
+
+      <div id="clientWelcome" class="notice hidden"></div>
+
+      <div class="progress-shell">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <div id="progressText" class="progress-text">
+        Progreso 0%
+      </div>
+    </section>
+
+
+    <form id="intakeForm">
+
+<section class="card">
+  <div class="gold">Sección 1</div>
+  <h2>Base para presentar el Affidavit of Support</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="sponsorBasis">¿Por qué está presentando este I-864?</label>
+      <select id="sponsorBasis" name="sponsorBasis" required>
+        <option value="">Seleccione</option>
+        <option value="petitioner">Soy el peticionario familiar</option>
+        <option value="employmentPetitioner">Presenté una petición de trabajador para un familiar</option>
+        <option value="fivePercentOwner">Tengo al menos 5% de participación en la entidad que presentó la petición laboral</option>
+        <option value="jointSponsor">Soy Joint Sponsor</option>
+        <option value="secondJointSponsor">Soy el segundo Joint Sponsor</option>
+        <option value="substituteSponsor">Soy Substitute Sponsor porque el peticionario falleció</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="substituteRelationshipWrap">
+      <label>Relación con el inmigrante principal</label>
+      <input name="substituteRelationship">
+    </div>
+
+  </div>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 2</div>
+  <h2>Información del Sponsor</h2>
+
+  <div class="grid">
+
+    <div class="field">
+      <label>Apellido legal</label>
+      <input name="sponsorLastName" required>
+    </div>
+
+    <div class="field">
+      <label>Nombre</label>
+      <input name="sponsorFirstName" required>
+    </div>
+
+    <div class="field">
+      <label>Segundo nombre</label>
+      <input name="sponsorMiddleName">
+    </div>
+
+    <div class="field">
+      <label>Fecha de nacimiento</label>
+      <input name="sponsorDOB" type="date" required>
+    </div>
+
+    <div class="field">
+      <label>País de nacimiento</label>
+      <input name="sponsorBirthCountry">
+    </div>
+
+    <div class="field">
+      <label for="sponsorStatus">Estatus del sponsor</label>
+      <select id="sponsorStatus" name="sponsorStatus" required>
+        <option value="">Seleccione</option>
+        <option value="uscitizen">Ciudadano de Estados Unidos</option>
+        <option value="usnational">U.S. National</option>
+        <option value="lpr">Residente permanente legal</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>A-Number, si tiene</label>
+      <input name="sponsorANumber">
+    </div>
+
+    <div class="field">
+      <label>USCIS Online Account Number, si tiene</label>
+      <input name="sponsorOnlineAccount">
+    </div>
+
+    <div class="field">
+      <label>Social Security Number</label>
+      <input name="sponsorSSN">
+    </div>
+
+    <div class="field full">
+      <label for="sponsorDomiciledUS">¿Mantiene domicilio en Estados Unidos?</label>
+      <select id="sponsorDomiciledUS" name="sponsorDomiciledUS" required>
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="domicileExplanationWrap">
+      <label>Explique cómo mantiene o establecerá domicilio en Estados Unidos</label>
+      <textarea name="domicileExplanation"></textarea>
+    </div>
+
+  </div>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 3</div>
+  <h2>Dirección y contacto del Sponsor</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label>Dirección postal</label>
+      <input name="sponsorMailingStreet">
+    </div>
+
+    <div class="field">
+      <label>Apartamento / Unidad</label>
+      <input name="sponsorMailingUnit">
+    </div>
+
+    <div class="field">
+      <label>Ciudad</label>
+      <input name="sponsorMailingCity">
+    </div>
+
+    <div class="field">
+      <label>Estado</label>
+      <input name="sponsorMailingState">
+    </div>
+
+    <div class="field">
+      <label>ZIP Code</label>
+      <input name="sponsorMailingZip">
+    </div>
+
+    <div class="field full">
+      <label for="mailingSameAsPhysical">¿La dirección física es la misma que la postal?</label>
+      <select id="mailingSameAsPhysical" name="mailingSameAsPhysical">
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="physicalAddressWrap">
+      <label>Dirección física</label>
+      <input name="sponsorPhysicalStreet">
+
+      <label>Ciudad</label>
+      <input name="sponsorPhysicalCity">
+
+      <label>Estado / Provincia</label>
+      <input name="sponsorPhysicalState">
+
+      <label>ZIP / Código postal</label>
+      <input name="sponsorPhysicalZip">
+
+      <label>País</label>
+      <input name="sponsorPhysicalCountry">
+    </div>
+
+    <div class="field">
+      <label>Teléfono</label>
+      <input name="sponsorPhone">
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input name="sponsorEmail" type="email">
+    </div>
+
+  </div>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 4</div>
+  <h2>Inmigrantes que serán patrocinados con este I-864</h2>
+
+  <div id="sponsoredImmigrantsList"></div>
+
+  <button type="button" class="secondary" id="addSponsoredImmigrantBtn">
+    + Agregar otro inmigrante
+  </button>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 5</div>
+  <h2>Tamaño del Household</h2>
+
+  <div class="grid">
+
+    <div class="field">
+      <label>El Sponsor</label>
+      <input value="1" disabled>
+    </div>
+
+    <div class="field">
+      <label>Cónyuge del Sponsor</label>
+      <input name="householdSpouseCount" type="number" min="0" value="0">
+    </div>
+
+    <div class="field">
+      <label>Hijos dependientes</label>
+      <input name="householdChildDependents" type="number" min="0" value="0">
+    </div>
+
+    <div class="field">
+      <label>Otros dependientes declarados en taxes</label>
+      <input name="householdOtherDependents" type="number" min="0" value="0">
+    </div>
+
+    <div class="field">
+      <label>Inmigrantes patrocinados con este I-864</label>
+      <input name="householdImmigrantsThisAffidavit" type="number" min="0">
+    </div>
+
+    <div class="field">
+      <label>Personas previamente patrocinadas y aún bajo obligación I-864</label>
+      <input name="householdPreviouslySponsored" type="number" min="0" value="0">
+    </div>
+
+    <div class="field full">
+      <label>Tamaño total del household</label>
+      <input name="householdTotal" type="number" min="1">
+    </div>
+
+  </div>
+
+  <h3>Dependientes</h3>
+
+  <div id="dependentsList"></div>
+
+  <button type="button" class="secondary" id="addDependentBtn">
+    + Agregar dependiente
+  </button>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 6</div>
+  <h2>Empleo e ingreso actual del Sponsor</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="sponsorEmploymentStatus">Situación laboral actual</label>
+      <select id="sponsorEmploymentStatus" name="sponsorEmploymentStatus">
+        <option value="">Seleccione</option>
+        <option value="employed">Empleado/a</option>
+        <option value="selfEmployed">Trabajador/a por cuenta propia</option>
+        <option value="retired">Retirado/a</option>
+        <option value="unemployed">Desempleado/a</option>
+        <option value="multiple">Más de un empleo</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>Ingreso anual individual actual del Sponsor</label>
+      <input name="sponsorCurrentAnnualIncome"
+             type="number"
+             step="0.01"
+             placeholder="0.00">
+    </div>
+
+    <div class="field full">
+      <label>Ingreso anual total del household que se utilizará para calificar</label>
+      <input name="totalHouseholdIncome"
+             type="number"
+             step="0.01"
+             placeholder="0.00">
+    </div>
+
+  </div>
+
+  <h3>Empleos / fuentes actuales de ingreso</h3>
+
+  <div id="sponsorEmploymentList"></div>
+
+  <button type="button" class="secondary" id="addSponsorEmploymentBtn">
+    + Agregar otro empleo o fuente de ingreso
+  </button>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 7</div>
+  <h2>Household Members cuyos ingresos se utilizarán</h2>
+
+  <p class="muted">
+    Agregue cualquier persona cuyos ingresos o activos se utilizarán para ayudar al Sponsor a calificar.
+    AGR determinará si se necesita un Form I-864A separado.
+  </p>
+
+  <div id="householdMembersList"></div>
+
+  <button type="button" class="secondary" id="addHouseholdMemberBtn">
+    + Agregar household member
+  </button>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 8</div>
+  <h2>Declaraciones de impuestos</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="requiredToFileTaxes">¿Estaba obligado/a a presentar su declaración federal más reciente?</label>
+      <select id="requiredToFileTaxes" name="requiredToFileTaxes">
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="noTaxExplanationWrap">
+      <label>Explique por qué no estaba obligado/a a declarar impuestos</label>
+      <textarea name="noTaxExplanation"></textarea>
+    </div>
+
+    <div class="field full">
+      <label for="taxTranscriptAvailable">¿Tiene IRS Tax Transcript del año más reciente?</label>
+      <select id="taxTranscriptAvailable" name="taxTranscriptAvailable">
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+  </div>
+
+  <div id="taxYearsList"></div>
+
+  <button type="button" class="secondary" id="addTaxYearBtn">
+    + Agregar otro año de impuestos
+  </button>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 9</div>
+  <h2>Activos</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="usingAssets">¿Necesita utilizar activos para cumplir con el requisito financiero?</label>
+      <select id="usingAssets" name="usingAssets">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+        <option value="unsure">No estoy seguro/a</option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="hidden" id="assetsWrap">
+
+    <p class="muted">
+      Puede incluir efectivo, cuentas, inversiones, propiedades y otros activos que puedan convertirse en efectivo.
+    </p>
+
+    <div id="assetsList"></div>
+
+    <button type="button" class="secondary" id="addAssetBtn">
+      + Agregar otro activo
+    </button>
+
+  </div>
+</section>
+
+
+<section class="card">
+  <div class="gold">Sección 10</div>
+  <h2>Información adicional del Sponsor</h2>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="readsEnglish">¿Puede leer y entender inglés suficientemente para revisar el I-864?</label>
+      <select id="readsEnglish" name="readsEnglish">
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="languageWrap">
+      <label>Idioma que comprende mejor</label>
+      <input name="preferredLanguage">
+    </div>
+
+    <div class="field full">
+      <label>Notas o información adicional para AGR</label>
+      <textarea name="sponsorAdditionalNotes"></textarea>
+    </div>
+
+  </div>
+</section>
+
+
+<section class="card">
+
+  <div id="saveStatus" class="notice hidden"></div>
+
+  <div class="actions">
+
+    <button type="button"
+            class="secondary"
+            id="saveBtn">
+      Guardar y continuar después
+    </button>
+
+    <button type="button"
+            class="submit"
+            id="submitBtn">
+      Enviar intake a AGR
+    </button>
+
+  </div>
+
+  <p class="footer-note">
+    Este formulario se utiliza para recopilar información para AGR Solutions LLC.
+    Completar este intake no constituye una presentación ante USCIS.
+    AGR revisará la información antes de preparar cualquier formulario migratorio.
+  </p>
+
+</section>
+
+</form>
+
+  </div>
+
+</main>
+
+
+<script>
+(function(){
+
+  const API='https://agrsolutionsllc-website-stripe-back.vercel.app';
+
+  const token=
+    new URLSearchParams(window.location.search).get('token') || '';
+
+  const loading=document.getElementById('loading');
+  const errorPage=document.getElementById('errorPage');
+  const errorMessage=document.getElementById('errorMessage');
+  const formArea=document.getElementById('formArea');
+  const form=document.getElementById('intakeForm');
+
+  const progressBar=document.getElementById('progressBar');
+  const progressText=document.getElementById('progressText');
+
+  const saveBtn=document.getElementById('saveBtn');
+  const submitBtn=document.getElementById('submitBtn');
+  const saveStatus=document.getElementById('saveStatus');
+
+  let currentStatus='not_sent';
+
+
+  function showError(message){
+    loading.classList.add('hidden');
+    formArea.classList.add('hidden');
+    errorPage.classList.remove('hidden');
+    errorMessage.textContent=message;
+  }
+
+
+  function showStatus(message,type){
+    saveStatus.className='notice';
+
+    if(type==='success'){
+      saveStatus.classList.add('success');
+    }
+
+    if(type==='error'){
+      saveStatus.classList.add('error');
+    }
+
+    saveStatus.textContent=message;
+    saveStatus.classList.remove('hidden');
+  }
+
+
+  function getAnswers(){
+    const fd=new FormData(form);
+    const answers={};
+
+    for(const [key,value] of fd.entries()){
+      answers[key]=String(value).trim();
+    }
+
+    return answers;
+  }
+
+
+  function rebuildDynamicHistory(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const addressNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^address(\d+)(Street|Apt|City|State|Postal|Country|From|To)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const employmentNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^employer(\d+)(ActivityType|Name|Street|City|State|Postal|Country|Occupation|SupportSource|From|To)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const addressList=document.getElementById('addressHistoryList');
+    if(addressList && addressNumbers.length){
+      addressList.innerHTML='';
+      addressIndex=0;
+
+      addressNumbers.forEach(function(n){
+        addAddressRow({
+          street:answers['address'+n+'Street']||'',
+          apt:answers['address'+n+'Apt']||'',
+          city:answers['address'+n+'City']||'',
+          state:answers['address'+n+'State']||'',
+          postal:answers['address'+n+'Postal']||'',
+          country:answers['address'+n+'Country']||'',
+          from:answers['address'+n+'From']||'',
+          to:answers['address'+n+'To']||''
+        });
+      });
+    }
+
+    const employmentList=document.getElementById('employmentHistoryList');
+    if(employmentList && employmentNumbers.length){
+      employmentList.innerHTML='';
+      employmentIndex=0;
+
+      employmentNumbers.forEach(function(n){
+        addEmploymentRow({
+          activityType:answers['employer'+n+'ActivityType']||'',
+          name:answers['employer'+n+'Name']||'',
+          street:answers['employer'+n+'Street']||'',
+          city:answers['employer'+n+'City']||'',
+          state:answers['employer'+n+'State']||'',
+          postal:answers['employer'+n+'Postal']||'',
+          country:answers['employer'+n+'Country']||'',
+          occupation:answers['employer'+n+'Occupation']||'',
+          supportSource:answers['employer'+n+'SupportSource']||'',
+          from:answers['employer'+n+'From']||'',
+          to:answers['employer'+n+'To']||''
+        });
+      });
+    }
+  }
+
+  function rebuildFamilyHistory(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const marriageNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^priorMarriage(\d+)(SpouseName|SpouseDOB|SpouseBirthCountry|SpouseCitizenship|MarriageDate|MarriagePlace|EndDate|EndPlace|EndReason)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const childNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^child(\d+)(Name|DOB|BirthCountry|ANumber|ApplyingWithYou)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const marriageList=document.getElementById('priorMarriageList');
+    if(marriageList && marriageNumbers.length){
+      marriageList.innerHTML='';
+      priorMarriageIndex=0;
+
+      marriageNumbers.forEach(function(n){
+        addPriorMarriageRow({
+          spouseName:answers['priorMarriage'+n+'SpouseName']||'',
+          spouseDOB:answers['priorMarriage'+n+'SpouseDOB']||'',
+          spouseBirthCountry:answers['priorMarriage'+n+'SpouseBirthCountry']||'',
+          spouseCitizenship:answers['priorMarriage'+n+'SpouseCitizenship']||'',
+          marriageDate:answers['priorMarriage'+n+'MarriageDate']||'',
+          marriagePlace:answers['priorMarriage'+n+'MarriagePlace']||'',
+          endDate:answers['priorMarriage'+n+'EndDate']||'',
+          endPlace:answers['priorMarriage'+n+'EndPlace']||'',
+          endReason:answers['priorMarriage'+n+'EndReason']||''
+        });
+      });
+    }
+
+    const childList=document.getElementById('childrenList');
+    if(childList && childNumbers.length){
+      childList.innerHTML='';
+      childIndex=0;
+
+      childNumbers.forEach(function(n){
+        addChildRow({
+          name:answers['child'+n+'Name']||'',
+          dob:answers['child'+n+'DOB']||'',
+          birthCountry:answers['child'+n+'BirthCountry']||'',
+          aNumber:answers['child'+n+'ANumber']||'',
+          applyingWithYou:answers['child'+n+'ApplyingWithYou']||''
+        });
+      });
+    }
+  }
+
+  function fillAnswers(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    Object.entries(answers).forEach(function(entry){
+      const key=entry[0];
+      const value=entry[1];
+
+      const el=form.elements[key];
+
+      if(el){
+        el.value=value==null ? '' : String(value);
+      }
+    });
+
+    updateConditionalFields();
+  }
+
+
+  let otherNameIndex=0;
+
+  function addOtherNameRow(values={}){
+    otherNameIndex++;
+
+    const n=otherNameIndex;
+    const list=document.getElementById('otherNamesList');
+
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice">
+        <strong>Otro nombre ${n}</strong>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>Apellido</label>
+          <input name="otherName${n}Last"
+                 value="${values.last||''}">
+        </div>
+
+        <div class="field">
+          <label>Nombre</label>
+          <input name="otherName${n}First"
+                 value="${values.first||''}">
+        </div>
+
+        <div class="field">
+          <label>Segundo nombre</label>
+          <input name="otherName${n}Middle"
+                 value="${values.middle||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  function rebuildOtherNames(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const numbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^otherName(\d+)(Last|First|Middle)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){
+          return Number.isFinite(n);
+        })
+    )].sort(function(a,b){
+      return a-b;
+    });
+
+    const list=document.getElementById('otherNamesList');
+
+    if(list && numbers.length){
+      list.innerHTML='';
+      otherNameIndex=0;
+
+      numbers.forEach(function(n){
+        addOtherNameRow({
+          last:answers['otherName'+n+'Last']||'',
+          first:answers['otherName'+n+'First']||'',
+          middle:answers['otherName'+n+'Middle']||''
+        });
+      });
+    }
+  }
+
+  let priorMarriageIndex=0;
+  let childIndex=0;
+
+  function addPriorMarriageRow(values={}){
+    priorMarriageIndex++;
+    const n=priorMarriageIndex;
+    const list=document.getElementById('priorMarriageList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Matrimonio anterior ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Nombre legal completo del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseName" value="${values.spouseName||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseDOB" type="date" value="${values.spouseDOB||''}">
+        </div>
+
+        <div class="field">
+          <label>País de nacimiento del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseBirthCountry" value="${values.spouseBirthCountry||''}">
+        </div>
+
+        <div class="field full">
+          <label>País de ciudadanía o nacionalidad del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseCitizenship" value="${values.spouseCitizenship||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha del matrimonio</label>
+          <input name="priorMarriage${n}MarriageDate" type="date" value="${values.marriageDate||''}">
+        </div>
+
+        <div class="field">
+          <label>Lugar del matrimonio</label>
+          <input name="priorMarriage${n}MarriagePlace" value="${values.marriagePlace||''}" placeholder="Ciudad, estado/provincia y país">
+        </div>
+
+        <div class="field">
+          <label>Fecha en que terminó el matrimonio</label>
+          <input name="priorMarriage${n}EndDate" type="date" value="${values.endDate||''}">
+        </div>
+
+        <div class="field">
+          <label>Lugar donde terminó el matrimonio</label>
+          <input name="priorMarriage${n}EndPlace" value="${values.endPlace||''}" placeholder="Ciudad, estado/provincia y país">
+        </div>
+
+        <div class="field full">
+          <label>¿Cómo terminó el matrimonio?</label>
+          <select name="priorMarriage${n}EndReason">
+            <option value="">Seleccione</option>
+            <option value="divorce" ${values.endReason==='divorce'?'selected':''}>Divorcio</option>
+            <option value="death" ${values.endReason==='death'?'selected':''}>Fallecimiento</option>
+            <option value="annulment" ${values.endReason==='annulment'?'selected':''}>Anulación</option>
+            <option value="other" ${values.endReason==='other'?'selected':''}>Otro</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  function addChildRow(values={}){
+    childIndex++;
+    const n=childIndex;
+    const list=document.getElementById('childrenList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Hijo/a ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Nombre legal completo</label>
+          <input name="child${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento</label>
+          <input name="child${n}DOB" type="date" value="${values.dob||''}">
+        </div>
+
+        <div class="field">
+          <label>País de nacimiento</label>
+          <input name="child${n}BirthCountry" value="${values.birthCountry||''}">
+        </div>
+
+        <div class="field">
+          <label>A-Number, si tiene</label>
+          <input name="child${n}ANumber" value="${values.aNumber||''}">
+        </div>
+
+        <div class="field">
+          <label>¿Está solicitando residencia con usted?</label>
+          <select name="child${n}ApplyingWithYou">
+            <option value="">Seleccione</option>
+            <option value="no" ${values.applyingWithYou==='no'?'selected':''}>No</option>
+            <option value="yes" ${values.applyingWithYou==='yes'?'selected':''}>Sí</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+  let addressIndex=0;
+  let employmentIndex=0;
+
+  function addAddressRow(values={}){
+    addressIndex++;
+    const n=addressIndex;
+    const list=document.getElementById('addressHistoryList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Dirección ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Calle y número</label>
+          <input name="address${n}Street" value="${values.street||''}">
+        </div>
+
+        <div class="field">
+          <label>Apartamento / Piso / Unidad</label>
+          <input name="address${n}Apt" value="${values.apt||''}">
+        </div>
+
+        <div class="field">
+          <label>Ciudad</label>
+          <input name="address${n}City" value="${values.city||''}">
+        </div>
+
+        <div class="field">
+          <label>Estado / Provincia</label>
+          <input name="address${n}State" value="${values.state||''}">
+        </div>
+
+        <div class="field">
+          <label>ZIP / Código postal</label>
+          <input name="address${n}Postal" value="${values.postal||''}">
+        </div>
+
+        <div class="field">
+          <label>País</label>
+          <input name="address${n}Country" value="${values.country||''}">
+        </div>
+
+        <div class="field">
+          <label>Desde</label>
+          <input name="address${n}From" type="date" value="${values.from||''}">
+        </div>
+
+        <div class="field">
+          <label>Hasta</label>
+          <input name="address${n}To" type="date" value="${values.to||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  function addEmploymentRow(values={}){
+    employmentIndex++;
+    const n=employmentIndex;
+    const list=document.getElementById('employmentHistoryList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Empleo ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Tipo de actividad</label>
+          <select name="employer${n}ActivityType">
+            <option value="">Seleccione</option>
+            <option value="employment" ${values.activityType==='employment'?'selected':''}>Empleo</option>
+            <option value="selfEmployment" ${values.activityType==='selfEmployment'?'selected':''}>Trabajo por cuenta propia</option>
+            <option value="school" ${values.activityType==='school'?'selected':''}>Estudios / Escuela</option>
+            <option value="unemployed" ${values.activityType==='unemployed'?'selected':''}>Desempleado/a</option>
+            <option value="retired" ${values.activityType==='retired'?'selected':''}>Retirado/a</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>Nombre del empleador, empresa o escuela</label>
+          <input name="employer${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field full">
+          <label>Dirección del empleador</label>
+          <input name="employer${n}Street" value="${values.street||''}">
+        </div>
+
+        <div class="field">
+          <label>Ciudad</label>
+          <input name="employer${n}City" value="${values.city||''}">
+        </div>
+
+        <div class="field">
+          <label>Estado / Provincia</label>
+          <input name="employer${n}State" value="${values.state||''}">
+        </div>
+
+        <div class="field">
+          <label>ZIP / Código postal</label>
+          <input name="employer${n}Postal" value="${values.postal||''}">
+        </div>
+
+        <div class="field">
+          <label>País</label>
+          <input name="employer${n}Country" value="${values.country||''}">
+        </div>
+
+        <div class="field full">
+          <label>Ocupación / Cargo / Área de estudio</label>
+          <input name="employer${n}Occupation" value="${values.occupation||''}">
+        </div>
+
+        <div class="field full">
+          <label>Fuente de sustento económico, si estuvo desempleado/a o retirado/a</label>
+          <input name="employer${n}SupportSource" value="${values.supportSource||''}" placeholder="Ejemplo: ahorros, apoyo de cónyuge o familia, pensión, etc.">
+        </div>
+
+        <div class="field">
+          <label>Fecha de inicio</label>
+          <input name="employer${n}From" type="date" value="${values.from||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de terminación</label>
+          <input name="employer${n}To" type="date" value="${values.to||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  let i864ImmigrantIndex=0;
+  let i864DependentIndex=0;
+  let i864EmploymentIndex=0;
+  let i864HouseholdMemberIndex=0;
+  let i864TaxIndex=0;
+  let i864AssetIndex=0;
+
+
+  function addSponsoredImmigrantRow(values={}){
+    i864ImmigrantIndex++;
+    const n=i864ImmigrantIndex;
+    const list=document.getElementById('sponsoredImmigrantsList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Inmigrante patrocinado ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field full">
+          <label>Nombre legal completo</label>
+          <input name="i864Immigrant${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento</label>
+          <input name="i864Immigrant${n}DOB" type="date" value="${values.dob||''}">
+        </div>
+
+        <div class="field">
+          <label>A-Number</label>
+          <input name="i864Immigrant${n}ANumber" value="${values.aNumber||''}">
+        </div>
+
+        <div class="field">
+          <label>País de ciudadanía</label>
+          <input name="i864Immigrant${n}Citizenship" value="${values.citizenship||''}">
+        </div>
+
+        <div class="field">
+          <label>Relación con el Sponsor</label>
+          <input name="i864Immigrant${n}Relationship" value="${values.relationship||''}">
+        </div>
+
+        <div class="field full">
+          <label>¿Es el inmigrante principal?</label>
+          <select name="i864Immigrant${n}Principal">
+            <option value="">Seleccione</option>
+            <option value="yes" ${values.principal==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${values.principal==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function addDependentRow(values={}){
+    i864DependentIndex++;
+    const n=i864DependentIndex;
+    const list=document.getElementById('dependentsList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Dependiente ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field full">
+          <label>Nombre completo</label>
+          <input name="i864Dependent${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field">
+          <label>Relación con el Sponsor</label>
+          <input name="i864Dependent${n}Relationship" value="${values.relationship||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento</label>
+          <input name="i864Dependent${n}DOB" type="date" value="${values.dob||''}">
+        </div>
+
+        <div class="field full">
+          <label>¿Fue reclamado/a como dependiente en la declaración federal más reciente?</label>
+          <select name="i864Dependent${n}TaxDependent">
+            <option value="">Seleccione</option>
+            <option value="yes" ${values.taxDependent==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${values.taxDependent==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function addSponsorEmploymentRow(values={}){
+    i864EmploymentIndex++;
+    const n=i864EmploymentIndex;
+    const list=document.getElementById('sponsorEmploymentList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Empleo / ingreso ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field full">
+          <label>Empleador / Empresa / Fuente de ingreso</label>
+          <input name="i864Employment${n}Employer" value="${values.employer||''}">
+        </div>
+
+        <div class="field full">
+          <label>Cargo u ocupación</label>
+          <input name="i864Employment${n}Occupation" value="${values.occupation||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de inicio</label>
+          <input name="i864Employment${n}From" type="date" value="${values.from||''}">
+        </div>
+
+        <div class="field">
+          <label>Ingreso anual estimado de esta fuente</label>
+          <input name="i864Employment${n}AnnualIncome"
+                 type="number"
+                 step="0.01"
+                 value="${values.annualIncome||''}">
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function addHouseholdMemberRow(values={}){
+    i864HouseholdMemberIndex++;
+    const n=i864HouseholdMemberIndex;
+    const list=document.getElementById('householdMembersList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Household Member ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field full">
+          <label>Nombre legal completo</label>
+          <input name="i864Household${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field">
+          <label>Relación con el Sponsor</label>
+          <input name="i864Household${n}Relationship" value="${values.relationship||''}">
+        </div>
+
+        <div class="field">
+          <label>Ingreso anual que se utilizará</label>
+          <input name="i864Household${n}Income"
+                 type="number"
+                 step="0.01"
+                 value="${values.income||''}">
+        </div>
+
+        <div class="field full">
+          <label>¿Vive en la misma residencia principal del Sponsor?</label>
+          <select name="i864Household${n}SameResidence">
+            <option value="">Seleccione</option>
+            <option value="yes" ${values.sameResidence==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${values.sameResidence==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>¿AGR deberá evaluar un Form I-864A para esta persona?</label>
+          <select name="i864Household${n}I864A">
+            <option value="">Seleccione</option>
+            <option value="yes" ${values.i864a==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${values.i864a==='no'?'selected':''}>No</option>
+            <option value="review" ${values.i864a==='review'?'selected':''}>Revisar</option>
+          </select>
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function addTaxYearRow(values={}){
+    i864TaxIndex++;
+    const n=i864TaxIndex;
+    const list=document.getElementById('taxYearsList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Año fiscal ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field">
+          <label>Año</label>
+          <input name="i864Tax${n}Year"
+                 type="number"
+                 value="${values.year||''}">
+        </div>
+
+        <div class="field">
+          <label>Total Income reportado</label>
+          <input name="i864Tax${n}TotalIncome"
+                 type="number"
+                 step="0.01"
+                 value="${values.totalIncome||''}">
+        </div>
+
+        <div class="field full">
+          <label>Tipo de evidencia disponible</label>
+          <select name="i864Tax${n}Evidence">
+            <option value="">Seleccione</option>
+            <option value="transcript" ${values.evidence==='transcript'?'selected':''}>IRS Tax Transcript</option>
+            <option value="return" ${values.evidence==='return'?'selected':''}>Copia del Tax Return</option>
+            <option value="none" ${values.evidence==='none'?'selected':''}>No disponible todavía</option>
+          </select>
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function addAssetRow(values={}){
+    i864AssetIndex++;
+    const n=i864AssetIndex;
+    const list=document.getElementById('assetsList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Activo ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field">
+          <label>Propietario del activo</label>
+          <input name="i864Asset${n}Owner" value="${values.owner||''}">
+        </div>
+
+        <div class="field">
+          <label>Tipo de activo</label>
+          <select name="i864Asset${n}Type">
+            <option value="">Seleccione</option>
+            <option value="cash" ${values.type==='cash'?'selected':''}>Efectivo / cuenta bancaria</option>
+            <option value="investment" ${values.type==='investment'?'selected':''}>Inversiones</option>
+            <option value="property" ${values.type==='property'?'selected':''}>Propiedad / Real Estate</option>
+            <option value="vehicle" ${values.type==='vehicle'?'selected':''}>Vehículo adicional</option>
+            <option value="other" ${values.type==='other'?'selected':''}>Otro</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Valor actual</label>
+          <input name="i864Asset${n}Value"
+                 type="number"
+                 step="0.01"
+                 value="${values.value||''}">
+        </div>
+
+        <div class="field">
+          <label>Deuda / préstamo contra el activo</label>
+          <input name="i864Asset${n}Debt"
+                 type="number"
+                 step="0.01"
+                 value="${values.debt||''}">
+        </div>
+
+        <div class="field full">
+          <label>Valor neto estimado</label>
+          <input name="i864Asset${n}NetValue"
+                 type="number"
+                 step="0.01"
+                 value="${values.netValue||''}">
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function rebuildI864Dynamic(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    function numbersFor(pattern){
+      return [...new Set(
+        Object.keys(answers)
+          .map(function(key){
+            const m=key.match(pattern);
+            return m ? Number(m[1]) : null;
+          })
+          .filter(function(n){
+            return Number.isFinite(n);
+          })
+      )].sort(function(a,b){
+        return a-b;
+      });
+    }
+
+    const immigrants=numbersFor(/^i864Immigrant(\d+)/);
+    const dependents=numbersFor(/^i864Dependent(\d+)/);
+    const employments=numbersFor(/^i864Employment(\d+)/);
+    const household=numbersFor(/^i864Household(\d+)/);
+    const taxes=numbersFor(/^i864Tax(\d+)/);
+    const assets=numbersFor(/^i864Asset(\d+)/);
+
+
+    const immigrantList=document.getElementById('sponsoredImmigrantsList');
+    if(immigrantList && immigrants.length){
+      immigrantList.innerHTML='';
+      i864ImmigrantIndex=0;
+
+      immigrants.forEach(function(n){
+        addSponsoredImmigrantRow({
+          name:answers['i864Immigrant'+n+'Name']||'',
+          dob:answers['i864Immigrant'+n+'DOB']||'',
+          aNumber:answers['i864Immigrant'+n+'ANumber']||'',
+          citizenship:answers['i864Immigrant'+n+'Citizenship']||'',
+          relationship:answers['i864Immigrant'+n+'Relationship']||'',
+          principal:answers['i864Immigrant'+n+'Principal']||''
+        });
+      });
+    }
+
+
+    const dependentList=document.getElementById('dependentsList');
+    if(dependentList && dependents.length){
+      dependentList.innerHTML='';
+      i864DependentIndex=0;
+
+      dependents.forEach(function(n){
+        addDependentRow({
+          name:answers['i864Dependent'+n+'Name']||'',
+          relationship:answers['i864Dependent'+n+'Relationship']||'',
+          dob:answers['i864Dependent'+n+'DOB']||'',
+          taxDependent:answers['i864Dependent'+n+'TaxDependent']||''
+        });
+      });
+    }
+
+
+    const employmentList=document.getElementById('sponsorEmploymentList');
+    if(employmentList && employments.length){
+      employmentList.innerHTML='';
+      i864EmploymentIndex=0;
+
+      employments.forEach(function(n){
+        addSponsorEmploymentRow({
+          employer:answers['i864Employment'+n+'Employer']||'',
+          occupation:answers['i864Employment'+n+'Occupation']||'',
+          from:answers['i864Employment'+n+'From']||'',
+          annualIncome:answers['i864Employment'+n+'AnnualIncome']||''
+        });
+      });
+    }
+
+
+    const householdList=document.getElementById('householdMembersList');
+    if(householdList && household.length){
+      householdList.innerHTML='';
+      i864HouseholdMemberIndex=0;
+
+      household.forEach(function(n){
+        addHouseholdMemberRow({
+          name:answers['i864Household'+n+'Name']||'',
+          relationship:answers['i864Household'+n+'Relationship']||'',
+          income:answers['i864Household'+n+'Income']||'',
+          sameResidence:answers['i864Household'+n+'SameResidence']||'',
+          i864a:answers['i864Household'+n+'I864A']||''
+        });
+      });
+    }
+
+
+    const taxList=document.getElementById('taxYearsList');
+    if(taxList && taxes.length){
+      taxList.innerHTML='';
+      i864TaxIndex=0;
+
+      taxes.forEach(function(n){
+        addTaxYearRow({
+          year:answers['i864Tax'+n+'Year']||'',
+          totalIncome:answers['i864Tax'+n+'TotalIncome']||'',
+          evidence:answers['i864Tax'+n+'Evidence']||''
+        });
+      });
+    }
+
+
+    const assetList=document.getElementById('assetsList');
+    if(assetList && assets.length){
+      assetList.innerHTML='';
+      i864AssetIndex=0;
+
+      assets.forEach(function(n){
+        addAssetRow({
+          owner:answers['i864Asset'+n+'Owner']||'',
+          type:answers['i864Asset'+n+'Type']||'',
+          value:answers['i864Asset'+n+'Value']||'',
+          debt:answers['i864Asset'+n+'Debt']||'',
+          netValue:answers['i864Asset'+n+'NetValue']||''
+        });
+      });
+    }
+  }
+
+  function calculateProgress(){
+    const controls=Array.from(
+      form.querySelectorAll('input[name], select[name], textarea[name]')
+    ).filter(function(el){
+      if(el.disabled) return false;
+      if(el.closest('.hidden')) return false;
+
+      if(
+        el.type==='hidden' ||
+        el.type==='submit' ||
+        el.type==='button' ||
+        el.type==='reset'
+      ){
+        return false;
+      }
+
+      return true;
+    });
+
+    const names=[
+      ...new Set(
+        controls
+          .map(function(el){
+            return el.name;
+          })
+          .filter(Boolean)
+      )
+    ];
+
+    let total=0;
+    let completed=0;
+
+    names.forEach(function(name){
+      const group=controls.filter(function(el){
+        return el.name===name;
+      });
+
+      if(!group.length) return;
+
+      total++;
+
+      const first=group[0];
+      let hasValue=false;
+
+      if(
+        first.type==='radio' ||
+        first.type==='checkbox'
+      ){
+        hasValue=group.some(function(el){
+          return el.checked;
+        });
+      }else{
+        hasValue=group.some(function(el){
+          return String(el.value||'').trim()!=='';
+        });
+      }
+
+      if(hasValue){
+        completed++;
+      }
+    });
+
+    if(!total){
+      return 0;
+    }
+
+    return Math.round(
+      (completed/total)*100
+    );
+  }
+
+
+  function updateProgress(){
+    const progress=calculateProgress();
+
+    progressBar.style.width=progress+'%';
+    progressText.textContent='Progreso '+progress+'%';
+
+    return progress;
+  }
+
+
+  function normalizeCategory(){
+    const el=document.getElementById('eligibilityCategory');
+
+    if(!el) return '';
+
+    return String(el.value||'')
+      .toLowerCase()
+      .replace(/\s+/g,'')
+      .replace(/[()]/g,'');
+  }
+
+
+  function updateConditionalFields(){
+
+    const sponsorBasis=document.getElementById('sponsorBasis');
+    const substituteRelationshipWrap=document.getElementById('substituteRelationshipWrap');
+
+    if(sponsorBasis && substituteRelationshipWrap){
+      substituteRelationshipWrap.classList.toggle(
+        'hidden',
+        sponsorBasis.value!=='substituteSponsor'
+      );
+    }
+
+
+    const sponsorDomiciledUS=document.getElementById('sponsorDomiciledUS');
+    const domicileExplanationWrap=document.getElementById('domicileExplanationWrap');
+
+    if(sponsorDomiciledUS && domicileExplanationWrap){
+      domicileExplanationWrap.classList.toggle(
+        'hidden',
+        sponsorDomiciledUS.value!=='no'
+      );
+    }
+
+
+    const mailingSameAsPhysical=document.getElementById('mailingSameAsPhysical');
+    const physicalAddressWrap=document.getElementById('physicalAddressWrap');
+
+    if(mailingSameAsPhysical && physicalAddressWrap){
+      physicalAddressWrap.classList.toggle(
+        'hidden',
+        mailingSameAsPhysical.value!=='no'
+      );
+    }
+
+
+    const requiredToFileTaxes=document.getElementById('requiredToFileTaxes');
+    const noTaxExplanationWrap=document.getElementById('noTaxExplanationWrap');
+
+    if(requiredToFileTaxes && noTaxExplanationWrap){
+      noTaxExplanationWrap.classList.toggle(
+        'hidden',
+        requiredToFileTaxes.value!=='no'
+      );
+    }
+
+
+    const usingAssets=document.getElementById('usingAssets');
+    const assetsWrap=document.getElementById('assetsWrap');
+
+    if(usingAssets && assetsWrap){
+      assetsWrap.classList.toggle(
+        'hidden',
+        usingAssets.value!=='yes' &&
+        usingAssets.value!=='unsure'
+      );
+    }
+
+
+    const readsEnglish=document.getElementById('readsEnglish');
+    const languageWrap=document.getElementById('languageWrap');
+
+    if(readsEnglish && languageWrap){
+      languageWrap.classList.toggle(
+        'hidden',
+        readsEnglish.value!=='no'
+      );
+    }
+
+  }
+
+  async function saveIntake(showMessage){
+    const answers=getAnswers();
+    const progress=updateProgress();
+
+    saveBtn.disabled=true;
+    submitBtn.disabled=true;
+
+    if(showMessage){
+      showStatus('Guardando información...','');
+    }
+
+    try{
+
+      const response=await fetch(
+        API+'/api/intake-save',
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify({
+            token:token,
+            answers:answers,
+            progress:progress
+          })
+        }
+      );
+
+      const result=await response.json();
+
+      if(!response.ok || !result.ok){
+        throw new Error(
+          result.error || 'No se pudo guardar la información.'
+        );
+      }
+
+      currentStatus=
+        result.intake &&
+        result.intake.status
+          ? result.intake.status
+          : 'draft';
+
+      if(showMessage){
+        showStatus(
+          '✓ Información guardada. Puede cerrar esta página y continuar después usando el mismo enlace.',
+          'success'
+        );
+      }
+
+      return true;
+
+    }catch(err){
+
+      console.error(err);
+
+      if(showMessage){
+        showStatus(
+          err.message || 'No se pudo guardar la información.',
+          'error'
+        );
+      }
+
+      return false;
+
+    }finally{
+
+      saveBtn.disabled=false;
+      submitBtn.disabled=false;
+
+    }
+  }
+
+
+  async function submitIntake(){
+
+    const saved=await saveIntake(false);
+
+    if(!saved){
+      showStatus(
+        'No pudimos guardar el formulario. Intente nuevamente.',
+        'error'
+      );
+      return;
+    }
+
+    const confirmed=window.confirm(
+      '¿Está seguro/a de que desea enviar este intake a AGR Solutions LLC? Podrá hacer cambios posteriormente, pero AGR tendrá que revisarlos nuevamente.'
+    );
+
+    if(!confirmed){
+      return;
+    }
+
+    saveBtn.disabled=true;
+    submitBtn.disabled=true;
+    submitBtn.textContent='Enviando...';
+
+    try{
+
+      const response=await fetch(
+        API+'/api/intake-submit',
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify({
+            token:token
+          })
+        }
+      );
+
+      const result=await response.json();
+
+      if(!response.ok || !result.ok){
+        throw new Error(
+          result.error || 'No se pudo enviar el intake.'
+        );
+      }
+
+      currentStatus='pending_review';
+
+      showStatus(
+        '✓ Su intake fue enviado correctamente a AGR Solutions LLC. AGR revisará la información.',
+        'success'
+      );
+
+      submitBtn.textContent='Intake enviado';
+      submitBtn.disabled=true;
+      saveBtn.disabled=false;
+
+      window.scrollTo({
+        top:document.body.scrollHeight,
+        behavior:'smooth'
+      });
+
+    }catch(err){
+
+      console.error(err);
+
+      showStatus(
+        err.message || 'No se pudo enviar el intake.',
+        'error'
+      );
+
+      submitBtn.disabled=false;
+      submitBtn.textContent='Enviar intake a AGR';
+      saveBtn.disabled=false;
+    }
+  }
+
+
+  async function loadIntake(){
+
+    if(!token){
+      showError(
+        'Este enlace no contiene un token válido. Solicite un nuevo enlace a AGR Solutions LLC.'
+      );
+      return;
+    }
+
+    try{
+
+      const response=await fetch(
+        API+'/api/intake-get?token='+
+        encodeURIComponent(token),
+        {
+          method:'GET'
+        }
+      );
+
+      const result=await response.json();
+
+      if(!response.ok || !result.ok || !result.intake){
+        throw new Error(
+          result.error ||
+          'El enlace no es válido o ya no está disponible.'
+        );
+      }
+
+      const intake=result.intake;
+
+      currentStatus=intake.status || 'not_sent';
+
+      if(
+        intake.prefill &&
+        intake.prefill.clientName
+      ){
+        const welcome=
+          document.getElementById('clientWelcome');
+
+        welcome.textContent=
+          'Formulario preparado para: '+
+          intake.prefill.clientName;
+
+        welcome.classList.remove('hidden');
+      }
+
+      if(intake.prefill){
+        if(
+          intake.prefill.aNumber &&
+          form.elements.applicantANumber &&
+          !form.elements.applicantANumber.value
+        ){
+          form.elements.applicantANumber.value=
+            intake.prefill.aNumber;
+        }
+      }
+      rebuildDynamicHistory(intake.answers || {});
+      rebuildFamilyHistory(intake.answers || {});
+      rebuildOtherNames(intake.answers || {});
+      rebuildI864Dynamic(intake.answers || {});
+      fillAnswers(intake.answers || {});
+
+      updateProgress();
+
+      loading.classList.add('hidden');
+      formArea.classList.remove('hidden');
+
+      if(currentStatus==='pending_review'){
+        showStatus(
+          'Este intake ya fue enviado a AGR. Puede actualizar información si es necesario; cualquier cambio requerirá una nueva revisión.',
+          'success'
+        );
+      }
+
+      if(currentStatus==='reviewed'){
+        showStatus(
+          'Este intake ya fue revisado por AGR. Si modifica información, el caso volverá a requerir revisión.',
+          'success'
+        );
+      }
+
+    }catch(err){
+
+      console.error(err);
+
+      showError(
+        err.message ||
+        'No pudimos abrir este formulario. Solicite ayuda a AGR Solutions LLC.'
+      );
+    }
+  }
+
+
+  form.addEventListener(
+    'input',
+    function(){
+      updateProgress();
+    }
+  );
+
+
+  [
+    'sponsorBasis',
+    'sponsorDomiciledUS',
+    'mailingSameAsPhysical',
+    'requiredToFileTaxes',
+    'usingAssets',
+    'readsEnglish'
+  ].forEach(function(id){
+
+    const el=document.getElementById(id);
+
+    if(el){
+      el.addEventListener(
+        'change',
+        updateConditionalFields
+      );
+    }
+
+  });
+
+
+  document.getElementById('addSponsoredImmigrantBtn')
+    ?.addEventListener('click',function(){
+      addSponsoredImmigrantRow();
+    });
+
+
+  document.getElementById('addDependentBtn')
+    ?.addEventListener('click',function(){
+      addDependentRow();
+    });
+
+
+  document.getElementById('addSponsorEmploymentBtn')
+    ?.addEventListener('click',function(){
+      addSponsorEmploymentRow();
+    });
+
+
+  document.getElementById('addHouseholdMemberBtn')
+    ?.addEventListener('click',function(){
+      addHouseholdMemberRow();
+    });
+
+
+  document.getElementById('addTaxYearBtn')
+    ?.addEventListener('click',function(){
+      addTaxYearRow();
+    });
+
+
+  document.getElementById('addAssetBtn')
+    ?.addEventListener('click',function(){
+      addAssetRow();
+    });
+
+
+  if(document.getElementById('sponsoredImmigrantsList')){
+    addSponsoredImmigrantRow();
+  }
+
+  if(document.getElementById('sponsorEmploymentList')){
+    addSponsorEmploymentRow();
+  }
+
+  if(document.getElementById('taxYearsList')){
+    addTaxYearRow();
+    addTaxYearRow();
+    addTaxYearRow();
+  }
+
+  saveBtn.addEventListener(
+    'click',
+    function(){
+      saveIntake(true);
+    }
+  );
+
+
+  submitBtn.addEventListener(
+    'click',
+    submitIntake
+  );
+
+
+  loadIntake();
+
+})();
+</script>
+
+</body>
+</html>
