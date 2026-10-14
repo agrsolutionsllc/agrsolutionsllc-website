@@ -837,11 +837,11 @@
     </div>
 
     <div class="field full hidden" id="priorMarriageWrap">
-      <label for="priorMarriageDetails">
-        Detalles de todos los matrimonios anteriores
-      </label>
-      <textarea id="priorMarriageDetails" name="priorMarriageDetails"
-        placeholder="Para cada matrimonio indique: nombre del ex cónyuge, fecha de nacimiento, país de nacimiento, ciudadanía, fecha y lugar del matrimonio, fecha y lugar donde terminó y si terminó por divorcio, fallecimiento, anulación u otra razón."></textarea>
+      <div id="priorMarriageList"></div>
+
+      <button type="button" class="secondary" id="addPriorMarriageBtn">
+        + Agregar otro matrimonio anterior
+      </button>
     </div>
 
     <div class="field full">
@@ -854,9 +854,11 @@
     </div>
 
     <div class="field full hidden" id="childrenDetailsWrap">
-      <label for="childrenDetails">Información de todos sus hijos</label>
-      <textarea id="childrenDetails" name="childrenDetails"
-        placeholder="Para cada hijo indique: nombre completo, fecha de nacimiento, país de nacimiento, A-Number si tiene, y si está solicitando residencia con usted."></textarea>
+      <div id="childrenList"></div>
+
+      <button type="button" class="secondary" id="addChildBtn">
+        + Agregar otro hijo
+      </button>
     </div>
 
   </div>
@@ -1293,6 +1295,64 @@
     }
   }
 
+  function rebuildFamilyHistory(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const marriageNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^priorMarriage(\d+)(SpouseName|SpouseDOB|SpouseBirthCountry|SpouseCitizenship|MarriageDate|MarriagePlace|EndDate|EndPlace|EndReason)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const childNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^child(\d+)(Name|DOB|BirthCountry|ANumber|ApplyingWithYou)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const marriageList=document.getElementById('priorMarriageList');
+    if(marriageList && marriageNumbers.length){
+      marriageList.innerHTML='';
+      priorMarriageIndex=0;
+
+      marriageNumbers.forEach(function(n){
+        addPriorMarriageRow({
+          spouseName:answers['priorMarriage'+n+'SpouseName']||'',
+          spouseDOB:answers['priorMarriage'+n+'SpouseDOB']||'',
+          spouseBirthCountry:answers['priorMarriage'+n+'SpouseBirthCountry']||'',
+          spouseCitizenship:answers['priorMarriage'+n+'SpouseCitizenship']||'',
+          marriageDate:answers['priorMarriage'+n+'MarriageDate']||'',
+          marriagePlace:answers['priorMarriage'+n+'MarriagePlace']||'',
+          endDate:answers['priorMarriage'+n+'EndDate']||'',
+          endPlace:answers['priorMarriage'+n+'EndPlace']||'',
+          endReason:answers['priorMarriage'+n+'EndReason']||''
+        });
+      });
+    }
+
+    const childList=document.getElementById('childrenList');
+    if(childList && childNumbers.length){
+      childList.innerHTML='';
+      childIndex=0;
+
+      childNumbers.forEach(function(n){
+        addChildRow({
+          name:answers['child'+n+'Name']||'',
+          dob:answers['child'+n+'DOB']||'',
+          birthCountry:answers['child'+n+'BirthCountry']||'',
+          aNumber:answers['child'+n+'ANumber']||'',
+          applyingWithYou:answers['child'+n+'ApplyingWithYou']||''
+        });
+      });
+    }
+  }
+
   function fillAnswers(answers){
     if(!answers || typeof answers!=='object') return;
 
@@ -1311,6 +1371,124 @@
   }
 
 
+  let priorMarriageIndex=0;
+  let childIndex=0;
+
+  function addPriorMarriageRow(values={}){
+    priorMarriageIndex++;
+    const n=priorMarriageIndex;
+    const list=document.getElementById('priorMarriageList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Matrimonio anterior ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Nombre legal completo del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseName" value="${values.spouseName||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseDOB" type="date" value="${values.spouseDOB||''}">
+        </div>
+
+        <div class="field">
+          <label>País de nacimiento del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseBirthCountry" value="${values.spouseBirthCountry||''}">
+        </div>
+
+        <div class="field full">
+          <label>País de ciudadanía o nacionalidad del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseCitizenship" value="${values.spouseCitizenship||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha del matrimonio</label>
+          <input name="priorMarriage${n}MarriageDate" type="date" value="${values.marriageDate||''}">
+        </div>
+
+        <div class="field">
+          <label>Lugar del matrimonio</label>
+          <input name="priorMarriage${n}MarriagePlace" value="${values.marriagePlace||''}" placeholder="Ciudad, estado/provincia y país">
+        </div>
+
+        <div class="field">
+          <label>Fecha en que terminó el matrimonio</label>
+          <input name="priorMarriage${n}EndDate" type="date" value="${values.endDate||''}">
+        </div>
+
+        <div class="field">
+          <label>Lugar donde terminó el matrimonio</label>
+          <input name="priorMarriage${n}EndPlace" value="${values.endPlace||''}" placeholder="Ciudad, estado/provincia y país">
+        </div>
+
+        <div class="field full">
+          <label>¿Cómo terminó el matrimonio?</label>
+          <select name="priorMarriage${n}EndReason">
+            <option value="">Seleccione</option>
+            <option value="divorce" ${values.endReason==='divorce'?'selected':''}>Divorcio</option>
+            <option value="death" ${values.endReason==='death'?'selected':''}>Fallecimiento</option>
+            <option value="annulment" ${values.endReason==='annulment'?'selected':''}>Anulación</option>
+            <option value="other" ${values.endReason==='other'?'selected':''}>Otro</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  function addChildRow(values={}){
+    childIndex++;
+    const n=childIndex;
+    const list=document.getElementById('childrenList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Hijo/a ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Nombre legal completo</label>
+          <input name="child${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento</label>
+          <input name="child${n}DOB" type="date" value="${values.dob||''}">
+        </div>
+
+        <div class="field">
+          <label>País de nacimiento</label>
+          <input name="child${n}BirthCountry" value="${values.birthCountry||''}">
+        </div>
+
+        <div class="field">
+          <label>A-Number, si tiene</label>
+          <input name="child${n}ANumber" value="${values.aNumber||''}">
+        </div>
+
+        <div class="field">
+          <label>¿Está solicitando residencia con usted?</label>
+          <select name="child${n}ApplyingWithYou">
+            <option value="">Seleccione</option>
+            <option value="no" ${values.applyingWithYou==='no'?'selected':''}>No</option>
+            <option value="yes" ${values.applyingWithYou==='yes'?'selected':''}>Sí</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
   let addressIndex=0;
   let employmentIndex=0;
 
@@ -1802,6 +1980,7 @@
         }
       }
       rebuildDynamicHistory(intake.answers || {});
+      rebuildFamilyHistory(intake.answers || {});
       fillAnswers(intake.answers || {});
 
       updateProgress();
@@ -1898,6 +2077,48 @@
     .addEventListener(
       'change',
       updateConditionalFields
+    );
+
+  document
+    .getElementById('addPriorMarriageBtn')
+    .addEventListener(
+      'click',
+      function(){
+        addPriorMarriageRow();
+      }
+    );
+
+  document
+    .getElementById('addChildBtn')
+    .addEventListener(
+      'click',
+      function(){
+        addChildRow();
+      }
+    );
+
+  document
+    .getElementById('priorMarriageExists')
+    .addEventListener(
+      'change',
+      function(){
+        const list=document.getElementById('priorMarriageList');
+        if(this.value==='yes' && list && list.children.length===0){
+          addPriorMarriageRow();
+        }
+      }
+    );
+
+  document
+    .getElementById('hasChildren')
+    .addEventListener(
+      'change',
+      function(){
+        const list=document.getElementById('childrenList');
+        if(this.value==='yes' && list && list.children.length===0){
+          addChildRow();
+        }
+      }
     );
 
   document
