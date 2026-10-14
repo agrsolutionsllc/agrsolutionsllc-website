@@ -1,1 +1,2487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGR Solutions LLC | AOS Master Intake</title>
 
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:#f4f7fb;
+      color:#172033;
+    }
+
+    .top{
+      background:#071d45;
+      color:white;
+      padding:22px 18px;
+    }
+
+    .top-inner{
+      max-width:920px;
+      margin:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+    }
+
+    .brand{
+      font-size:22px;
+      font-weight:800;
+    }
+
+    .brand small{
+      display:block;
+      font-size:12px;
+      font-weight:400;
+      opacity:.8;
+      margin-top:4px;
+    }
+
+    .wrap{
+      max-width:920px;
+      margin:30px auto;
+      padding:0 16px 60px;
+    }
+
+    .card{
+      background:white;
+      border:1px solid #dce4ef;
+      border-radius:20px;
+      padding:26px;
+      margin-bottom:18px;
+      box-shadow:0 8px 25px rgba(9,30,66,.05);
+    }
+
+    h1{
+      margin:0 0 8px;
+      color:#071d45;
+      font-size:34px;
+    }
+
+    h2{
+      color:#071d45;
+      margin:0 0 18px;
+    }
+
+    .gold{
+      color:#c89013;
+      font-weight:800;
+      font-size:13px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+    }
+
+    .muted{
+      color:#637083;
+      line-height:1.5;
+    }
+
+    .progress-shell{
+      height:12px;
+      background:#eaf0f7;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:12px;
+    }
+
+    .progress-bar{
+      height:100%;
+      width:0;
+      background:#d6a020;
+      transition:.25s;
+    }
+
+    .progress-text{
+      margin-top:8px;
+      font-size:13px;
+      color:#596579;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:7px;
+    }
+
+    .field.full{
+      grid-column:1/-1;
+    }
+
+    label{
+      font-weight:700;
+      font-size:14px;
+    }
+
+    input,select,textarea{
+      width:100%;
+      padding:13px 14px;
+      border:1px solid #b9c5d4;
+      border-radius:10px;
+      background:white;
+      font:inherit;
+      color:#172033;
+    }
+
+    textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+
+    input:focus,select:focus,textarea:focus{
+      outline:3px solid rgba(214,160,32,.15);
+      border-color:#c89013;
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:22px;
+    }
+
+    button{
+      border:0;
+      border-radius:12px;
+      padding:13px 20px;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer;
+    }
+
+    .primary{
+      background:#071d45;
+      color:white;
+    }
+
+    .secondary{
+      background:#edf2f8;
+      color:#071d45;
+    }
+
+    .submit{
+      background:#c89013;
+      color:#111;
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .notice{
+      border-radius:12px;
+      padding:14px 16px;
+      margin-bottom:16px;
+      background:#edf5ff;
+      border:1px solid #cddff5;
+    }
+
+    .success{
+      background:#ecf8ef;
+      border-color:#b9dfc1;
+    }
+
+    .error{
+      background:#fff0f0;
+      border-color:#efc3c3;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    .loading{
+      text-align:center;
+      padding:60px 20px;
+      color:#637083;
+    }
+
+    .footer-note{
+      font-size:12px;
+      color:#6f7988;
+      line-height:1.5;
+      margin-top:18px;
+    }
+
+    @media(max-width:700px){
+      .grid{grid-template-columns:1fr}
+      .field.full{grid-column:auto}
+      h1{font-size:28px}
+      .card{padding:20px}
+    }
+    details.aos-section{
+    background:#fff;
+    border:1px solid #dfe5ee;
+    border-radius:14px;
+    margin:18px 0;
+    overflow:hidden;
+    box-shadow:0 4px 14px rgba(15,23,42,.05);
+  }
+
+  details.aos-section > summary{
+    cursor:pointer;
+    list-style:none;
+    padding:20px 22px;
+    font-weight:700;
+    font-size:18px;
+    color:#071d45;
+    background:#f8fafc;
+    border-bottom:1px solid transparent;
+  }
+
+  details.aos-section[open] > summary{
+    border-bottom-color:#e5e7eb;
+  }
+
+  details.aos-section > summary::-webkit-details-marker{
+    display:none;
+  }
+
+  details.aos-section > summary::after{
+    content:"+";
+    float:right;
+    font-size:24px;
+    line-height:18px;
+    color:#b78b2e;
+  }
+
+  details.aos-section[open] > summary::after{
+    content:"−";
+  }
+
+  .aos-body{
+    padding:22px;
+  }
+
+  .subsection-title{
+    margin:26px 0 12px;
+    padding-bottom:8px;
+    border-bottom:1px solid #e5e7eb;
+    color:#071d45;
+    font-size:17px;
+  }
+
+  .aos-module-label{
+    display:inline-block;
+    margin-bottom:8px;
+    padding:4px 9px;
+    border-radius:999px;
+    background:#fff7df;
+    color:#8a6518;
+    font-size:12px;
+    font-weight:700;
+  }
+</style>
+</head>
+
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      AGR SOLUTIONS LLC
+      <small>Formulario privado del cliente</small>
+    </div>
+    <div>AOS</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div id="loading" class="card loading">
+    Cargando su formulario privado...
+  </div>
+
+  <div id="errorPage" class="card hidden">
+    <div class="gold">AGR Solutions LLC</div>
+    <h1>Enlace no disponible</h1>
+    <p id="errorMessage" class="muted">
+      No pudimos abrir este formulario.
+    </p>
+  </div>
+
+  <div id="formArea" class="hidden">
+
+    <section class="card">
+      <div class="gold">Intake de inmigración</div>
+      <h1>Adjustment of Status · Master Intake</h1>
+
+      <p class="muted">
+        Complete la información solicitada con el mayor detalle posible.
+        Puede guardar su progreso y continuar más tarde usando este mismo enlace privado.
+      </p>
+
+      <div id="clientWelcome" class="notice hidden"></div>
+
+      <div class="progress-shell">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <div id="progressText" class="progress-text">
+        Progreso 0%
+      </div>
+    </section>
+
+
+    <form id="intakeForm">
+
+<details class="aos-section" open>
+<summary>1. Información del caso</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">AOS PACKAGE</span>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="aosPackageType">¿Qué paquete está preparando AGR?</label>
+      <select id="aosPackageType" name="aosPackageType" required>
+        <option value="">Seleccione</option>
+        <option value="fullMarriage">I-130 + I-485 + I-765 + I-864</option>
+        <option value="i485i765i864">I-485 + I-765 + I-864</option>
+        <option value="i485i765">I-485 + I-765</option>
+        <option value="other">Otro paquete</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>Notas del caso</label>
+      <textarea name="caseNotes"></textarea>
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<details class="aos-section" open>
+<summary>2. Beneficiario / Applicant</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-130 · I-485 · I-765</span>
+
+  <div class="grid">
+
+    <div class="field">
+      <label>Apellido legal</label>
+      <input name="applicantLastName" required>
+    </div>
+
+    <div class="field">
+      <label>Nombre</label>
+      <input name="applicantFirstName" required>
+    </div>
+
+    <div class="field">
+      <label>Segundo nombre</label>
+      <input name="applicantMiddleName">
+    </div>
+
+    <div class="field">
+      <label>Fecha de nacimiento</label>
+      <input name="applicantDOB" type="date" required>
+    </div>
+
+    <div class="field">
+      <label>Ciudad de nacimiento</label>
+      <input name="applicantBirthCity">
+    </div>
+
+    <div class="field">
+      <label>País de nacimiento</label>
+      <input name="applicantBirthCountry">
+    </div>
+
+    <div class="field full">
+      <label>País o países de ciudadanía/nacionalidad</label>
+      <input name="applicantCitizenship">
+    </div>
+
+    <div class="field">
+      <label>Sexo</label>
+      <select name="applicantSex">
+        <option value="">Seleccione</option>
+        <option value="male">Masculino</option>
+        <option value="female">Femenino</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>A-Number</label>
+      <input name="applicantANumber">
+    </div>
+
+    <div class="field">
+      <label>USCIS Online Account Number</label>
+      <input name="applicantUSCISOnlineAccount">
+    </div>
+
+    <div class="field">
+      <label>Social Security Number</label>
+      <input name="applicantSSN">
+    </div>
+
+    <div class="field">
+      <label>Teléfono</label>
+      <input name="applicantPhone">
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input name="applicantEmail" type="email">
+    </div>
+
+  </div>
+
+
+  <h3 class="subsection-title">Otros nombres utilizados</h3>
+
+  <div id="otherNamesList"></div>
+
+  <button type="button" class="secondary" id="addOtherNameBtn">
+    + Agregar otro nombre
+  </button>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>3. Peticionario</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-130</span>
+
+  <div class="grid">
+
+    <div class="field">
+      <label>Apellido legal</label>
+      <input name="petitionerLastName">
+    </div>
+
+    <div class="field">
+      <label>Nombre</label>
+      <input name="petitionerFirstName">
+    </div>
+
+    <div class="field">
+      <label>Segundo nombre</label>
+      <input name="petitionerMiddleName">
+    </div>
+
+    <div class="field">
+      <label>Fecha de nacimiento</label>
+      <input name="petitionerDOB" type="date">
+    </div>
+
+    <div class="field">
+      <label>País de nacimiento</label>
+      <input name="petitionerBirthCountry">
+    </div>
+
+    <div class="field">
+      <label for="petitionerStatus">Estatus migratorio</label>
+      <select id="petitionerStatus" name="petitionerStatus">
+        <option value="">Seleccione</option>
+        <option value="uscitizen">Ciudadano/a estadounidense</option>
+        <option value="lpr">Residente permanente</option>
+        <option value="usnational">U.S. National</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>A-Number, si tiene</label>
+      <input name="petitionerANumber">
+    </div>
+
+    <div class="field">
+      <label>USCIS Online Account Number</label>
+      <input name="petitionerOnlineAccount">
+    </div>
+
+    <div class="field">
+      <label>Social Security Number</label>
+      <input name="petitionerSSN">
+    </div>
+
+    <div class="field full">
+      <label for="petitionerRelationship">Relación con el beneficiario</label>
+      <select id="petitionerRelationship" name="petitionerRelationship">
+        <option value="">Seleccione</option>
+        <option value="spouse">Cónyuge</option>
+        <option value="parent">Padre/Madre</option>
+        <option value="child">Hijo/a</option>
+        <option value="sibling">Hermano/a</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Teléfono</label>
+      <input name="petitionerPhone">
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input name="petitionerEmail" type="email">
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>4. Dirección actual y direcciones anteriores</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">DATOS COMPARTIDOS</span>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label>Dirección física actual</label>
+      <input name="physicalStreet">
+    </div>
+
+    <div class="field">
+      <label>Apt. / Unidad</label>
+      <input name="physicalApt">
+    </div>
+
+    <div class="field">
+      <label>Ciudad</label>
+      <input name="physicalCity">
+    </div>
+
+    <div class="field">
+      <label>Estado / Provincia</label>
+      <input name="physicalState">
+    </div>
+
+    <div class="field">
+      <label>ZIP / Código postal</label>
+      <input name="physicalZip">
+    </div>
+
+    <div class="field">
+      <label>País</label>
+      <input name="physicalCountry">
+    </div>
+
+    <div class="field full">
+      <label for="mailingSameAsPhysical">
+        ¿La dirección postal es la misma que la dirección física?
+      </label>
+
+      <select id="mailingSameAsPhysical" name="mailingSameAsPhysical">
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="mailingAddressWrap">
+
+      <label>Dirección postal</label>
+      <input name="mailingStreet">
+
+      <label>Apt. / Unidad</label>
+      <input name="mailingApt">
+
+      <label>Ciudad</label>
+      <input name="mailingCity">
+
+      <label>Estado</label>
+      <input name="mailingState">
+
+      <label>ZIP Code</label>
+      <input name="mailingZip">
+
+    </div>
+
+  </div>
+
+
+  <h3 class="subsection-title">Historial de direcciones</h3>
+
+  <div id="addressHistoryList"></div>
+
+  <button type="button" class="secondary" id="addAddressBtn">
+    + Agregar otra dirección
+  </button>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>5. Última entrada e historial migratorio</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-485 · I-765</span>
+
+  <div class="grid">
+
+    <div class="field">
+      <label>Fecha de última entrada</label>
+      <input name="lastArrivalDate" type="date">
+    </div>
+
+    <div class="field">
+      <label>Lugar de entrada</label>
+      <input name="lastArrivalPlace">
+    </div>
+
+    <div class="field">
+      <label>Número I-94</label>
+      <input name="i94Number">
+    </div>
+
+    <div class="field">
+      <label>Número de pasaporte</label>
+      <input name="passportNumber">
+    </div>
+
+    <div class="field">
+      <label>País que emitió el pasaporte</label>
+      <input name="passportCountry">
+    </div>
+
+    <div class="field">
+      <label>Expiración del pasaporte</label>
+      <input name="passportExpiration" type="date">
+    </div>
+
+    <div class="field full">
+      <label>Estatus al ingresar</label>
+      <input name="statusAtEntry">
+    </div>
+
+    <div class="field full">
+      <label>Estatus migratorio actual</label>
+      <input name="currentImmigrationStatus">
+    </div>
+
+    <div class="field full">
+      <label for="everInRemovalProceedings">
+        ¿Alguna vez ha estado en procedimientos ante la Corte de Inmigración?
+      </label>
+
+      <select id="everInRemovalProceedings" name="everInRemovalProceedings">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="removalProceedingsDetailsWrap">
+      <label>Explique los procedimientos migratorios</label>
+      <textarea name="removalProceedingsDetails"></textarea>
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>6. Matrimonios, ex cónyuges e hijos</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-130 · I-485</span>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="currentMaritalStatus">Estado civil actual del beneficiario</label>
+
+      <select id="currentMaritalStatus" name="currentMaritalStatus">
+        <option value="">Seleccione</option>
+        <option value="single">Soltero/a</option>
+        <option value="married">Casado/a</option>
+        <option value="divorced">Divorciado/a</option>
+        <option value="widowed">Viudo/a</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="currentSpouseWrap">
+
+      <label>Nombre legal completo del cónyuge</label>
+      <input name="currentSpouseName">
+
+      <label>Fecha de nacimiento</label>
+      <input name="currentSpouseDOB" type="date">
+
+      <label>Fecha del matrimonio</label>
+      <input name="currentMarriageDate" type="date">
+
+      <label>Lugar del matrimonio</label>
+      <input name="currentMarriagePlace">
+
+    </div>
+
+    <div class="field full">
+      <label for="priorMarriageExists">¿Ha tenido matrimonios anteriores?</label>
+
+      <select id="priorMarriageExists" name="priorMarriageExists">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="priorMarriageWrap">
+
+      <div id="priorMarriageList"></div>
+
+      <button type="button"
+              class="secondary"
+              id="addPriorMarriageBtn">
+        + Agregar otro matrimonio anterior
+      </button>
+
+    </div>
+
+    <div class="field full">
+      <label for="hasChildren">¿Tiene hijos?</label>
+
+      <select id="hasChildren" name="hasChildren">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="childrenDetailsWrap">
+
+      <div id="childrenList"></div>
+
+      <button type="button"
+              class="secondary"
+              id="addChildBtn">
+        + Agregar otro hijo
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>7. Historial de empleo, estudios y actividad</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">DATOS COMPARTIDOS</span>
+
+  <div id="employmentHistoryList"></div>
+
+  <button type="button"
+          class="secondary"
+          id="addEmploymentBtn">
+    + Agregar empleo / estudio / actividad
+  </button>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>8. Base del Ajuste de Estatus</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-485</span>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label>Categoría o base del ajuste</label>
+
+      <select id="adjustmentCategory" name="adjustmentCategory">
+        <option value="">Seleccione</option>
+        <option value="immediateRelative">Familiar inmediato de ciudadano</option>
+        <option value="familyPreference">Preferencia familiar</option>
+        <option value="employment">Empleo</option>
+        <option value="vawa">VAWA</option>
+        <option value="asylee">Asylee</option>
+        <option value="refugee">Refugee</option>
+        <option value="cuban">Cuban Adjustment</option>
+        <option value="other">Otra</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Receipt Number de la petición base</label>
+      <input name="underlyingPetitionReceipt">
+    </div>
+
+    <div class="field">
+      <label>Priority Date, si aplica</label>
+      <input name="priorityDate" type="date">
+    </div>
+
+    <div class="field full">
+      <label>Información adicional sobre la base del ajuste</label>
+      <textarea name="adjustmentBasisNotes"></textarea>
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>9. Elegibilidad, antecedentes e inadmisibilidad</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-485 SCREENING</span>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label>¿Alguna vez ha sido arrestado/a, citado/a, acusado/a o detenido/a?</label>
+      <select name="everArrested">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>¿Alguna vez ha sido condenado/a por algún delito?</label>
+      <select name="everConvicted">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>¿Alguna vez ha usado fraude o información falsa para obtener un beneficio migratorio?</label>
+      <select name="fraudMisrepresentation">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>¿Alguna vez afirmó ser ciudadano/a de Estados Unidos?</label>
+      <select name="falseUSCitizenClaim">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>¿Alguna vez ayudó a otra persona a entrar ilegalmente a Estados Unidos?</label>
+      <select name="smugglingAssistance">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>¿Alguna vez estuvo involucrado/a con drogas o tráfico de sustancias controladas?</label>
+      <select name="drugActivity">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>¿Alguna vez participó en persecución, genocidio, tortura o violaciones graves de derechos humanos?</label>
+      <select name="humanRightsActivity">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>¿Alguna vez perteneció, sirvió o apoyó fuerzas militares, grupos armados u organizaciones similares?</label>
+      <select name="militaryArmedGroup">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>Explique cualquier respuesta Sí</label>
+      <textarea name="inadmissibilityDetails"></textarea>
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>10. Permiso de trabajo</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-765</span>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="eadReason">Razón de la solicitud</label>
+
+      <select id="eadReason" name="eadReason">
+        <option value="">Seleccione</option>
+        <option value="initial">Permiso inicial</option>
+        <option value="renewal">Renovación</option>
+        <option value="replacement">Reemplazo</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Categoría I-765</label>
+      <input name="eadEligibilityCategory" value="(c)(9)">
+    </div>
+
+    <div class="field full">
+      <label for="previousI765">¿Ha presentado anteriormente un I-765?</label>
+
+      <select id="previousI765" name="previousI765">
+        <option value="">Seleccione</option>
+        <option value="no">No</option>
+        <option value="yes">Sí</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="previousI765Wrap">
+
+      <label>Detalles de I-765/EAD anteriores</label>
+      <textarea name="previousI765Details"></textarea>
+
+    </div>
+
+    <div class="field full">
+      <label for="requestSSN">¿Solicita una tarjeta de Seguro Social a través del I-765?</label>
+
+      <select id="requestSSN" name="requestSSN">
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>11. Sponsor y Affidavit of Support</summary>
+<div class="aos-body">
+
+  <span class="aos-module-label">I-864</span>
+
+  <div class="grid">
+
+    <div class="field full">
+      <label for="samePetitionerSponsor">¿El peticionario también será el Sponsor del I-864?</label>
+
+      <select id="samePetitionerSponsor" name="samePetitionerSponsor">
+        <option value="">Seleccione</option>
+        <option value="yes">Sí</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="field full hidden" id="separateSponsorWrap">
+
+      <label>Nombre legal completo del Sponsor</label>
+      <input name="sponsorFullName">
+
+      <label>Fecha de nacimiento</label>
+      <input name="sponsorDOB" type="date">
+
+      <label>SSN</label>
+      <input name="sponsorSSN">
+
+      <label>Estatus del Sponsor</label>
+      <select name="sponsorStatus">
+        <option value="">Seleccione</option>
+        <option value="uscitizen">Ciudadano/a</option>
+        <option value="lpr">Residente permanente</option>
+        <option value="usnational">U.S. National</option>
+      </select>
+
+    </div>
+
+    <div class="field">
+      <label>Ingreso anual actual del Sponsor</label>
+      <input name="sponsorCurrentAnnualIncome" type="number" step="0.01">
+    </div>
+
+    <div class="field">
+      <label>Tamaño total del household</label>
+      <input name="householdTotal" type="number" min="1">
+    </div>
+
+  </div>
+
+
+  <h3 class="subsection-title">Household members cuyos ingresos se utilizarán</h3>
+
+  <div id="householdMembersList"></div>
+
+  <button type="button"
+          class="secondary"
+          id="addHouseholdMemberBtn">
+    + Agregar household member
+  </button>
+
+
+  <h3 class="subsection-title">Impuestos</h3>
+
+  <div id="taxYearsList"></div>
+
+  <button type="button"
+          class="secondary"
+          id="addTaxYearBtn">
+    + Agregar otro año de impuestos
+  </button>
+
+
+  <h3 class="subsection-title">Activos</h3>
+
+  <div id="assetsList"></div>
+
+  <button type="button"
+          class="secondary"
+          id="addAssetBtn">
+    + Agregar otro activo
+  </button>
+
+</div>
+</details>
+
+
+<details class="aos-section">
+<summary>12. Documentos y notas para AGR</summary>
+<div class="aos-body">
+
+  <div class="grid">
+
+    <div class="field full">
+      <label>Documentos que ya tiene disponibles</label>
+
+      <textarea name="documentsAvailable"
+        placeholder="Pasaporte, I-94, birth certificate, marriage certificate, taxes, pay stubs, EAD, etc."></textarea>
+    </div>
+
+    <div class="field full">
+      <label>Documentos pendientes o información adicional</label>
+      <textarea name="missingDocuments"></textarea>
+    </div>
+
+    <div class="field full">
+      <label>Comentarios adicionales para AGR</label>
+      <textarea name="additionalNotes"></textarea>
+    </div>
+
+  </div>
+
+</div>
+</details>
+
+
+<section class="card">
+
+  <div id="saveStatus" class="notice hidden"></div>
+
+  <div class="actions">
+
+    <button type="button"
+            class="secondary"
+            id="saveBtn">
+      Guardar y continuar después
+    </button>
+
+    <button type="button"
+            class="submit"
+            id="submitBtn">
+      Enviar Master Intake a AGR
+    </button>
+
+  </div>
+
+  <p class="footer-note">
+    Este formulario recopila información para AGR Solutions LLC.
+    No constituye una presentación ante USCIS.
+    AGR revisará la información antes de preparar los formularios correspondientes.
+  </p>
+
+</section>
+
+</form>
+
+  </div>
+
+</main>
+
+
+<script>
+(function(){
+
+  const API='https://agrsolutionsllc-website-stripe-back.vercel.app';
+
+  const token=
+    new URLSearchParams(window.location.search).get('token') || '';
+
+  const loading=document.getElementById('loading');
+  const errorPage=document.getElementById('errorPage');
+  const errorMessage=document.getElementById('errorMessage');
+  const formArea=document.getElementById('formArea');
+  const form=document.getElementById('intakeForm');
+
+  const progressBar=document.getElementById('progressBar');
+  const progressText=document.getElementById('progressText');
+
+  const saveBtn=document.getElementById('saveBtn');
+  const submitBtn=document.getElementById('submitBtn');
+  const saveStatus=document.getElementById('saveStatus');
+
+  let currentStatus='not_sent';
+
+
+  function showError(message){
+    loading.classList.add('hidden');
+    formArea.classList.add('hidden');
+    errorPage.classList.remove('hidden');
+    errorMessage.textContent=message;
+  }
+
+
+  function showStatus(message,type){
+    saveStatus.className='notice';
+
+    if(type==='success'){
+      saveStatus.classList.add('success');
+    }
+
+    if(type==='error'){
+      saveStatus.classList.add('error');
+    }
+
+    saveStatus.textContent=message;
+    saveStatus.classList.remove('hidden');
+  }
+
+
+  function getAnswers(){
+    const fd=new FormData(form);
+    const answers={};
+
+    for(const [key,value] of fd.entries()){
+      answers[key]=String(value).trim();
+    }
+
+    return answers;
+  }
+
+
+  function rebuildDynamicHistory(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const addressNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^address(\d+)(Street|Apt|City|State|Postal|Country|From|To)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const employmentNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^employer(\d+)(ActivityType|Name|Street|City|State|Postal|Country|Occupation|SupportSource|From|To)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const addressList=document.getElementById('addressHistoryList');
+    if(addressList && addressNumbers.length){
+      addressList.innerHTML='';
+      addressIndex=0;
+
+      addressNumbers.forEach(function(n){
+        addAddressRow({
+          street:answers['address'+n+'Street']||'',
+          apt:answers['address'+n+'Apt']||'',
+          city:answers['address'+n+'City']||'',
+          state:answers['address'+n+'State']||'',
+          postal:answers['address'+n+'Postal']||'',
+          country:answers['address'+n+'Country']||'',
+          from:answers['address'+n+'From']||'',
+          to:answers['address'+n+'To']||''
+        });
+      });
+    }
+
+    const employmentList=document.getElementById('employmentHistoryList');
+    if(employmentList && employmentNumbers.length){
+      employmentList.innerHTML='';
+      employmentIndex=0;
+
+      employmentNumbers.forEach(function(n){
+        addEmploymentRow({
+          activityType:answers['employer'+n+'ActivityType']||'',
+          name:answers['employer'+n+'Name']||'',
+          street:answers['employer'+n+'Street']||'',
+          city:answers['employer'+n+'City']||'',
+          state:answers['employer'+n+'State']||'',
+          postal:answers['employer'+n+'Postal']||'',
+          country:answers['employer'+n+'Country']||'',
+          occupation:answers['employer'+n+'Occupation']||'',
+          supportSource:answers['employer'+n+'SupportSource']||'',
+          from:answers['employer'+n+'From']||'',
+          to:answers['employer'+n+'To']||''
+        });
+      });
+    }
+  }
+
+  function rebuildFamilyHistory(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const marriageNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^priorMarriage(\d+)(SpouseName|SpouseDOB|SpouseBirthCountry|SpouseCitizenship|MarriageDate|MarriagePlace|EndDate|EndPlace|EndReason)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const childNumbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^child(\d+)(Name|DOB|BirthCountry|ANumber|ApplyingWithYou)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){ return Number.isFinite(n); })
+    )].sort(function(a,b){ return a-b; });
+
+    const marriageList=document.getElementById('priorMarriageList');
+    if(marriageList && marriageNumbers.length){
+      marriageList.innerHTML='';
+      priorMarriageIndex=0;
+
+      marriageNumbers.forEach(function(n){
+        addPriorMarriageRow({
+          spouseName:answers['priorMarriage'+n+'SpouseName']||'',
+          spouseDOB:answers['priorMarriage'+n+'SpouseDOB']||'',
+          spouseBirthCountry:answers['priorMarriage'+n+'SpouseBirthCountry']||'',
+          spouseCitizenship:answers['priorMarriage'+n+'SpouseCitizenship']||'',
+          marriageDate:answers['priorMarriage'+n+'MarriageDate']||'',
+          marriagePlace:answers['priorMarriage'+n+'MarriagePlace']||'',
+          endDate:answers['priorMarriage'+n+'EndDate']||'',
+          endPlace:answers['priorMarriage'+n+'EndPlace']||'',
+          endReason:answers['priorMarriage'+n+'EndReason']||''
+        });
+      });
+    }
+
+    const childList=document.getElementById('childrenList');
+    if(childList && childNumbers.length){
+      childList.innerHTML='';
+      childIndex=0;
+
+      childNumbers.forEach(function(n){
+        addChildRow({
+          name:answers['child'+n+'Name']||'',
+          dob:answers['child'+n+'DOB']||'',
+          birthCountry:answers['child'+n+'BirthCountry']||'',
+          aNumber:answers['child'+n+'ANumber']||'',
+          applyingWithYou:answers['child'+n+'ApplyingWithYou']||''
+        });
+      });
+    }
+  }
+
+  function fillAnswers(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    Object.entries(answers).forEach(function(entry){
+      const key=entry[0];
+      const value=entry[1];
+
+      const el=form.elements[key];
+
+      if(el){
+        el.value=value==null ? '' : String(value);
+      }
+    });
+
+    updateConditionalFields();
+  }
+
+
+  let otherNameIndex=0;
+
+  function addOtherNameRow(values={}){
+    otherNameIndex++;
+    const n=otherNameIndex;
+    const list=document.getElementById('otherNamesList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Otro nombre ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field">
+          <label>Apellido</label>
+          <input name="otherName${n}Last" value="${values.last||''}">
+        </div>
+
+        <div class="field">
+          <label>Nombre</label>
+          <input name="otherName${n}First" value="${values.first||''}">
+        </div>
+
+        <div class="field">
+          <label>Segundo nombre</label>
+          <input name="otherName${n}Middle" value="${values.middle||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function rebuildOtherNames(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    const numbers=[...new Set(
+      Object.keys(answers)
+        .map(function(key){
+          const m=key.match(/^otherName(\d+)(Last|First|Middle)$/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter(function(n){
+          return Number.isFinite(n);
+        })
+    )].sort(function(a,b){
+      return a-b;
+    });
+
+    const list=document.getElementById('otherNamesList');
+
+    if(list && numbers.length){
+      list.innerHTML='';
+      otherNameIndex=0;
+
+      numbers.forEach(function(n){
+        addOtherNameRow({
+          last:answers['otherName'+n+'Last']||'',
+          first:answers['otherName'+n+'First']||'',
+          middle:answers['otherName'+n+'Middle']||''
+        });
+      });
+    }
+  }
+
+  let priorMarriageIndex=0;
+  let childIndex=0;
+
+  function addPriorMarriageRow(values={}){
+    priorMarriageIndex++;
+    const n=priorMarriageIndex;
+    const list=document.getElementById('priorMarriageList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Matrimonio anterior ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Nombre legal completo del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseName" value="${values.spouseName||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseDOB" type="date" value="${values.spouseDOB||''}">
+        </div>
+
+        <div class="field">
+          <label>País de nacimiento del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseBirthCountry" value="${values.spouseBirthCountry||''}">
+        </div>
+
+        <div class="field full">
+          <label>País de ciudadanía o nacionalidad del ex cónyuge</label>
+          <input name="priorMarriage${n}SpouseCitizenship" value="${values.spouseCitizenship||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha del matrimonio</label>
+          <input name="priorMarriage${n}MarriageDate" type="date" value="${values.marriageDate||''}">
+        </div>
+
+        <div class="field">
+          <label>Lugar del matrimonio</label>
+          <input name="priorMarriage${n}MarriagePlace" value="${values.marriagePlace||''}" placeholder="Ciudad, estado/provincia y país">
+        </div>
+
+        <div class="field">
+          <label>Fecha en que terminó el matrimonio</label>
+          <input name="priorMarriage${n}EndDate" type="date" value="${values.endDate||''}">
+        </div>
+
+        <div class="field">
+          <label>Lugar donde terminó el matrimonio</label>
+          <input name="priorMarriage${n}EndPlace" value="${values.endPlace||''}" placeholder="Ciudad, estado/provincia y país">
+        </div>
+
+        <div class="field full">
+          <label>¿Cómo terminó el matrimonio?</label>
+          <select name="priorMarriage${n}EndReason">
+            <option value="">Seleccione</option>
+            <option value="divorce" ${values.endReason==='divorce'?'selected':''}>Divorcio</option>
+            <option value="death" ${values.endReason==='death'?'selected':''}>Fallecimiento</option>
+            <option value="annulment" ${values.endReason==='annulment'?'selected':''}>Anulación</option>
+            <option value="other" ${values.endReason==='other'?'selected':''}>Otro</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  function addChildRow(values={}){
+    childIndex++;
+    const n=childIndex;
+    const list=document.getElementById('childrenList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Hijo/a ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Nombre legal completo</label>
+          <input name="child${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento</label>
+          <input name="child${n}DOB" type="date" value="${values.dob||''}">
+        </div>
+
+        <div class="field">
+          <label>País de nacimiento</label>
+          <input name="child${n}BirthCountry" value="${values.birthCountry||''}">
+        </div>
+
+        <div class="field">
+          <label>A-Number, si tiene</label>
+          <input name="child${n}ANumber" value="${values.aNumber||''}">
+        </div>
+
+        <div class="field">
+          <label>¿Está solicitando residencia con usted?</label>
+          <select name="child${n}ApplyingWithYou">
+            <option value="">Seleccione</option>
+            <option value="no" ${values.applyingWithYou==='no'?'selected':''}>No</option>
+            <option value="yes" ${values.applyingWithYou==='yes'?'selected':''}>Sí</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+  let addressIndex=0;
+  let employmentIndex=0;
+
+  function addAddressRow(values={}){
+    addressIndex++;
+    const n=addressIndex;
+    const list=document.getElementById('addressHistoryList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Dirección ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Calle y número</label>
+          <input name="address${n}Street" value="${values.street||''}">
+        </div>
+
+        <div class="field">
+          <label>Apartamento / Piso / Unidad</label>
+          <input name="address${n}Apt" value="${values.apt||''}">
+        </div>
+
+        <div class="field">
+          <label>Ciudad</label>
+          <input name="address${n}City" value="${values.city||''}">
+        </div>
+
+        <div class="field">
+          <label>Estado / Provincia</label>
+          <input name="address${n}State" value="${values.state||''}">
+        </div>
+
+        <div class="field">
+          <label>ZIP / Código postal</label>
+          <input name="address${n}Postal" value="${values.postal||''}">
+        </div>
+
+        <div class="field">
+          <label>País</label>
+          <input name="address${n}Country" value="${values.country||''}">
+        </div>
+
+        <div class="field">
+          <label>Desde</label>
+          <input name="address${n}From" type="date" value="${values.from||''}">
+        </div>
+
+        <div class="field">
+          <label>Hasta</label>
+          <input name="address${n}To" type="date" value="${values.to||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  function addEmploymentRow(values={}){
+    employmentIndex++;
+    const n=employmentIndex;
+    const list=document.getElementById('employmentHistoryList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+    wrap.innerHTML=`
+      <div class="notice"><strong>Empleo ${n}</strong></div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>Tipo de actividad</label>
+          <select name="employer${n}ActivityType">
+            <option value="">Seleccione</option>
+            <option value="employment" ${values.activityType==='employment'?'selected':''}>Empleo</option>
+            <option value="selfEmployment" ${values.activityType==='selfEmployment'?'selected':''}>Trabajo por cuenta propia</option>
+            <option value="school" ${values.activityType==='school'?'selected':''}>Estudios / Escuela</option>
+            <option value="unemployed" ${values.activityType==='unemployed'?'selected':''}>Desempleado/a</option>
+            <option value="retired" ${values.activityType==='retired'?'selected':''}>Retirado/a</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>Nombre del empleador, empresa o escuela</label>
+          <input name="employer${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field full">
+          <label>Dirección del empleador</label>
+          <input name="employer${n}Street" value="${values.street||''}">
+        </div>
+
+        <div class="field">
+          <label>Ciudad</label>
+          <input name="employer${n}City" value="${values.city||''}">
+        </div>
+
+        <div class="field">
+          <label>Estado / Provincia</label>
+          <input name="employer${n}State" value="${values.state||''}">
+        </div>
+
+        <div class="field">
+          <label>ZIP / Código postal</label>
+          <input name="employer${n}Postal" value="${values.postal||''}">
+        </div>
+
+        <div class="field">
+          <label>País</label>
+          <input name="employer${n}Country" value="${values.country||''}">
+        </div>
+
+        <div class="field full">
+          <label>Ocupación / Cargo / Área de estudio</label>
+          <input name="employer${n}Occupation" value="${values.occupation||''}">
+        </div>
+
+        <div class="field full">
+          <label>Fuente de sustento económico, si estuvo desempleado/a o retirado/a</label>
+          <input name="employer${n}SupportSource" value="${values.supportSource||''}" placeholder="Ejemplo: ahorros, apoyo de cónyuge o familia, pensión, etc.">
+        </div>
+
+        <div class="field">
+          <label>Fecha de inicio</label>
+          <input name="employer${n}From" type="date" value="${values.from||''}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de terminación</label>
+          <input name="employer${n}To" type="date" value="${values.to||''}">
+        </div>
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+  let aosHouseholdIndex=0;
+  let aosTaxIndex=0;
+  let aosAssetIndex=0;
+
+
+  function addHouseholdMemberRow(values={}){
+    aosHouseholdIndex++;
+    const n=aosHouseholdIndex;
+    const list=document.getElementById('householdMembersList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Household Member ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field full">
+          <label>Nombre legal completo</label>
+          <input name="aosHousehold${n}Name" value="${values.name||''}">
+        </div>
+
+        <div class="field">
+          <label>Relación con el Sponsor</label>
+          <input name="aosHousehold${n}Relationship" value="${values.relationship||''}">
+        </div>
+
+        <div class="field">
+          <label>Ingreso anual que se utilizará</label>
+          <input name="aosHousehold${n}Income"
+                 type="number"
+                 step="0.01"
+                 value="${values.income||''}">
+        </div>
+
+        <div class="field full">
+          <label>¿Vive en la misma residencia del Sponsor?</label>
+          <select name="aosHousehold${n}SameResidence">
+            <option value="">Seleccione</option>
+            <option value="yes" ${values.sameResidence==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${values.sameResidence==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>¿Debe AGR evaluar un I-864A?</label>
+          <select name="aosHousehold${n}I864A">
+            <option value="">Seleccione</option>
+            <option value="yes" ${values.i864a==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${values.i864a==='no'?'selected':''}>No</option>
+            <option value="review" ${values.i864a==='review'?'selected':''}>Revisar</option>
+          </select>
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function addTaxYearRow(values={}){
+    aosTaxIndex++;
+    const n=aosTaxIndex;
+    const list=document.getElementById('taxYearsList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Año fiscal ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field">
+          <label>Año</label>
+          <input name="aosTax${n}Year"
+                 type="number"
+                 value="${values.year||''}">
+        </div>
+
+        <div class="field">
+          <label>Total Income</label>
+          <input name="aosTax${n}TotalIncome"
+                 type="number"
+                 step="0.01"
+                 value="${values.totalIncome||''}">
+        </div>
+
+        <div class="field full">
+          <label>Evidencia disponible</label>
+          <select name="aosTax${n}Evidence">
+            <option value="">Seleccione</option>
+            <option value="transcript" ${values.evidence==='transcript'?'selected':''}>IRS Tax Transcript</option>
+            <option value="return" ${values.evidence==='return'?'selected':''}>Tax Return</option>
+            <option value="none" ${values.evidence==='none'?'selected':''}>No disponible</option>
+          </select>
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function addAssetRow(values={}){
+    aosAssetIndex++;
+    const n=aosAssetIndex;
+    const list=document.getElementById('assetsList');
+    if(!list) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='dynamic-entry';
+
+    wrap.innerHTML=`
+      <div class="notice"><strong>Activo ${n}</strong></div>
+
+      <div class="grid">
+
+        <div class="field">
+          <label>Propietario</label>
+          <input name="aosAsset${n}Owner" value="${values.owner||''}">
+        </div>
+
+        <div class="field">
+          <label>Tipo de activo</label>
+          <select name="aosAsset${n}Type">
+            <option value="">Seleccione</option>
+            <option value="cash" ${values.type==='cash'?'selected':''}>Efectivo / Banco</option>
+            <option value="investment" ${values.type==='investment'?'selected':''}>Inversiones</option>
+            <option value="property" ${values.type==='property'?'selected':''}>Propiedad</option>
+            <option value="vehicle" ${values.type==='vehicle'?'selected':''}>Vehículo adicional</option>
+            <option value="other" ${values.type==='other'?'selected':''}>Otro</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Valor actual</label>
+          <input name="aosAsset${n}Value"
+                 type="number"
+                 step="0.01"
+                 value="${values.value||''}">
+        </div>
+
+        <div class="field">
+          <label>Deuda contra el activo</label>
+          <input name="aosAsset${n}Debt"
+                 type="number"
+                 step="0.01"
+                 value="${values.debt||''}">
+        </div>
+
+        <div class="field full">
+          <label>Valor neto</label>
+          <input name="aosAsset${n}NetValue"
+                 type="number"
+                 step="0.01"
+                 value="${values.netValue||''}">
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(wrap);
+    updateProgress();
+  }
+
+
+  function rebuildAOSFinancial(answers){
+    if(!answers || typeof answers!=='object') return;
+
+    function nums(pattern){
+      return [...new Set(
+        Object.keys(answers)
+          .map(function(key){
+            const m=key.match(pattern);
+            return m ? Number(m[1]) : null;
+          })
+          .filter(function(n){ return Number.isFinite(n); })
+      )].sort(function(a,b){ return a-b; });
+    }
+
+    const household=nums(/^aosHousehold(\d+)/);
+    const taxes=nums(/^aosTax(\d+)/);
+    const assets=nums(/^aosAsset(\d+)/);
+
+
+    const householdList=document.getElementById('householdMembersList');
+
+    if(householdList && household.length){
+      householdList.innerHTML='';
+      aosHouseholdIndex=0;
+
+      household.forEach(function(n){
+        addHouseholdMemberRow({
+          name:answers['aosHousehold'+n+'Name']||'',
+          relationship:answers['aosHousehold'+n+'Relationship']||'',
+          income:answers['aosHousehold'+n+'Income']||'',
+          sameResidence:answers['aosHousehold'+n+'SameResidence']||'',
+          i864a:answers['aosHousehold'+n+'I864A']||''
+        });
+      });
+    }
+
+
+    const taxList=document.getElementById('taxYearsList');
+
+    if(taxList && taxes.length){
+      taxList.innerHTML='';
+      aosTaxIndex=0;
+
+      taxes.forEach(function(n){
+        addTaxYearRow({
+          year:answers['aosTax'+n+'Year']||'',
+          totalIncome:answers['aosTax'+n+'TotalIncome']||'',
+          evidence:answers['aosTax'+n+'Evidence']||''
+        });
+      });
+    }
+
+
+    const assetList=document.getElementById('assetsList');
+
+    if(assetList && assets.length){
+      assetList.innerHTML='';
+      aosAssetIndex=0;
+
+      assets.forEach(function(n){
+        addAssetRow({
+          owner:answers['aosAsset'+n+'Owner']||'',
+          type:answers['aosAsset'+n+'Type']||'',
+          value:answers['aosAsset'+n+'Value']||'',
+          debt:answers['aosAsset'+n+'Debt']||'',
+          netValue:answers['aosAsset'+n+'NetValue']||''
+        });
+      });
+    }
+  }
+
+  function calculateProgress(){
+    const controls=Array.from(
+      form.querySelectorAll('input[name], select[name], textarea[name]')
+    ).filter(function(el){
+      if(el.disabled) return false;
+      if(el.closest('.hidden')) return false;
+
+      if(
+        el.type==='hidden' ||
+        el.type==='submit' ||
+        el.type==='button' ||
+        el.type==='reset'
+      ){
+        return false;
+      }
+
+      return true;
+    });
+
+    const names=[
+      ...new Set(
+        controls
+          .map(function(el){
+            return el.name;
+          })
+          .filter(Boolean)
+      )
+    ];
+
+    let total=0;
+    let completed=0;
+
+    names.forEach(function(name){
+      const group=controls.filter(function(el){
+        return el.name===name;
+      });
+
+      if(!group.length) return;
+
+      total++;
+
+      const first=group[0];
+      let hasValue=false;
+
+      if(
+        first.type==='radio' ||
+        first.type==='checkbox'
+      ){
+        hasValue=group.some(function(el){
+          return el.checked;
+        });
+      }else{
+        hasValue=group.some(function(el){
+          return String(el.value||'').trim()!=='';
+        });
+      }
+
+      if(hasValue){
+        completed++;
+      }
+    });
+
+    if(!total){
+      return 0;
+    }
+
+    return Math.round(
+      (completed/total)*100
+    );
+  }
+
+
+  function updateProgress(){
+    const progress=calculateProgress();
+
+    progressBar.style.width=progress+'%';
+    progressText.textContent='Progreso '+progress+'%';
+
+    return progress;
+  }
+
+
+  function updateConditionalFields(){
+
+    const mailingSameAsPhysical=document.getElementById('mailingSameAsPhysical');
+    const mailingAddressWrap=document.getElementById('mailingAddressWrap');
+
+    if(mailingSameAsPhysical && mailingAddressWrap){
+      mailingAddressWrap.classList.toggle(
+        'hidden',
+        mailingSameAsPhysical.value!=='no'
+      );
+    }
+
+
+    const everInRemovalProceedings=document.getElementById('everInRemovalProceedings');
+    const removalProceedingsDetailsWrap=document.getElementById('removalProceedingsDetailsWrap');
+
+    if(everInRemovalProceedings && removalProceedingsDetailsWrap){
+      removalProceedingsDetailsWrap.classList.toggle(
+        'hidden',
+        everInRemovalProceedings.value!=='yes'
+      );
+    }
+
+
+    const currentMaritalStatus=document.getElementById('currentMaritalStatus');
+    const currentSpouseWrap=document.getElementById('currentSpouseWrap');
+
+    if(currentMaritalStatus && currentSpouseWrap){
+      currentSpouseWrap.classList.toggle(
+        'hidden',
+        currentMaritalStatus.value!=='married'
+      );
+    }
+
+
+    const priorMarriageExists=document.getElementById('priorMarriageExists');
+    const priorMarriageWrap=document.getElementById('priorMarriageWrap');
+
+    if(priorMarriageExists && priorMarriageWrap){
+      priorMarriageWrap.classList.toggle(
+        'hidden',
+        priorMarriageExists.value!=='yes'
+      );
+    }
+
+
+    const hasChildren=document.getElementById('hasChildren');
+    const childrenDetailsWrap=document.getElementById('childrenDetailsWrap');
+
+    if(hasChildren && childrenDetailsWrap){
+      childrenDetailsWrap.classList.toggle(
+        'hidden',
+        hasChildren.value!=='yes'
+      );
+    }
+
+
+    const previousI765=document.getElementById('previousI765');
+    const previousI765Wrap=document.getElementById('previousI765Wrap');
+
+    if(previousI765 && previousI765Wrap){
+      previousI765Wrap.classList.toggle(
+        'hidden',
+        previousI765.value!=='yes'
+      );
+    }
+
+
+    const samePetitionerSponsor=document.getElementById('samePetitionerSponsor');
+    const separateSponsorWrap=document.getElementById('separateSponsorWrap');
+
+    if(samePetitionerSponsor && separateSponsorWrap){
+      separateSponsorWrap.classList.toggle(
+        'hidden',
+        samePetitionerSponsor.value!=='no'
+      );
+    }
+
+  }
+
+  async function saveIntake(showMessage){
+    const answers=getAnswers();
+    const progress=updateProgress();
+
+    saveBtn.disabled=true;
+    submitBtn.disabled=true;
+
+    if(showMessage){
+      showStatus('Guardando información...','');
+    }
+
+    try{
+
+      const response=await fetch(
+        API+'/api/intake-save',
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify({
+            token:token,
+            answers:answers,
+            progress:progress
+          })
+        }
+      );
+
+      const result=await response.json();
+
+      if(!response.ok || !result.ok){
+        throw new Error(
+          result.error || 'No se pudo guardar la información.'
+        );
+      }
+
+      currentStatus=
+        result.intake &&
+        result.intake.status
+          ? result.intake.status
+          : 'draft';
+
+      if(showMessage){
+        showStatus(
+          '✓ Información guardada. Puede cerrar esta página y continuar después usando el mismo enlace.',
+          'success'
+        );
+      }
+
+      return true;
+
+    }catch(err){
+
+      console.error(err);
+
+      if(showMessage){
+        showStatus(
+          err.message || 'No se pudo guardar la información.',
+          'error'
+        );
+      }
+
+      return false;
+
+    }finally{
+
+      saveBtn.disabled=false;
+      submitBtn.disabled=false;
+
+    }
+  }
+
+
+  async function submitIntake(){
+
+    const saved=await saveIntake(false);
+
+    if(!saved){
+      showStatus(
+        'No pudimos guardar el formulario. Intente nuevamente.',
+        'error'
+      );
+      return;
+    }
+
+    const confirmed=window.confirm(
+      '¿Está seguro/a de que desea enviar este intake a AGR Solutions LLC? Podrá hacer cambios posteriormente, pero AGR tendrá que revisarlos nuevamente.'
+    );
+
+    if(!confirmed){
+      return;
+    }
+
+    saveBtn.disabled=true;
+    submitBtn.disabled=true;
+    submitBtn.textContent='Enviando...';
+
+    try{
+
+      const response=await fetch(
+        API+'/api/intake-submit',
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify({
+            token:token
+          })
+        }
+      );
+
+      const result=await response.json();
+
+      if(!response.ok || !result.ok){
+        throw new Error(
+          result.error || 'No se pudo enviar el intake.'
+        );
+      }
+
+      currentStatus='pending_review';
+
+      showStatus(
+        '✓ Su intake fue enviado correctamente a AGR Solutions LLC. AGR revisará la información.',
+        'success'
+      );
+
+      submitBtn.textContent='Intake enviado';
+      submitBtn.disabled=true;
+      saveBtn.disabled=false;
+
+      window.scrollTo({
+        top:document.body.scrollHeight,
+        behavior:'smooth'
+      });
+
+    }catch(err){
+
+      console.error(err);
+
+      showStatus(
+        err.message || 'No se pudo enviar el intake.',
+        'error'
+      );
+
+      submitBtn.disabled=false;
+      submitBtn.textContent='Enviar intake a AGR';
+      saveBtn.disabled=false;
+    }
+  }
+
+
+  async function loadIntake(){
+
+    if(!token){
+      showError(
+        'Este enlace no contiene un token válido. Solicite un nuevo enlace a AGR Solutions LLC.'
+      );
+      return;
+    }
+
+    try{
+
+      const response=await fetch(
+        API+'/api/intake-get?token='+
+        encodeURIComponent(token),
+        {
+          method:'GET'
+        }
+      );
+
+      const result=await response.json();
+
+      if(!response.ok || !result.ok || !result.intake){
+        throw new Error(
+          result.error ||
+          'El enlace no es válido o ya no está disponible.'
+        );
+      }
+
+      const intake=result.intake;
+
+      currentStatus=intake.status || 'not_sent';
+
+      if(
+        intake.prefill &&
+        intake.prefill.clientName
+      ){
+        const welcome=
+          document.getElementById('clientWelcome');
+
+        welcome.textContent=
+          'Formulario preparado para: '+
+          intake.prefill.clientName;
+
+        welcome.classList.remove('hidden');
+      }
+
+      if(intake.prefill){
+        if(
+          intake.prefill.aNumber &&
+          form.elements.applicantANumber &&
+          !form.elements.applicantANumber.value
+        ){
+          form.elements.applicantANumber.value=
+            intake.prefill.aNumber;
+        }
+      }
+      rebuildDynamicHistory(intake.answers || {});
+      rebuildFamilyHistory(intake.answers || {});
+      rebuildDynamicHistory(intake.answers || {});
+      rebuildFamilyHistory(intake.answers || {});
+      rebuildOtherNames(intake.answers || {});
+      rebuildAOSFinancial(intake.answers || {});
+      fillAnswers(intake.answers || {});
+
+      updateProgress();
+
+      loading.classList.add('hidden');
+      formArea.classList.remove('hidden');
+
+      if(currentStatus==='pending_review'){
+        showStatus(
+          'Este intake ya fue enviado a AGR. Puede actualizar información si es necesario; cualquier cambio requerirá una nueva revisión.',
+          'success'
+        );
+      }
+
+      if(currentStatus==='reviewed'){
+        showStatus(
+          'Este intake ya fue revisado por AGR. Si modifica información, el caso volverá a requerir revisión.',
+          'success'
+        );
+      }
+
+    }catch(err){
+
+      console.error(err);
+
+      showError(
+        err.message ||
+        'No pudimos abrir este formulario. Solicite ayuda a AGR Solutions LLC.'
+      );
+    }
+  }
+
+
+  form.addEventListener(
+    'input',
+    function(){
+      updateProgress();
+    }
+  );
+
+
+  [
+    'mailingSameAsPhysical',
+    'everInRemovalProceedings',
+    'currentMaritalStatus',
+    'priorMarriageExists',
+    'hasChildren',
+    'previousI765',
+    'samePetitionerSponsor'
+  ].forEach(function(id){
+
+    const el=document.getElementById(id);
+
+    if(el){
+      el.addEventListener(
+        'change',
+        updateConditionalFields
+      );
+    }
+
+  });
+
+
+  document.getElementById('addOtherNameBtn')
+    ?.addEventListener('click',function(){
+      addOtherNameRow();
+    });
+
+
+  document.getElementById('addAddressBtn')
+    ?.addEventListener('click',function(){
+      addAddressRow();
+    });
+
+
+  document.getElementById('addEmploymentBtn')
+    ?.addEventListener('click',function(){
+      addEmploymentRow();
+    });
+
+
+  document.getElementById('addPriorMarriageBtn')
+    ?.addEventListener('click',function(){
+      addPriorMarriageRow();
+    });
+
+
+  document.getElementById('addChildBtn')
+    ?.addEventListener('click',function(){
+      addChildRow();
+    });
+
+
+  document.getElementById('addHouseholdMemberBtn')
+    ?.addEventListener('click',function(){
+      addHouseholdMemberRow();
+    });
+
+
+  document.getElementById('addTaxYearBtn')
+    ?.addEventListener('click',function(){
+      addTaxYearRow();
+    });
+
+
+  document.getElementById('addAssetBtn')
+    ?.addEventListener('click',function(){
+      addAssetRow();
+    });
+
+
+  const priorMarriageExists=document.getElementById('priorMarriageExists');
+
+  if(priorMarriageExists){
+    priorMarriageExists.addEventListener(
+      'change',
+      function(){
+
+        const list=document.getElementById('priorMarriageList');
+
+        if(
+          this.value==='yes' &&
+          list &&
+          list.children.length===0
+        ){
+          addPriorMarriageRow();
+        }
+
+      }
+    );
+  }
+
+
+  const hasChildren=document.getElementById('hasChildren');
+
+  if(hasChildren){
+    hasChildren.addEventListener(
+      'change',
+      function(){
+
+        const list=document.getElementById('childrenList');
+
+        if(
+          this.value==='yes' &&
+          list &&
+          list.children.length===0
+        ){
+          addChildRow();
+        }
+
+      }
+    );
+  }
+
+
+  if(document.getElementById('addressHistoryList')){
+    addAddressRow();
+  }
+
+  if(document.getElementById('employmentHistoryList')){
+    addEmploymentRow();
+  }
+
+  if(document.getElementById('taxYearsList')){
+    addTaxYearRow();
+    addTaxYearRow();
+    addTaxYearRow();
+  }
+
+  saveBtn.addEventListener(
+    'click',
+    function(){
+      saveIntake(true);
+    }
+  );
+
+
+  submitBtn.addEventListener(
+    'click',
+    submitIntake
+  );
+
+
+  loadIntake();
+
+})();
+</script>
+
+</body>
+</html>
