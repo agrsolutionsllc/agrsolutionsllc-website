@@ -266,6 +266,55 @@
     padding:22px;
   }
 
+
+  /* I130-SUPPLEMENTAL-STYLE */
+
+  .i130-subblock{
+    margin-top:28px;
+    padding-top:22px;
+    border-top:1px solid #e2e8f0;
+  }
+
+  .i130-subblock h3{
+    margin:0 0 8px;
+    color:#071d45;
+    font-size:18px;
+  }
+
+  .i130-subblock .helper{
+    margin:0 0 16px;
+    color:#64748b;
+    font-size:14px;
+  }
+
+  .i130-dynamic-row{
+    margin:14px 0;
+    padding:18px;
+    border:1px solid #dfe5ee;
+    border-radius:12px;
+    background:#f8fafc;
+  }
+
+  .i130-dynamic-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:14px;
+  }
+
+  .i130-dynamic-head strong{
+    color:#071d45;
+  }
+
+  .i130-remove-row{
+    border:0;
+    background:transparent;
+    color:#a33;
+    cursor:pointer;
+    font-weight:700;
+  }
+
 </style>
 </head>
 
@@ -509,7 +558,128 @@
           </div>
 
         </div>
-      </section>
+      
+        <!-- I130-PETITIONER-SUPPLEMENTAL -->
+
+        <div class="i130-subblock">
+          <h3>Otros nombres utilizados</h3>
+          <p class="helper">
+            Incluya nombres de nacimiento, nombres anteriores, apellidos de matrimonio
+            u otros nombres utilizados.
+          </p>
+
+          <div id="petOtherNamesList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="petOtherName">
+            + Agregar otro nombre
+          </button>
+        </div>
+
+
+        <div class="i130-subblock">
+          <h3>Estado civil y matrimonios</h3>
+
+          <div class="grid">
+
+            <div class="field full">
+              <label for="petitionerMaritalStatus">
+                Estado civil actual
+              </label>
+
+              <select id="petitionerMaritalStatus"
+                      name="petitionerMaritalStatus">
+
+                <option value="">Seleccione</option>
+                <option value="single">Soltero/a</option>
+                <option value="married">Casado/a</option>
+                <option value="divorced">Divorciado/a</option>
+                <option value="widowed">Viudo/a</option>
+
+              </select>
+            </div>
+
+
+            <div class="field full hidden"
+                 id="petitionerCurrentSpouseWrap">
+
+              <label>Nombre legal completo del cónyuge actual</label>
+              <input name="petitionerCurrentSpouseName">
+
+              <label>Fecha del matrimonio</label>
+              <input name="petitionerCurrentMarriageDate"
+                     type="date">
+
+              <label>Lugar del matrimonio</label>
+              <input name="petitionerCurrentMarriagePlace">
+
+            </div>
+
+          </div>
+
+
+          <h3 style="margin-top:24px">Matrimonios anteriores</h3>
+
+          <div id="petPriorMarriagesList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="petPriorMarriage">
+            + Agregar matrimonio anterior
+          </button>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Hijos del peticionario</h3>
+
+          <p class="helper">
+            Información complementaria para revisión del caso por AGR.
+          </p>
+
+          <div id="petChildrenList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="petChild">
+            + Agregar hijo
+          </button>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Historial de direcciones</h3>
+
+          <div id="petAddressesList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="petAddress">
+            + Agregar dirección anterior
+          </button>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Historial de empleo</h3>
+
+          <div id="petEmploymentList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="petEmployment">
+            + Agregar empleo
+          </button>
+
+        </div>
+</section>
 
 
       <section class="card">
@@ -631,7 +801,137 @@
           </div>
 
         </div>
-      </section>
+      
+        <!-- I130-BENEFICIARY-SUPPLEMENTAL -->
+
+        <div class="i130-subblock">
+
+          <h3>Otros nombres utilizados</h3>
+
+          <p class="helper">
+            Incluya nombre de nacimiento, nombres anteriores,
+            apellidos de matrimonio y cualquier otro nombre utilizado.
+          </p>
+
+          <div id="benOtherNamesList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="benOtherName">
+            + Agregar otro nombre
+          </button>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Estado civil y matrimonios</h3>
+
+          <div class="grid">
+
+            <div class="field full">
+
+              <label for="beneficiaryMaritalStatus">
+                Estado civil actual
+              </label>
+
+              <select id="beneficiaryMaritalStatus"
+                      name="beneficiaryMaritalStatus">
+
+                <option value="">Seleccione</option>
+                <option value="single">Soltero/a</option>
+                <option value="married">Casado/a</option>
+                <option value="divorced">Divorciado/a</option>
+                <option value="widowed">Viudo/a</option>
+
+              </select>
+
+            </div>
+
+
+            <div class="field full hidden"
+                 id="beneficiaryCurrentSpouseWrap">
+
+              <label>Nombre legal completo del cónyuge actual</label>
+              <input name="beneficiaryCurrentSpouseName">
+
+              <label>Fecha del matrimonio</label>
+              <input name="beneficiaryCurrentMarriageDate"
+                     type="date">
+
+              <label>Lugar del matrimonio</label>
+              <input name="beneficiaryCurrentMarriagePlace">
+
+            </div>
+
+          </div>
+
+
+          <h3 style="margin-top:24px">
+            Matrimonios anteriores
+          </h3>
+
+          <div id="benPriorMarriagesList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="benPriorMarriage">
+            + Agregar matrimonio anterior
+          </button>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Hijos del beneficiario</h3>
+
+          <p class="helper">
+            Incluya todos los hijos, independientemente de su edad,
+            lugar de residencia o si inmigrarán con el beneficiario.
+          </p>
+
+          <div id="benChildrenList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="benChild">
+            + Agregar hijo
+          </button>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Historial de direcciones</h3>
+
+          <div id="benAddressesList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="benAddress">
+            + Agregar dirección anterior
+          </button>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Historial de empleo</h3>
+
+          <div id="benEmploymentList"></div>
+
+          <button type="button"
+                  class="secondary"
+                  data-add-i130="benEmployment">
+            + Agregar empleo
+          </button>
+
+        </div>
+</section>
 
 
       <section class="card">
@@ -1196,7 +1496,9 @@
         }
       }
 
-      fillAnswers(intake.answers || {});
+      rebuildI130Supplemental(intake.answers || {});
+fillAnswers(intake.answers || {});
+updateI130MaritalFields();
 
       updateProgress();
 
@@ -1319,6 +1621,370 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 
 });
+</script>
+
+
+<script>
+/* I130-SUPPLEMENTAL-SCRIPT */
+
+(function(){
+
+  const counters={};
+
+
+  const configs={
+
+    petOtherName:{
+      container:'petOtherNamesList',
+      title:'Otro nombre',
+      fields:[
+        ['Last','Apellido','text'],
+        ['First','Nombre','text'],
+        ['Middle','Segundo nombre','text']
+      ]
+    },
+
+    benOtherName:{
+      container:'benOtherNamesList',
+      title:'Otro nombre',
+      fields:[
+        ['Last','Apellido','text'],
+        ['First','Nombre','text'],
+        ['Middle','Segundo nombre','text']
+      ]
+    },
+
+
+    petPriorMarriage:{
+      container:'petPriorMarriagesList',
+      title:'Matrimonio anterior',
+      fields:[
+        ['Spouse','Nombre completo del ex cónyuge','text'],
+        ['MarriageDate','Fecha del matrimonio','date'],
+        ['MarriagePlace','Lugar del matrimonio','text'],
+        ['EndDate','Fecha de terminación','date'],
+        ['EndedBy','Cómo terminó el matrimonio','text']
+      ]
+    },
+
+    benPriorMarriage:{
+      container:'benPriorMarriagesList',
+      title:'Matrimonio anterior',
+      fields:[
+        ['Spouse','Nombre completo del ex cónyuge','text'],
+        ['MarriageDate','Fecha del matrimonio','date'],
+        ['MarriagePlace','Lugar del matrimonio','text'],
+        ['EndDate','Fecha de terminación','date'],
+        ['EndedBy','Cómo terminó el matrimonio','text']
+      ]
+    },
+
+
+    petChild:{
+      container:'petChildrenList',
+      title:'Hijo',
+      fields:[
+        ['Name','Nombre legal completo','text'],
+        ['DOB','Fecha de nacimiento','date'],
+        ['BirthCountry','País de nacimiento','text'],
+        ['ResidenceCountry','País de residencia actual','text']
+      ]
+    },
+
+    benChild:{
+      container:'benChildrenList',
+      title:'Hijo',
+      fields:[
+        ['Name','Nombre legal completo','text'],
+        ['DOB','Fecha de nacimiento','date'],
+        ['BirthCountry','País de nacimiento','text'],
+        ['ResidenceCountry','País de residencia actual','text']
+      ]
+    },
+
+
+    petAddress:{
+      container:'petAddressesList',
+      title:'Dirección anterior',
+      fields:[
+        ['Street','Dirección','text'],
+        ['City','Ciudad','text'],
+        ['State','Estado / Provincia','text'],
+        ['Country','País','text'],
+        ['From','Desde','date'],
+        ['To','Hasta','date']
+      ]
+    },
+
+    benAddress:{
+      container:'benAddressesList',
+      title:'Dirección anterior',
+      fields:[
+        ['Street','Dirección','text'],
+        ['City','Ciudad','text'],
+        ['State','Estado / Provincia','text'],
+        ['Country','País','text'],
+        ['From','Desde','date'],
+        ['To','Hasta','date']
+      ]
+    },
+
+
+    petEmployment:{
+      container:'petEmploymentList',
+      title:'Empleo',
+      fields:[
+        ['Employer','Empleador','text'],
+        ['Occupation','Ocupación','text'],
+        ['City','Ciudad','text'],
+        ['State','Estado / Provincia','text'],
+        ['Country','País','text'],
+        ['From','Desde','date'],
+        ['To','Hasta','date']
+      ]
+    },
+
+    benEmployment:{
+      container:'benEmploymentList',
+      title:'Empleo',
+      fields:[
+        ['Employer','Empleador','text'],
+        ['Occupation','Ocupación','text'],
+        ['City','Ciudad','text'],
+        ['State','Estado / Provincia','text'],
+        ['Country','País','text'],
+        ['From','Desde','date'],
+        ['To','Hasta','date']
+      ]
+    }
+
+  };
+
+
+  function addI130SupplementalRow(kind,values={}){
+
+    const config=configs[kind];
+    if(!config) return;
+
+    const list=document.getElementById(config.container);
+    if(!list) return;
+
+    counters[kind]=(counters[kind]||0)+1;
+
+    const n=counters[kind];
+
+    const row=document.createElement('div');
+    row.className='i130-dynamic-row';
+
+    const head=document.createElement('div');
+    head.className='i130-dynamic-head';
+
+    head.innerHTML=
+      '<strong>'+config.title+' '+n+'</strong>'+
+      '<button type="button" class="i130-remove-row">Eliminar</button>';
+
+    row.appendChild(head);
+
+    const grid=document.createElement('div');
+    grid.className='grid';
+
+    config.fields.forEach(function(field){
+
+      const suffix=field[0];
+      const label=field[1];
+      const type=field[2];
+
+      const wrap=document.createElement('div');
+      wrap.className='field';
+
+      const lab=document.createElement('label');
+      lab.textContent=label;
+
+      const input=document.createElement('input');
+      input.type=type;
+      input.name=kind+n+suffix;
+      input.value=values[suffix]||'';
+
+      wrap.appendChild(lab);
+      wrap.appendChild(input);
+
+      grid.appendChild(wrap);
+
+    });
+
+    row.appendChild(grid);
+
+    head.querySelector('.i130-remove-row')
+      ?.addEventListener('click',function(){
+
+        row.remove();
+
+        if(typeof updateProgress==='function'){
+          updateProgress();
+        }
+
+      });
+
+    list.appendChild(row);
+
+    if(typeof updateProgress==='function'){
+      updateProgress();
+    }
+
+  }
+
+
+  function rebuildI130Supplemental(answers){
+
+    if(!answers || typeof answers!=='object') return;
+
+    Object.keys(configs).forEach(function(kind){
+
+      const config=configs[kind];
+
+      const numbers=[...new Set(
+
+        Object.keys(answers)
+          .map(function(key){
+
+            const m=key.match(
+              new RegExp(
+                '^'+kind+'(\\d+)'
+              )
+            );
+
+            return m ? Number(m[1]) : null;
+
+          })
+          .filter(Number.isFinite)
+
+      )].sort(function(a,b){
+        return a-b;
+      });
+
+
+      if(!numbers.length) return;
+
+      const list=document.getElementById(config.container);
+
+      if(!list) return;
+
+      list.innerHTML='';
+      counters[kind]=0;
+
+
+      numbers.forEach(function(oldNumber){
+
+        const values={};
+
+        config.fields.forEach(function(field){
+
+          const suffix=field[0];
+
+          values[suffix]=
+            answers[kind+oldNumber+suffix]||'';
+
+        });
+
+        addI130SupplementalRow(kind,values);
+
+      });
+
+    });
+
+  }
+
+
+  window.rebuildI130Supplemental=rebuildI130Supplemental;
+
+
+  function updateI130MaritalFields(){
+
+    const pet=document.getElementById(
+      'petitionerMaritalStatus'
+    );
+
+    const petWrap=document.getElementById(
+      'petitionerCurrentSpouseWrap'
+    );
+
+    if(pet && petWrap){
+
+      petWrap.classList.toggle(
+        'hidden',
+        pet.value!=='married'
+      );
+
+    }
+
+
+    const ben=document.getElementById(
+      'beneficiaryMaritalStatus'
+    );
+
+    const benWrap=document.getElementById(
+      'beneficiaryCurrentSpouseWrap'
+    );
+
+    if(ben && benWrap){
+
+      benWrap.classList.toggle(
+        'hidden',
+        ben.value!=='married'
+      );
+
+    }
+
+  }
+
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+      document.querySelectorAll(
+        '[data-add-i130]'
+      ).forEach(function(btn){
+
+        btn.addEventListener(
+          'click',
+          function(){
+
+            addI130SupplementalRow(
+              btn.dataset.addI130
+            );
+
+          }
+        );
+
+      });
+
+
+      [
+        'petitionerMaritalStatus',
+        'beneficiaryMaritalStatus'
+      ].forEach(function(id){
+
+        document.getElementById(id)
+          ?.addEventListener(
+            'change',
+            updateI130MaritalFields
+          );
+
+      });
+
+
+      updateI130MaritalFields();
+
+    }
+  );
+
+
+  window.updateI130MaritalFields=
+    updateI130MaritalFields;
+
+})();
+
 </script>
 
 </body>
