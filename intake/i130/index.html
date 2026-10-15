@@ -315,6 +315,16 @@
     font-weight:700;
   }
 
+
+  /* I130-COUNT-BUTTONS-HIDDEN */
+
+  [data-add-i130="petPriorMarriage"],
+  [data-add-i130="benPriorMarriage"],
+  [data-add-i130="petChild"],
+  [data-add-i130="benChild"]{
+    display:none !important;
+  }
+
 </style>
 </head>
 
@@ -601,6 +611,26 @@
             </div>
 
 
+            <div class="field full">
+              <label for="petitionerMarriageCount">
+                ¿Cuántas veces se ha casado en total?
+              </label>
+
+              <input id="petitionerMarriageCount"
+                     name="petitionerMarriageCount"
+                     type="number"
+                     min="0"
+                     max="20"
+                     step="1"
+                     required
+                     placeholder="Ej. 3">
+
+              <small>
+                Incluya el matrimonio actual y todos los matrimonios anteriores.
+                Si nunca se ha casado, escriba 0.
+              </small>
+            </div>
+
             <div class="field full hidden"
                  id="petitionerCurrentSpouseWrap">
 
@@ -640,7 +670,25 @@
             Información complementaria para revisión del caso por AGR.
           </p>
 
-          <div id="petChildrenList"></div>
+                    <div class="field full">
+            <label for="petitionerChildrenCount">
+              ¿Cuántos hijos tiene en total?
+            </label>
+
+            <input id="petitionerChildrenCount"
+                   name="petitionerChildrenCount"
+                   type="number"
+                   min="0"
+                   max="30"
+                   step="1"
+                   required
+                   placeholder="Ej. 3">
+
+            <small>
+              Incluya todos sus hijos. Si no tiene hijos, escriba 0.
+            </small>
+          </div>
+<div id="petChildrenList"></div>
 
           <button type="button"
                   class="secondary"
@@ -850,6 +898,26 @@
             </div>
 
 
+            <div class="field full">
+              <label for="beneficiaryMarriageCount">
+                ¿Cuántas veces se ha casado en total?
+              </label>
+
+              <input id="beneficiaryMarriageCount"
+                     name="beneficiaryMarriageCount"
+                     type="number"
+                     min="0"
+                     max="20"
+                     step="1"
+                     required
+                     placeholder="Ej. 3">
+
+              <small>
+                Incluya el matrimonio actual y todos los matrimonios anteriores.
+                Si nunca se ha casado, escriba 0.
+              </small>
+            </div>
+
             <div class="field full hidden"
                  id="beneficiaryCurrentSpouseWrap">
 
@@ -892,7 +960,25 @@
             lugar de residencia o si inmigrarán con el beneficiario.
           </p>
 
-          <div id="benChildrenList"></div>
+                    <div class="field full">
+            <label for="beneficiaryChildrenCount">
+              ¿Cuántos hijos tiene en total?
+            </label>
+
+            <input id="beneficiaryChildrenCount"
+                   name="beneficiaryChildrenCount"
+                   type="number"
+                   min="0"
+                   max="30"
+                   step="1"
+                   required
+                   placeholder="Ej. 3">
+
+            <small>
+              Incluya todos sus hijos. Si no tiene hijos, escriba 0.
+            </small>
+          </div>
+<div id="benChildrenList"></div>
 
           <button type="button"
                   class="secondary"
@@ -1499,6 +1585,7 @@
       rebuildI130Supplemental(intake.answers || {});
 fillAnswers(intake.answers || {});
 updateI130MaritalFields();
+syncI130Counts();
 
       updateProgress();
 
@@ -1982,6 +2069,224 @@ document.addEventListener('DOMContentLoaded',function(){
 
   window.updateI130MaritalFields=
     updateI130MaritalFields;
+
+})();
+
+</script>
+
+
+<script>
+/* I130-AUTO-COUNTS */
+
+(function(){
+
+  function rowCount(containerId){
+    return document
+      .getElementById(containerId)
+      ?.querySelectorAll('.i130-dynamic-row')
+      .length || 0;
+  }
+
+
+  function removeLastRow(containerId){
+
+    const list=document.getElementById(containerId);
+    if(!list) return;
+
+    const rows=list.querySelectorAll('.i130-dynamic-row');
+
+    if(rows.length){
+      rows[rows.length-1].remove();
+    }
+
+  }
+
+
+  function clickAdd(kind){
+
+    document
+      .querySelector('[data-add-i130="'+kind+'"]')
+      ?.click();
+
+  }
+
+
+  function setExactRows(containerId,kind,wanted){
+
+    wanted=Math.max(0,Number(wanted)||0);
+
+    let current=rowCount(containerId);
+
+    while(current<wanted){
+      clickAdd(kind);
+      current++;
+    }
+
+    while(current>wanted){
+      removeLastRow(containerId);
+      current--;
+    }
+
+  }
+
+
+  function syncMarriageCount(
+    statusId,
+    countId,
+    containerId,
+    kind
+  ){
+
+    const status=document.getElementById(statusId);
+    const count=document.getElementById(countId);
+
+    if(!status || !count) return;
+
+    const state=status.value;
+
+    if(state==='single'){
+
+      count.min='0';
+
+      if(count.value===''){
+        count.value='0';
+      }
+
+      setExactRows(containerId,kind,0);
+      return;
+    }
+
+
+    if(
+      state==='married' ||
+      state==='divorced' ||
+      state==='widowed'
+    ){
+
+      count.min='1';
+
+      if(
+        count.value!=='' &&
+        Number(count.value)<1
+      ){
+        count.value='1';
+      }
+
+    }
+
+
+    const total=Math.max(
+      0,
+      Number(count.value)||0
+    );
+
+
+    let previous=total;
+
+    if(state==='married'){
+      previous=Math.max(0,total-1);
+    }
+
+    setExactRows(
+      containerId,
+      kind,
+      previous
+    );
+
+  }
+
+
+  function syncChildrenCount(
+    countId,
+    containerId,
+    kind
+  ){
+
+    const input=document.getElementById(countId);
+    if(!input) return;
+
+    const total=Math.max(
+      0,
+      Number(input.value)||0
+    );
+
+    setExactRows(
+      containerId,
+      kind,
+      total
+    );
+
+  }
+
+
+  function syncI130Counts(){
+
+    syncMarriageCount(
+      'petitionerMaritalStatus',
+      'petitionerMarriageCount',
+      'petPriorMarriagesList',
+      'petPriorMarriage'
+    );
+
+    syncMarriageCount(
+      'beneficiaryMaritalStatus',
+      'beneficiaryMarriageCount',
+      'benPriorMarriagesList',
+      'benPriorMarriage'
+    );
+
+
+    syncChildrenCount(
+      'petitionerChildrenCount',
+      'petChildrenList',
+      'petChild'
+    );
+
+    syncChildrenCount(
+      'beneficiaryChildrenCount',
+      'benChildrenList',
+      'benChild'
+    );
+
+  }
+
+
+  window.syncI130Counts=syncI130Counts;
+
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+      [
+        'petitionerMaritalStatus',
+        'petitionerMarriageCount',
+        'beneficiaryMaritalStatus',
+        'beneficiaryMarriageCount',
+        'petitionerChildrenCount',
+        'beneficiaryChildrenCount'
+      ].forEach(function(id){
+
+        const el=document.getElementById(id);
+
+        if(!el) return;
+
+        el.addEventListener(
+          'change',
+          syncI130Counts
+        );
+
+        el.addEventListener(
+          'input',
+          syncI130Counts
+        );
+
+      });
+
+      syncI130Counts();
+
+    }
+  );
 
 })();
 
