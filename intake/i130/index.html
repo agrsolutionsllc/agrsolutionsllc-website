@@ -325,6 +325,16 @@
     display:none !important;
   }
 
+
+  /* I130-HIDE-MANAGED-REMOVE */
+
+  #petChildrenList .i130-remove-row,
+  #benChildrenList .i130-remove-row,
+  #petPriorMarriagesList .i130-remove-row,
+  #benPriorMarriagesList .i130-remove-row{
+    display:none !important;
+  }
+
 </style>
 </head>
 
@@ -3737,6 +3747,138 @@ document.addEventListener('DOMContentLoaded',function(){
       });
 
       updateI130FinalConditions();
+
+    }
+  );
+
+})();
+
+</script>
+
+
+<script>
+/* I130-RENUMBER-COUNTED-ROWS */
+
+(function(){
+
+  const managedKinds={
+    petChild:{
+      container:'petChildrenList',
+      title:'Hijo'
+    },
+    benChild:{
+      container:'benChildrenList',
+      title:'Hijo'
+    },
+    petPriorMarriage:{
+      container:'petPriorMarriagesList',
+      title:'Matrimonio anterior'
+    },
+    benPriorMarriage:{
+      container:'benPriorMarriagesList',
+      title:'Matrimonio anterior'
+    }
+  };
+
+
+  function renumberManagedRows(kind){
+
+    const config=managedKinds[kind];
+    if(!config) return;
+
+    const list=document.getElementById(config.container);
+    if(!list) return;
+
+    const rows=[
+      ...list.querySelectorAll('.i130-dynamic-row')
+    ];
+
+    rows.forEach(function(row,index){
+
+      const number=index+1;
+
+      const heading=row.querySelector(
+        '.i130-dynamic-head strong'
+      );
+
+      if(heading){
+        heading.textContent=
+          config.title+' '+number;
+      }
+
+
+      row.querySelectorAll(
+        'input[name], select[name], textarea[name]'
+      ).forEach(function(field){
+
+        const oldName=field.name || '';
+
+        const match=oldName.match(
+          new RegExp(
+            '^'+kind+'\\d+(.+)$'
+          )
+        );
+
+        if(match){
+          field.name=
+            kind+number+match[1];
+        }
+
+      });
+
+    });
+
+  }
+
+
+  function renumberAllManagedRows(){
+
+    Object.keys(managedKinds)
+      .forEach(renumberManagedRows);
+
+  }
+
+
+  window.renumberManagedRows=
+    renumberManagedRows;
+
+  window.renumberAllManagedRows=
+    renumberAllManagedRows;
+
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+      const observer=
+        new MutationObserver(function(){
+
+          renumberAllManagedRows();
+
+        });
+
+
+      Object.values(managedKinds)
+        .forEach(function(config){
+
+          const list=
+            document.getElementById(
+              config.container
+            );
+
+          if(!list) return;
+
+          observer.observe(
+            list,
+            {
+              childList:true
+            }
+          );
+
+        });
+
+
+      renumberAllManagedRows();
 
     }
   );
