@@ -81,6 +81,26 @@ const FOXIT_SIGNED_PDF_URL='https://agrsolutionsllc-website-stripe-back.vercel.a
 const FINAL_INVOICE_EMAIL_URL='/api/send-final-invoice';
 let data=JSON.parse(localStorage.getItem(storeKey)||'null')||structuredClone(seed);
 if(!Array.isArray(data.services)) data.services=structuredClone(seed.services);
+if(!data.services.some(s=>String(s.name||'').toLowerCase().includes('i-864'))){
+  data.services.push({
+    id:30,
+    name:'I-864 Affidavit of Support',
+    category:'Inmigración',
+    price:0,
+    active:true
+  });
+}
+
+if(!data.services.some(s=>String(s.name||'').toLowerCase().includes('aos'))){
+  data.services.push({
+    id:31,
+    name:'AOS Master - Adjustment of Status Package',
+    category:'Inmigración',
+    price:0,
+    active:true
+  });
+}
+
 if(!data.documents || typeof data.documents!=='object') data.documents={};
 if(!Array.isArray(data.notes)) data.notes=[];
 if(!Array.isArray(data.history)) data.history=[];
@@ -4166,7 +4186,7 @@ function intakeTypeForCase(k){
   if(s.includes('i-130') || s.includes('i130') || s.includes('petición familiar') || s.includes('peticion familiar')){
     return {code:'i130',label:'I-130 · Petición Familiar'};
   }
-  if(s.includes('aos master') || s.includes('adjustment of status package') || s.includes('paquete de ajuste')){
+  if(s.includes('aos') || s.includes('adjustment of status package') || s.includes('paquete de ajuste')){
   return {code:'aos',label:'AOS Master · Adjustment of Status'};
 }
 if(s.includes('i-864') || s.includes('i864') || s.includes('affidavit of support') || s.includes('patrocinador financiero')){
@@ -4742,7 +4762,7 @@ function renderCaseIntake(k){
       }
 
       rec.token=result.token;
-      rec.clientLink='https://agrsolutionsllc.com/intake/'+type.code+'/?token='+encodeURIComponent(result.token);
+      rec.clientLink='https://agrsolutionsllc.com/intake/'+type.code+'/?token='+encodeURIComponent(result.token)+(type.code==='i130'?'&v=6':'');
       rec.createdAt=(result.intake && result.intake.created_at) || new Date().toISOString();
       rec.status='No enviado';
       rec.progress=Number((result.intake && result.intake.progress) || 0);
