@@ -34,7 +34,25 @@
 <div class="field"><label>Ocupación</label><input name="spouseOccupation"></div><div class="field"><label>IP PIN del IRS</label><input name="spouseIpPin"></div>
 </div><p class="muted">AGR revisará cuál estado civil tributario corresponde.</p></div></details>
 
-<details class="tax-section"><summary>3. Dependientes</summary><div class="tax-body"><div id="dependentsList"></div><button type="button" class="secondary" id="addDependentBtn">+ Agregar dependiente</button></div></details>
+<details class="tax-section">
+<summary>3. Dependientes</summary>
+<div class="tax-body">
+
+<div class="notice">
+<strong>¿A quién debo agregar?</strong><br>
+Agregue a cada hijo, familiar u otra persona que usted cree que podría calificar como dependiente.
+No se preocupe por decidir si es elegible. AGR Solutions LLC revisará las reglas de edad,
+parentesco, residencia, manutención y demás requisitos antes de preparar su declaración.
+</div>
+
+<div id="dependentsList"></div>
+
+<button type="button" class="secondary" id="addDependentBtn">
++ Agregar posible dependiente
+</button>
+
+</div>
+</details>
 
 <details class="tax-section"><summary>4. Ingresos</summary><div class="tax-body"><p class="muted">Marque todo lo que recibió durante el año.</p><div class="checkgrid">
 <label class="check"><input type="checkbox" name="incomeW2">W-2</label><label class="check"><input type="checkbox" name="income1099NEC">1099-NEC</label>
@@ -87,12 +105,216 @@ const token=new URLSearchParams(location.search).get('token')||'';
 const form=document.getElementById('intakeForm'),loading=document.getElementById('loading'),formArea=document.getElementById('formArea'),errorPage=document.getElementById('errorPage'),errorMessage=document.getElementById('errorMessage'),statusBox=document.getElementById('statusBox'),progressBar=document.getElementById('progressBar'),progressText=document.getElementById('progressText'),spouseSection=document.getElementById('spouseSection'),maritalStatus=document.getElementById('maritalStatus'),selfEmployment=document.getElementById('hasSelfEmployment'),scheduleCBlock=document.getElementById('scheduleCBlock'),estimatedSelect=document.getElementById('madeEstimatedPayments'),estimatedBlock=document.getElementById('estimatedPaymentBlock'),dependentsList=document.getElementById('dependentsList');
 let dependentCounter=0;
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function addDependent(d={}){dependentCounter++;const i=dependentCounter;dependentsList.insertAdjacentHTML('beforeend',`<div class="repeat-card" data-dependent="${i}"><strong>Dependiente ${i}</strong><div class="grid" style="margin-top:12px"><div class="field"><label>Nombre completo</label><input name="dependent_${i}_name" value="${esc(d.name||'')}"></div><div class="field"><label>Fecha de nacimiento</label><input type="date" name="dependent_${i}_dob" value="${esc(d.dob||'')}"></div><div class="field"><label>SSN o ITIN</label><input name="dependent_${i}_taxId" value="${esc(d.taxId||'')}"></div><div class="field"><label>Relación</label><input name="dependent_${i}_relationship" value="${esc(d.relationship||'')}"></div><div class="field"><label>Meses que vivió con usted</label><input type="number" min="0" max="12" name="dependent_${i}_months" value="${esc(d.months||'')}"></div></div><button type="button" class="secondary" data-remove-dependent="${i}" style="margin-top:12px">Eliminar</button></div>`);bindRemovers()}
+function addDependent(d={}){
+  dependentCounter++;
+  const i=dependentCounter;
+
+  dependentsList.insertAdjacentHTML('beforeend',`
+    <div class="repeat-card" data-dependent="${i}">
+      <strong>Posible dependiente ${i}</strong>
+
+      <div class="grid" style="margin-top:12px">
+
+        <div class="field">
+          <label>Nombre completo</label>
+          <input name="dependent_${i}_name" value="${esc(d.name||'')}">
+        </div>
+
+        <div class="field">
+          <label>Fecha de nacimiento</label>
+          <input type="date" name="dependent_${i}_dob" value="${esc(d.dob||'')}">
+        </div>
+
+        <div class="field">
+          <label>SSN o ITIN</label>
+          <input name="dependent_${i}_taxId" value="${esc(d.taxId||'')}">
+        </div>
+
+        <div class="field">
+          <label>Relación con usted</label>
+          <input name="dependent_${i}_relationship"
+                 placeholder="Ej. hijo, hija, madre, hermano"
+                 value="${esc(d.relationship||'')}">
+        </div>
+
+        <div class="field">
+          <label>¿Cuántos meses vivió con usted durante el año?</label>
+          <input type="number" min="0" max="12"
+                 name="dependent_${i}_months"
+                 value="${esc(d.months||'')}">
+        </div>
+
+        <div class="field">
+          <label>¿Vivió en Estados Unidos durante el año?</label>
+          <select name="dependent_${i}_livedUS">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.livedUS==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.livedUS==='no'?'selected':''}>No</option>
+            <option value="part" ${d.livedUS==='part'?'selected':''}>Solo parte del año</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Si estuvo separado de usted, ¿fue por escuela, enfermedad, vacaciones u otra ausencia temporal?</label>
+          <select name="dependent_${i}_temporaryAbsence">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.temporaryAbsence==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.temporaryAbsence==='no'?'selected':''}>No</option>
+            <option value="na" ${d.temporaryAbsence==='na'?'selected':''}>No aplica</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Es ciudadano, U.S. National o residente de EE.UU., Canadá o México?</label>
+          <select name="dependent_${i}_residencyStatus">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.residencyStatus==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.residencyStatus==='no'?'selected':''}>No</option>
+            <option value="unknown" ${d.residencyStatus==='unknown'?'selected':''}>No estoy seguro/a</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Era estudiante de tiempo completo?</label>
+          <select name="dependent_${i}_fullTimeStudent">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.fullTimeStudent==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.fullTimeStudent==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Tiene una discapacidad permanente y total?</label>
+          <select name="dependent_${i}_disabled">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.disabled==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.disabled==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Esta persona pagó más de la mitad de su propia manutención?</label>
+          <select name="dependent_${i}_selfSupport">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.selfSupport==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.selfSupport==='no'?'selected':''}>No</option>
+            <option value="unknown" ${d.selfSupport==='unknown'?'selected':''}>No estoy seguro/a</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Usted pagó más de la mitad de la manutención de esta persona?</label>
+          <select name="dependent_${i}_taxpayerSupport">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.taxpayerSupport==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.taxpayerSupport==='no'?'selected':''}>No</option>
+            <option value="unknown" ${d.taxpayerSupport==='unknown'?'selected':''}>No estoy seguro/a</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Está casado/a?</label>
+          <select name="dependent_${i}_married">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.married==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.married==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Si está casado/a, ¿presentó o presentará declaración conjunta con su cónyuge?</label>
+          <select name="dependent_${i}_jointReturn">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.jointReturn==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.jointReturn==='no'?'selected':''}>No</option>
+            <option value="na" ${d.jointReturn==='na'?'selected':''}>No aplica</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Otra persona podría reclamarlo como dependiente?</label>
+          <select name="dependent_${i}_otherClaimant">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.otherClaimant==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.otherClaimant==='no'?'selected':''}>No</option>
+            <option value="unknown" ${d.otherClaimant==='unknown'?'selected':''}>No estoy seguro/a</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Tuvo gastos de daycare o cuidado para esta persona?</label>
+          <select name="dependent_${i}_childcare">
+            <option value="">Seleccione</option>
+            <option value="yes" ${d.childcare==='yes'?'selected':''}>Sí</option>
+            <option value="no" ${d.childcare==='no'?'selected':''}>No</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>Información adicional sobre este posible dependiente</label>
+          <textarea name="dependent_${i}_notes">${esc(d.notes||'')}</textarea>
+        </div>
+
+      </div>
+
+      <button type="button"
+              class="secondary"
+              data-remove-dependent="${i}"
+              style="margin-top:12px">
+        Eliminar
+      </button>
+    </div>
+  `);
+
+  bindRemovers();
+}
 function bindRemovers(){document.querySelectorAll('[data-remove-dependent]').forEach(b=>b.onclick=()=>{b.closest('.repeat-card').remove();updateProgress()})}
 document.getElementById('addDependentBtn').onclick=()=>addDependent();
 function syncConditional(){spouseSection.classList.toggle('hidden',maritalStatus.value!=='married');scheduleCBlock.classList.toggle('hidden',selfEmployment.value!=='yes');estimatedBlock.classList.toggle('hidden',estimatedSelect.value!=='yes')}
 [maritalStatus,selfEmployment,estimatedSelect].forEach(x=>x.addEventListener('change',syncConditional));
-function collectAnswers(){const a={};const fd=new FormData(form);for(const [k,v] of fd.entries())a[k]=v;form.querySelectorAll('input[type="checkbox"]').forEach(el=>a[el.name]=el.checked);a.dependents=[];dependentsList.querySelectorAll('[data-dependent]').forEach(card=>{const i=card.dataset.dependent;a.dependents.push({name:form.elements[`dependent_${i}_name`]?.value||'',dob:form.elements[`dependent_${i}_dob`]?.value||'',taxId:form.elements[`dependent_${i}_taxId`]?.value||'',relationship:form.elements[`dependent_${i}_relationship`]?.value||'',months:form.elements[`dependent_${i}_months`]?.value||''})});a.taxIntakeType='tax-master';a.requiresScheduleCReview=selfEmployment.value==='yes';return a}
+function collectAnswers(){
+  const a={};
+  const fd=new FormData(form);
+
+  for(const [k,v] of fd.entries()){
+    a[k]=v;
+  }
+
+  form.querySelectorAll('input[type="checkbox"]').forEach(el=>{
+    a[el.name]=el.checked;
+  });
+
+  a.dependents=[];
+
+  dependentsList.querySelectorAll('[data-dependent]').forEach(card=>{
+    const i=card.dataset.dependent;
+
+    a.dependents.push({
+      name:form.elements[`dependent_${i}_name`]?.value||'',
+      dob:form.elements[`dependent_${i}_dob`]?.value||'',
+      taxId:form.elements[`dependent_${i}_taxId`]?.value||'',
+      relationship:form.elements[`dependent_${i}_relationship`]?.value||'',
+      months:form.elements[`dependent_${i}_months`]?.value||'',
+      livedUS:form.elements[`dependent_${i}_livedUS`]?.value||'',
+      temporaryAbsence:form.elements[`dependent_${i}_temporaryAbsence`]?.value||'',
+      residencyStatus:form.elements[`dependent_${i}_residencyStatus`]?.value||'',
+      fullTimeStudent:form.elements[`dependent_${i}_fullTimeStudent`]?.value||'',
+      disabled:form.elements[`dependent_${i}_disabled`]?.value||'',
+      selfSupport:form.elements[`dependent_${i}_selfSupport`]?.value||'',
+      taxpayerSupport:form.elements[`dependent_${i}_taxpayerSupport`]?.value||'',
+      married:form.elements[`dependent_${i}_married`]?.value||'',
+      jointReturn:form.elements[`dependent_${i}_jointReturn`]?.value||'',
+      otherClaimant:form.elements[`dependent_${i}_otherClaimant`]?.value||'',
+      childcare:form.elements[`dependent_${i}_childcare`]?.value||'',
+      notes:form.elements[`dependent_${i}_notes`]?.value||''
+    });
+  });
+
+  a.taxIntakeType='tax-master';
+  a.requiresScheduleCReview=selfEmployment.value==='yes';
+
+  return a;
+}
 function fillAnswers(a){Object.entries(a||{}).forEach(([k,v])=>{if(k==='dependents')return;const el=form.elements[k];if(!el)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v??''});dependentsList.innerHTML='';dependentCounter=0;(a?.dependents||[]).forEach(addDependent);syncConditional()}
 function updateProgress(){const req=[...form.querySelectorAll('[required]')].filter(el=>!el.closest('.hidden'));const done=req.filter(el=>el.type==='checkbox'?el.checked:String(el.value||'').trim()!=='').length;const pct=req.length?Math.round(done/req.length*100):0;progressBar.style.width=pct+'%';progressText.textContent='Progreso '+pct+'%';return pct}
 form.addEventListener('input',updateProgress);form.addEventListener('change',updateProgress);
