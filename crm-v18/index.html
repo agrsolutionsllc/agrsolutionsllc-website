@@ -12,6 +12,120 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css?v=20261005-2045" />
+
+<style>
+/* AGR-CLIENT-PAGINATION-STYLE */
+
+.client-directory-tools{
+  position:sticky;
+  top:0;
+  z-index:8;
+  background:#fff;
+  padding-bottom:12px;
+}
+
+.client-alpha-filter{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:12px 0;
+}
+
+.client-alpha-btn{
+  min-width:34px;
+  height:34px;
+  padding:0 9px;
+  border:1px solid #d7dde8;
+  background:#fff;
+  color:#0b2347;
+  border-radius:9px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+.client-alpha-btn:hover{
+  background:#f3f6fa;
+}
+
+.client-alpha-btn.active{
+  background:#0b2347;
+  border-color:#0b2347;
+  color:#fff;
+}
+
+.client-list-options{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  margin:8px 0 14px;
+  color:#667085;
+  font-size:14px;
+}
+
+.client-list-options label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+
+#clientPageSize{
+  width:auto;
+  min-width:75px;
+  padding:7px 10px;
+  border:1px solid #d7dde8;
+  border-radius:8px;
+  background:#fff;
+}
+
+.client-pagination{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+  padding:18px 0 4px;
+}
+
+.client-page-btn{
+  min-width:38px;
+  height:38px;
+  border:1px solid #d7dde8;
+  background:#fff;
+  border-radius:9px;
+  color:#0b2347;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.client-page-btn:hover:not(:disabled){
+  background:#f3f6fa;
+}
+
+.client-page-btn.active{
+  background:#0b2347;
+  color:#fff;
+  border-color:#0b2347;
+}
+
+.client-page-btn:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+.client-page-dots{
+  padding:0 5px;
+  color:#667085;
+}
+
+@media(max-width:700px){
+  .client-directory-tools{
+    position:static;
+  }
+}
+</style>
+
 </head>
 <body>
   <div class="demo-banner">DEMO DE PRUEBA · No ingresar información real o sensible de clientes</div>
@@ -48,7 +162,60 @@
   </div>
   <div class="global-search-wrap"><span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></span><input id="globalSearch" type="search" placeholder="Buscar cliente, factura, receipt, A-Number o teléfono..."><div id="globalSearchResults" class="global-search-results" hidden></div></div></div></header>
       <section class="view active" id="view-dashboard"><div class="stats-grid"><article class="stat-card"><span>Clientes activos</span><strong id="statClients">0</strong><small>Base de prueba</small></article><article class="stat-card"><span>Casos abiertos</span><strong id="statCases">0</strong><small>En seguimiento</small></article><article class="stat-card"><span>Saldo pendiente</span><strong id="statBalance">$0</strong><small>Por cobrar</small></article><article class="stat-card"><span>Próximas citas</span><strong id="statAppointments">0</strong><small>Agenda de prueba</small></article><article class="stat-card"><span>Urgentes hoy</span><strong id="statTasks">0</strong><small>Tareas vencidas o para hoy</small></article></div><article class="panel attention-panel"><div class="panel-head"><div><p class="eyebrow">PRIORIDADES</p><h2>Lo que necesita tu atención</h2></div><button class="primary" data-open="task">+ Nueva tarea</button></div><div id="dashboardAlerts" class="dashboard-alerts"></div></article><article class="panel today-panel"><div class="panel-head"><div><p class="eyebrow">HOY</p><h2>Citas de hoy</h2></div><div class="toolbar-actions"><button class="ghost" type="button" data-whatsapp-appointment>WhatsApp → cita</button><button class="primary" data-open="appointment">+ Nueva cita</button></div></div><div id="todayAppointmentList" class="appointment-list"></div></article><div class="dashboard-grid"><article class="panel"><div class="panel-head"><div><p class="eyebrow">CASOS</p><h2>Seguimiento reciente</h2></div><button class="text-btn" data-jump="cases">Ver todos →</button></div><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Servicio</th><th>Estado</th></tr></thead><tbody id="recentCases"></tbody></table></div></article><article class="panel"><div class="panel-head"><div><p class="eyebrow">AGENDA</p><h2>Próximas citas</h2></div></div><div id="appointmentList" class="appointment-list"></div></article></div></section>
-      <section class="view" id="view-clients"><div class="section-toolbar"><div><p class="eyebrow">CLIENTES</p><h2>Directorio de clientes</h2></div><button class="primary" data-open="client">+ Nuevo cliente</button></div><div class="panel"><div class="search-row"><input id="clientSearch" type="search" placeholder="Buscar por nombre, teléfono o email"></div><div class="table-wrap"><table><thead><tr><th>Carpeta</th><th>Cliente</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Referidos</th><th>Saldo</th><th></th></tr></thead><tbody id="clientsTable"></tbody></table></div></div></section>
+      <section class="view" id="view-clients"><div class="section-toolbar"><div><p class="eyebrow">CLIENTES</p><h2>Directorio de clientes</h2></div><button class="primary" data-open="client">+ Nuevo cliente</button></div><div class="panel"><!-- AGR-CLIENT-PAGINATION-UI -->
+
+<div class="client-directory-tools">
+
+  <div class="search-row">
+    <input id="clientSearch"
+           type="search"
+           placeholder="Buscar por nombre, teléfono, email o carpeta">
+  </div>
+
+  <div class="client-alpha-filter"
+       id="clientAlphaFilter">
+  </div>
+
+  <div class="client-list-options">
+
+    <label>
+      Mostrar
+      <select id="clientPageSize">
+        <option value="25" selected>25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+      clientes
+    </label>
+
+    <span id="clientListSummary"></span>
+
+  </div>
+
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Carpeta</th>
+        <th>Cliente</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Casos</th>
+        <th>Referidos</th>
+        <th>Saldo</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody id="clientsTable"></tbody>
+  </table>
+</div>
+
+<div id="clientPagination"
+     class="client-pagination">
+</div></div></section>
       <section class="view" id="view-companies"><div class="section-toolbar"><div><p class="eyebrow">EMPRESAS</p><h2>Clientes empresariales</h2><p class="section-subtext">Cuentas recurrentes, varios servicios y facturación global.</p></div><button class="primary" data-open="client-company">+ Nueva empresa</button></div><div class="panel"><div class="search-row"><input id="companySearch" type="search" placeholder="Buscar empresa por nombre, teléfono o email"></div><div class="table-wrap"><table><thead><tr><th>Carpeta</th><th>Empresa</th><th>Teléfono</th><th>Email</th><th>Casos</th><th>Saldo</th><th>Cuenta global</th></tr></thead><tbody id="companiesTable"></tbody></table></div></div></section>
       <section class="view" id="view-cases"><div class="section-toolbar"><div><p class="eyebrow">CASOS & TRÁMITES</p><h2>Pipeline de trabajo</h2></div><button class="primary" data-open="case">+ Nuevo caso</button></div><div class="kanban" id="caseBoard"></div></section>
       <section class="view" id="view-services"><div class="section-toolbar"><div><p class="eyebrow">SERVICIOS</p><h2>Catálogo interno de servicios</h2></div><button class="primary" data-open="service">+ Nuevo servicio</button></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Categoría</th><th>Precio sugerido</th><th>Activo</th></tr></thead><tbody id="servicesTable"></tbody></table></div></div></section>
