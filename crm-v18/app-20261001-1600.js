@@ -3475,35 +3475,472 @@ function openReferralDetails(referrerId){
   dlg.showModal();
 }
 
-function renderClients(filter=''){
-  ensureDeleteIconStyle();
-  const q=filter.toLowerCase();
-  const table=$('#clientsTable');
-  if(!table) return;
-  table.innerHTML=data.clients
-    .filter(c=>!c.isCompany && [c.folderNumber,c.name,c.phone,c.email].join(' ').toLowerCase().includes(q))
-    .slice()
-    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
-    .map(c=>{
-      const cases=data.cases.filter(x=>x.clientId===c.id).length;
-      const referrals=data.clients.filter(
-        x=>Number(x.referredByClientId)===Number(c.id)
-      ).length;
-      const caseBal=data.cases.filter(x=>x.clientId===c.id).reduce((s,k)=>s+caseBalance(k),0);
-      return `<tr><td><span class="folder-number-badge">${esc(c.folderNumber||'—')}</span></td><td><strong>${c.name}</strong></td><td>${c.phone}</td><td>${c.email||'—'}</td><td>${cases}</td><td>${referrals>0
-  ? '<button type="button" class="text-btn referral-count-btn" data-referral-client-id="'+c.id+'"><strong>'+referrals+'</strong></button>'
-  : '<strong>0</strong>'
-}</td><td><strong>${money(caseBal)}</strong></td><td><button type="button" class="danger delete-icon-btn" data-delete-client-id="${c.id}" title="Eliminar" aria-label="Eliminar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" fill="currentColor"/></svg></button></td></tr>`
-    }).join('')||'<tr><td colspan="8">No hay clientes personales registrados.</td></tr>';
-  table.querySelectorAll('[data-delete-client-id]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();deleteClientRecord(Number(btn.dataset.deleteClientId));});
+/* AGR-CLIENT-DIRECTORY-PAGINATION */
 
-  table.querySelectorAll('[data-referral-client-id]').forEach(btn=>{
-    btn.onclick=e=>{
-      e.stopPropagation();
-      openReferralDetails(Number(btn.dataset.referralClientId));
-    };
-  });
+let clientDirectoryPage=1;
+let clientDirectoryPageSize=25;
+let clientDirectoryLetter='ALL';
+let clientDirectorySearch='';
+
+
+function normalizedClientLetter(name=''){
+  const clean=String(name||'')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'');
+
+  const match=clean.match(/[A-Za-z]/);
+
+  return match
+    ? match[0].toUpperCase()
+    : '#';
 }
+
+
+function renderClientAlphabet(){
+
+  const box=$('#clientAlphaFilter');
+
+  if(!box) return;
+
+  const letters=[
+    'ALL',
+    ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+  ];
+
+  box.innerHTML=letters.map(letter=>{
+
+    const label=
+      letter==='ALL'
+        ? 'Todos'
+        : letter;
+
+    return `
+      <button
+        type="button"
+        class="client-alpha-btn ${clientDirectoryLetter===letter?'active':''}"
+        data-client-letter="${letter}">
+        ${label}
+      </button>
+    `;
+
+  }).join('');
+
+
+  box.querySelectorAll('[data-client-letter]')
+    .forEach(btn=>{
+
+      btn.onclick=()=>{
+
+        clientDirectoryLetter=
+          btn.dataset.clientLetter;
+
+        clientDirectoryPage=1;
+
+        renderClients();
+
+      };
+
+    });
+
+}
+
+
+function clientPaginationNumbers(current,total){
+
+  if(total<=7){
+    return Array.from(
+      {length:total},
+      (_,i)=>i+1
+    );
+  }
+
+  const pages=[1];
+
+  if(current>4){
+    pages.push('...');
+  }
+
+  const from=Math.max(
+    2,
+    current-1
+  );
+
+  const to=Math.min(
+    total-1,
+    current+1
+  );
+
+  for(let p=from;p<=to;p++){
+    pages.push(p);
+  }
+
+  if(current<total-3){
+    pages.push('...');
+  }
+
+  pages.push(total);
+
+  return pages;
+
+}
+
+
+function renderClientPagination(total){
+
+  const box=$('#clientPagination');
+
+  if(!box) return;
+
+  const totalPages=Math.max(
+    1,
+    Math.ceil(
+      total/clientDirectoryPageSize
+    )
+  );
+
+  if(clientDirectoryPage>totalPages){
+    clientDirectoryPage=totalPages;
+  }
+
+  if(total<=clientDirectoryPageSize){
+    box.innerHTML='';
+    return;
+  }
+
+
+  const pages=
+    clientPaginationNumbers(
+      clientDirectoryPage,
+      totalPages
+    );
+
+
+  box.innerHTML=`
+
+    <button
+      type="button"
+      class="client-page-btn"
+      data-client-page="${clientDirectoryPage-1}"
+      ${clientDirectoryPage===1?'disabled':''}>
+      ‹ Anterior
+    </button>
+
+    ${pages.map(p=>{
+
+      if(p==='...'){
+        return '<span class="client-page-dots">…</span>';
+      }
+
+      return `
+        <button
+          type="button"
+          class="client-page-btn ${p===clientDirectoryPage?'active':''}"
+          data-client-page="${p}">
+          ${p}
+        </button>
+      `;
+
+    }).join('')}
+
+    <button
+      type="button"
+      class="client-page-btn"
+      data-client-page="${clientDirectoryPage+1}"
+      ${clientDirectoryPage===totalPages?'disabled':''}>
+      Siguiente ›
+    </button>
+
+  `;
+
+
+  box.querySelectorAll('[data-client-page]')
+    .forEach(btn=>{
+
+      btn.onclick=()=>{
+
+        const page=
+          Number(btn.dataset.clientPage);
+
+        if(
+          !page ||
+          page<1 ||
+          page>totalPages
+        ) return;
+
+        clientDirectoryPage=page;
+
+        renderClients();
+
+        document
+          .getElementById('view-clients')
+          ?.scrollIntoView({
+            behavior:'smooth',
+            block:'start'
+          });
+
+      };
+
+    });
+
+}
+
+
+function renderClients(filter){
+
+  ensureDeleteIconStyle();
+
+  if(typeof filter==='string'){
+    clientDirectorySearch=filter;
+  }
+
+
+  const table=$('#clientsTable');
+
+  if(!table) return;
+
+
+  const q=String(
+    clientDirectorySearch||''
+  )
+    .trim()
+    .toLowerCase();
+
+
+  let clients=data.clients
+    .filter(c=>!c.isCompany)
+    .filter(c=>{
+
+      if(!q) return true;
+
+      return [
+        c.folderNumber,
+        c.name,
+        c.phone,
+        c.email
+      ]
+        .join(' ')
+        .toLowerCase()
+        .includes(q);
+
+    })
+    .filter(c=>{
+
+      if(clientDirectoryLetter==='ALL'){
+        return true;
+      }
+
+      return normalizedClientLetter(c.name)===
+        clientDirectoryLetter;
+
+    })
+    .slice()
+    .sort((a,b)=>
+      String(a.name||'')
+        .localeCompare(
+          String(b.name||''),
+          undefined,
+          {sensitivity:'base'}
+        )
+    );
+
+
+  const total=clients.length;
+
+  const totalPages=Math.max(
+    1,
+    Math.ceil(
+      total/clientDirectoryPageSize
+    )
+  );
+
+
+  if(clientDirectoryPage>totalPages){
+    clientDirectoryPage=totalPages;
+  }
+
+
+  const start=
+    (clientDirectoryPage-1)*
+    clientDirectoryPageSize;
+
+  const visible=
+    clients.slice(
+      start,
+      start+clientDirectoryPageSize
+    );
+
+
+  table.innerHTML=visible.map(c=>{
+
+    const cases=
+      data.cases.filter(
+        x=>x.clientId===c.id
+      ).length;
+
+
+    const referrals=
+      data.clients.filter(
+        x=>
+          Number(x.referredByClientId)===
+          Number(c.id)
+      ).length;
+
+
+    const caseBal=
+      data.cases
+        .filter(
+          x=>x.clientId===c.id
+        )
+        .reduce(
+          (s,k)=>s+caseBalance(k),
+          0
+        );
+
+
+    return `
+      <tr>
+
+        <td>
+          <span class="folder-number-badge">
+            ${esc(c.folderNumber||'—')}
+          </span>
+        </td>
+
+        <td>
+          <strong>${c.name}</strong>
+        </td>
+
+        <td>${c.phone}</td>
+
+        <td>${c.email||'—'}</td>
+
+        <td>${cases}</td>
+
+        <td>
+          ${
+            referrals>0
+              ? '<button type="button" class="text-btn referral-count-btn" data-referral-client-id="'+c.id+'"><strong>'+referrals+'</strong></button>'
+              : '<strong>0</strong>'
+          }
+        </td>
+
+        <td>
+          <strong>${money(caseBal)}</strong>
+        </td>
+
+        <td>
+
+          <button
+            type="button"
+            class="danger delete-icon-btn"
+            data-delete-client-id="${c.id}"
+            title="Eliminar"
+            aria-label="Eliminar">
+
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true">
+
+              <path
+                d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"
+                fill="currentColor"/>
+
+            </svg>
+
+          </button>
+
+        </td>
+
+      </tr>
+    `;
+
+  }).join('') ||
+  '<tr><td colspan="8">No hay clientes que coincidan con esta búsqueda.</td></tr>';
+
+
+  table.querySelectorAll(
+    '[data-delete-client-id]'
+  ).forEach(btn=>
+
+    btn.onclick=e=>{
+
+      e.stopPropagation();
+
+      deleteClientRecord(
+        Number(
+          btn.dataset.deleteClientId
+        )
+      );
+
+    }
+
+  );
+
+
+  table.querySelectorAll(
+    '[data-referral-client-id]'
+  ).forEach(btn=>{
+
+    btn.onclick=e=>{
+
+      e.stopPropagation();
+
+      openReferralDetails(
+        Number(
+          btn.dataset.referralClientId
+        )
+      );
+
+    };
+
+  });
+
+
+  const summary=
+    $('#clientListSummary');
+
+  if(summary){
+
+    if(total===0){
+
+      summary.textContent=
+        '0 clientes encontrados';
+
+    }else{
+
+      const from=start+1;
+
+      const to=Math.min(
+        start+clientDirectoryPageSize,
+        total
+      );
+
+      summary.textContent=
+        `Mostrando ${from}–${to} de ${total} clientes`;
+
+    }
+
+  }
+
+
+  const sizeSelect=
+    $('#clientPageSize');
+
+  if(sizeSelect){
+
+    sizeSelect.value=
+      String(clientDirectoryPageSize);
+
+  }
+
+
+  renderClientAlphabet();
+
+  renderClientPagination(total);
+
+}
+
 function renderCompanies(filter=''){
   ensureDeleteIconStyle();
   const q=filter.toLowerCase();
@@ -3560,7 +3997,17 @@ function renderPayments(){
   </tr>`).join('');
   bindCasePaymentOpeners();
 }
-$('#clientSearch')?.addEventListener('input',e=>renderClients(e.target.value));
+$('#clientSearch')?.addEventListener('input',e=>{
+  clientDirectorySearch=e.target.value;
+  clientDirectoryPage=1;
+  renderClients();
+});
+
+$('#clientPageSize')?.addEventListener('change',e=>{
+  clientDirectoryPageSize=Number(e.target.value)||25;
+  clientDirectoryPage=1;
+  renderClients();
+});
 $('#companySearch')?.addEventListener('input',e=>renderCompanies(e.target.value));
 
 const dialog=$('#recordDialog'), form=$('#recordForm'), fields=$('#formFields'), modalTitle=$('#modalTitle');
