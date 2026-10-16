@@ -48,7 +48,7 @@ parentesco, residencia, manutención y demás requisitos antes de preparar su de
 <div id="dependentsList"></div>
 
 <button type="button" class="secondary" id="addDependentBtn">
-+ Agregar posible dependiente
++ Agregar dependiente
 </button>
 
 </div>
@@ -257,18 +257,61 @@ function addDependent(d={}){
 
       </div>
 
-      <button type="button"
-              class="secondary"
-              data-remove-dependent="${i}"
-              style="margin-top:12px">
-        Eliminar
-      </button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+
+<button type="button"
+        class="submit"
+        data-save-dependent="${i}">
+Guardar dependiente
+</button>
+
+<button type="button"
+        class="secondary"
+        data-remove-dependent="${i}">
+Eliminar
+</button>
+
+</div>
     </div>
   `);
 
   bindRemovers();
 }
-function bindRemovers(){document.querySelectorAll('[data-remove-dependent]').forEach(b=>b.onclick=()=>{b.closest('.repeat-card').remove();updateProgress()})}
+function bindRemovers(){
+
+document.querySelectorAll('[data-remove-dependent]').forEach(b=>{
+  b.onclick=()=>{
+    b.closest('.repeat-card').remove();
+    updateProgress();
+  };
+});
+
+document.querySelectorAll('[data-save-dependent]').forEach(b=>{
+  b.onclick=async()=>{
+    const original=b.textContent;
+
+    try{
+      b.disabled=true;
+      b.textContent='Guardando...';
+
+      await save(false);
+
+      b.textContent='✓ Guardado';
+
+      setTimeout(()=>{
+        b.textContent=original;
+        b.disabled=false;
+      },1500);
+
+    }catch(e){
+      b.textContent='Error al guardar';
+      b.disabled=false;
+      showStatus(e.message||'No se pudo guardar el dependiente.','error');
+    }
+  };
+});
+
+}
 document.getElementById('addDependentBtn').onclick=()=>addDependent();
 function syncConditional(){spouseSection.classList.toggle('hidden',maritalStatus.value!=='married');scheduleCBlock.classList.toggle('hidden',selfEmployment.value!=='yes');estimatedBlock.classList.toggle('hidden',estimatedSelect.value!=='yes')}
 [maritalStatus,selfEmployment,estimatedSelect].forEach(x=>x.addEventListener('change',syncConditional));
