@@ -421,7 +421,42 @@
             </select>
           </div>
 
-          <div class="field full hidden" id="spouseNotice">
+                    <!-- I130-RELATIONSHIP-ADOPTION -->
+
+          <div class="field full hidden"
+               id="siblingAdoptionWrap">
+
+            <label for="siblingRelatedByAdoption">
+              Si la petición es para hermano/a:
+              ¿están relacionados mediante adopción?
+            </label>
+
+            <select id="siblingRelatedByAdoption"
+                    name="siblingRelatedByAdoption">
+              <option value="">Seleccione</option>
+              <option value="yes">Sí</option>
+              <option value="no">No</option>
+            </select>
+
+          </div>
+
+          <div class="field full">
+
+            <label for="petitionerStatusThroughAdoption">
+              ¿El peticionario obtuvo residencia permanente
+              o ciudadanía estadounidense mediante adopción?
+            </label>
+
+            <select id="petitionerStatusThroughAdoption"
+                    name="petitionerStatusThroughAdoption">
+              <option value="">Seleccione</option>
+              <option value="yes">Sí</option>
+              <option value="no">No</option>
+            </select>
+
+          </div>
+
+<div class="field full hidden" id="spouseNotice">
             <div class="notice">
               Debido a que la petición es para un esposo/a,
               AGR también necesitará información correspondiente al Formulario I-130A.
@@ -569,6 +604,482 @@
 
         </div>
       
+        <!-- I130-PETITIONER-FINAL-DETAILS -->
+
+        <div class="i130-subblock">
+
+          <h3>Detalles de la residencia actual</h3>
+
+          <div class="grid">
+
+            <div class="field">
+              <label>Apt. / Suite / Floor, si aplica</label>
+              <input name="petitionerCurrentUnit">
+            </div>
+
+            <div class="field">
+              <label>¿Desde qué fecha vive en esta dirección?</label>
+              <input name="petitionerCurrentAddressFrom"
+                     type="date">
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="i130-subblock">
+
+          <h3>Ciudad de nacimiento de los padres</h3>
+
+          <div class="grid">
+
+            <div class="field">
+              <label>Ciudad / pueblo de nacimiento - Padre/Madre 1</label>
+              <input name="petitionerParent1BirthCity">
+            </div>
+
+            <div class="field">
+              <label>Ciudad / pueblo de nacimiento - Padre/Madre 2</label>
+              <input name="petitionerParent2BirthCity">
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- I130-PETITIONER-OFFICIAL-DETAILS -->
+
+        <div class="i130-subblock">
+
+          <h3>Información personal adicional</h3>
+
+          <div class="grid">
+
+            <div class="field">
+              <label for="petitionerBirthCity">
+                Ciudad / pueblo de nacimiento
+              </label>
+              <input id="petitionerBirthCity"
+                     name="petitionerBirthCity">
+            </div>
+
+            <div class="field">
+              <label for="petitionerSex">Sexo</label>
+
+              <select id="petitionerSex"
+                      name="petitionerSex">
+                <option value="">Seleccione</option>
+                <option value="male">Masculino</option>
+                <option value="female">Femenino</option>
+              </select>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Dirección postal</h3>
+
+          <p class="helper">
+            Indique dónde desea recibir correspondencia.
+            Si es la misma dirección física, seleccione Sí.
+          </p>
+
+          <div class="grid">
+
+            <div class="field full">
+
+              <label for="petitionerMailingSame">
+                ¿La dirección postal es igual a la dirección física actual?
+              </label>
+
+              <select id="petitionerMailingSame"
+                      name="petitionerMailingSame">
+                <option value="">Seleccione</option>
+                <option value="yes">Sí</option>
+                <option value="no">No</option>
+              </select>
+
+            </div>
+
+
+            <div class="field full hidden"
+                 id="petitionerMailingWrap">
+
+              <label>In Care Of Name, si aplica</label>
+              <input name="petitionerMailingCareOf">
+
+              <label>Calle y número</label>
+              <input name="petitionerMailingStreet">
+
+              <label>Apt. / Suite / Floor</label>
+              <input name="petitionerMailingUnit">
+
+              <label>Ciudad</label>
+              <input name="petitionerMailingCity">
+
+              <label>Estado / Provincia</label>
+              <input name="petitionerMailingState">
+
+              <label>ZIP / Código postal</label>
+              <input name="petitionerMailingPostal">
+
+              <label>País</label>
+              <input name="petitionerMailingCountry">
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Información de los padres</h3>
+
+          <h4>Padre / Madre 1</h4>
+
+          <div class="grid">
+
+            <div class="field">
+              <label>Apellido</label>
+              <input name="petitionerParent1LastName">
+            </div>
+
+            <div class="field">
+              <label>Nombre</label>
+              <input name="petitionerParent1FirstName">
+            </div>
+
+            <div class="field">
+              <label>Segundo nombre</label>
+              <input name="petitionerParent1MiddleName">
+            </div>
+
+            <div class="field">
+              <label>Fecha de nacimiento</label>
+              <input name="petitionerParent1DOB"
+                     type="date">
+            </div>
+
+            <div class="field">
+              <label>Sexo</label>
+              <select name="petitionerParent1Sex">
+                <option value="">Seleccione</option>
+                <option value="male">Masculino</option>
+                <option value="female">Femenino</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>País de nacimiento</label>
+              <input name="petitionerParent1BirthCountry">
+            </div>
+
+            <div class="field">
+              <label>Ciudad de residencia actual</label>
+              <input name="petitionerParent1ResidenceCity">
+            </div>
+
+            <div class="field">
+              <label>País de residencia actual</label>
+              <input name="petitionerParent1ResidenceCountry">
+            </div>
+
+          </div>
+
+
+          <h4 style="margin-top:26px">Padre / Madre 2</h4>
+
+          <div class="grid">
+
+            <div class="field">
+              <label>Apellido</label>
+              <input name="petitionerParent2LastName">
+            </div>
+
+            <div class="field">
+              <label>Nombre</label>
+              <input name="petitionerParent2FirstName">
+            </div>
+
+            <div class="field">
+              <label>Segundo nombre</label>
+              <input name="petitionerParent2MiddleName">
+            </div>
+
+            <div class="field">
+              <label>Fecha de nacimiento</label>
+              <input name="petitionerParent2DOB"
+                     type="date">
+            </div>
+
+            <div class="field">
+              <label>Sexo</label>
+              <select name="petitionerParent2Sex">
+                <option value="">Seleccione</option>
+                <option value="male">Masculino</option>
+                <option value="female">Femenino</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>País de nacimiento</label>
+              <input name="petitionerParent2BirthCountry">
+            </div>
+
+            <div class="field">
+              <label>Ciudad de residencia actual</label>
+              <input name="petitionerParent2ResidenceCity">
+            </div>
+
+            <div class="field">
+              <label>País de residencia actual</label>
+              <input name="petitionerParent2ResidenceCountry">
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Ciudadanía o residencia del peticionario</h3>
+
+          <div id="petitionerCitizenDetails"
+               class="hidden">
+
+            <div class="grid">
+
+              <div class="field full">
+
+                <label for="petitionerCitizenshipMethod">
+                  ¿Cómo adquirió la ciudadanía estadounidense?
+                </label>
+
+                <select id="petitionerCitizenshipMethod"
+                        name="petitionerCitizenshipMethod">
+
+                  <option value="">Seleccione</option>
+                  <option value="birth">
+                    Nacimiento en Estados Unidos
+                  </option>
+                  <option value="naturalization">
+                    Naturalización
+                  </option>
+                  <option value="parents">
+                    A través de los padres
+                  </option>
+
+                </select>
+
+              </div>
+
+
+              <div class="field full">
+
+                <label for="petitionerHasCertificate">
+                  ¿Tiene Certificate of Naturalization o Certificate of Citizenship?
+                </label>
+
+                <select id="petitionerHasCertificate"
+                        name="petitionerHasCertificate">
+                  <option value="">Seleccione</option>
+                  <option value="yes">Sí</option>
+                  <option value="no">No</option>
+                </select>
+
+              </div>
+
+
+              <div class="field full hidden"
+                   id="petitionerCertificateWrap">
+
+                <label>Número del certificado</label>
+                <input name="petitionerCertificateNumber">
+
+                <label>Lugar de emisión</label>
+                <input name="petitionerCertificatePlace">
+
+                <label>Fecha de emisión</label>
+                <input name="petitionerCertificateDate"
+                       type="date">
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div id="petitionerLPRDetails"
+               class="hidden">
+
+            <div class="grid">
+
+              <div class="field">
+                <label>Class of Admission</label>
+                <input name="petitionerLPRClass">
+              </div>
+
+              <div class="field">
+                <label>Fecha de admisión como residente permanente</label>
+                <input name="petitionerLPRDate"
+                       type="date">
+              </div>
+
+              <div class="field">
+                <label>Ciudad / lugar de admisión</label>
+                <input name="petitionerLPRPlace">
+              </div>
+
+              <div class="field full">
+                <label for="petitionerLPRThroughMarriage">
+                  ¿Obtuvo la residencia permanente mediante matrimonio con un ciudadano o residente?
+                </label>
+
+                <select id="petitionerLPRThroughMarriage"
+                        name="petitionerLPRThroughMarriage">
+                  <option value="">Seleccione</option>
+                  <option value="yes">Sí</option>
+                  <option value="no">No</option>
+                </select>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Información biográfica</h3>
+
+          <div class="grid">
+
+            <div class="field">
+              <label for="petitionerEthnicity">Etnicidad</label>
+
+              <select id="petitionerEthnicity"
+                      name="petitionerEthnicity">
+                <option value="">Seleccione</option>
+                <option value="hispanic">
+                  Hispanic or Latino
+                </option>
+                <option value="notHispanic">
+                  Not Hispanic or Latino
+                </option>
+              </select>
+            </div>
+
+            <div class="field full">
+              <label>
+                Raza (puede seleccionar las que correspondan)
+              </label>
+
+              <label>
+                <input type="checkbox"
+                       name="petitionerRaceWhite"
+                       value="yes">
+                White
+              </label>
+
+              <label>
+                <input type="checkbox"
+                       name="petitionerRaceAsian"
+                       value="yes">
+                Asian
+              </label>
+
+              <label>
+                <input type="checkbox"
+                       name="petitionerRaceBlack"
+                       value="yes">
+                Black or African American
+              </label>
+
+              <label>
+                <input type="checkbox"
+                       name="petitionerRaceAIAN"
+                       value="yes">
+                American Indian or Alaska Native
+              </label>
+
+              <label>
+                <input type="checkbox"
+                       name="petitionerRaceNHPI"
+                       value="yes">
+                Native Hawaiian or Other Pacific Islander
+              </label>
+            </div>
+
+            <div class="field">
+              <label>Altura - pies</label>
+              <input name="petitionerHeightFeet"
+                     type="number"
+                     min="2"
+                     max="8">
+            </div>
+
+            <div class="field">
+              <label>Altura - pulgadas</label>
+              <input name="petitionerHeightInches"
+                     type="number"
+                     min="0"
+                     max="11">
+            </div>
+
+            <div class="field">
+              <label>Peso en libras</label>
+              <input name="petitionerWeight"
+                     type="number"
+                     min="1">
+            </div>
+
+            <div class="field">
+              <label>Color de ojos</label>
+              <select name="petitionerEyeColor">
+                <option value="">Seleccione</option>
+                <option value="black">Negros</option>
+                <option value="blue">Azules</option>
+                <option value="brown">Marrones</option>
+                <option value="gray">Grises</option>
+                <option value="green">Verdes</option>
+                <option value="hazel">Hazel</option>
+                <option value="maroon">Maroon</option>
+                <option value="pink">Rosados</option>
+                <option value="unknown">Desconocido</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Color de cabello</label>
+              <select name="petitionerHairColor">
+                <option value="">Seleccione</option>
+                <option value="bald">Calvo/a</option>
+                <option value="black">Negro</option>
+                <option value="blond">Rubio</option>
+                <option value="brown">Marrón</option>
+                <option value="gray">Gris</option>
+                <option value="red">Rojo</option>
+                <option value="sandy">Sandy</option>
+                <option value="white">Blanco</option>
+                <option value="unknown">Desconocido</option>
+              </select>
+            </div>
+
+          </div>
+
+        </div>
+
         <!-- I130-PETITIONER-SUPPLEMENTAL -->
 
         <div class="i130-subblock">
@@ -703,6 +1214,11 @@
 
           <h3>Historial de direcciones</h3>
 
+          <p class="helper">
+            Agregue todas las direcciones necesarias para cubrir los últimos 5 años,
+            sin dejar períodos sin explicar.
+          </p>
+
           <div id="petAddressesList"></div>
 
           <button type="button"
@@ -717,6 +1233,11 @@
         <div class="i130-subblock">
 
           <h3>Historial de empleo</h3>
+
+          <p class="helper">
+            Agregue todos los empleos necesarios para cubrir los últimos 5 años.
+            Si hubo períodos sin empleo, indíquelo también.
+          </p>
 
           <div id="petEmploymentList"></div>
 
@@ -850,6 +1371,237 @@
 
         </div>
       
+        <!-- I130-BENEFICIARY-NATIVE-DETAILS -->
+
+        <div class="i130-subblock">
+
+          <h3>Detalles de la dirección actual</h3>
+
+          <div class="grid">
+
+            <div class="field">
+              <label>Apt. / Suite / Floor, si aplica</label>
+              <input name="beneficiaryCurrentUnit">
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Nombre y dirección en escritura nativa</h3>
+
+          <div class="grid">
+
+            <div class="field full">
+
+              <label for="beneficiaryUsesNonRomanAlphabet">
+                ¿El nombre o dirección del beneficiario se escribe
+                originalmente en un alfabeto diferente al romano?
+              </label>
+
+              <select id="beneficiaryUsesNonRomanAlphabet"
+                      name="beneficiaryUsesNonRomanAlphabet">
+
+                <option value="">Seleccione</option>
+                <option value="yes">Sí</option>
+                <option value="no">No</option>
+
+              </select>
+
+            </div>
+
+
+            <div class="field full hidden"
+                 id="beneficiaryNativeWrap">
+
+              <label>Nombre completo en escritura nativa</label>
+              <input name="beneficiaryNativeName">
+
+              <label>Dirección completa en escritura nativa</label>
+              <textarea name="beneficiaryNativeAddress"></textarea>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- I130-BENEFICIARY-OFFICIAL-DETAILS -->
+
+        <div class="i130-subblock">
+
+          <h3>Información personal adicional</h3>
+
+          <div class="grid">
+
+            <div class="field">
+              <label for="beneficiaryBirthCity">
+                Ciudad / pueblo de nacimiento
+              </label>
+              <input id="beneficiaryBirthCity"
+                     name="beneficiaryBirthCity">
+            </div>
+
+            <div class="field">
+              <label for="beneficiaryUSCIS">
+                USCIS Online Account Number, si tiene
+              </label>
+              <input id="beneficiaryUSCIS"
+                     name="beneficiaryUSCIS">
+            </div>
+
+            <div class="field">
+              <label for="beneficiarySSN">
+                Social Security Number, si tiene
+              </label>
+              <input id="beneficiarySSN"
+                     name="beneficiarySSN">
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Dirección futura en Estados Unidos</h3>
+
+          <p class="helper">
+            Complete esta sección si el beneficiario vivirá en una dirección
+            diferente a la dirección actual.
+          </p>
+
+          <div class="grid">
+
+            <div class="field full">
+              <label>Calle y número</label>
+              <input name="beneficiaryFutureUSStreet">
+            </div>
+
+            <div class="field">
+              <label>Apt. / Suite / Floor</label>
+              <input name="beneficiaryFutureUSUnit">
+            </div>
+
+            <div class="field">
+              <label>Ciudad</label>
+              <input name="beneficiaryFutureUSCity">
+            </div>
+
+            <div class="field">
+              <label>Estado</label>
+              <input name="beneficiaryFutureUSState">
+            </div>
+
+            <div class="field">
+              <label>ZIP</label>
+              <input name="beneficiaryFutureUSZip">
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Dirección fuera de Estados Unidos</h3>
+
+          <p class="helper">
+            Si el beneficiario reside fuera de Estados Unidos o mantiene una
+            dirección extranjera relevante para el proceso, indíquela aquí.
+          </p>
+
+          <div class="grid">
+
+            <div class="field full">
+              <label>Calle y número</label>
+              <input name="beneficiaryForeignStreet">
+            </div>
+
+            <div class="field">
+              <label>Ciudad</label>
+              <input name="beneficiaryForeignCity">
+            </div>
+
+            <div class="field">
+              <label>Provincia / Estado</label>
+              <input name="beneficiaryForeignState">
+            </div>
+
+            <div class="field">
+              <label>Código postal</label>
+              <input name="beneficiaryForeignPostal">
+            </div>
+
+            <div class="field">
+              <label>País</label>
+              <input name="beneficiaryForeignCountry">
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="i130-subblock">
+
+          <h3>Empleo actual del beneficiario</h3>
+
+          <div class="grid">
+
+            <div class="field full">
+              <label for="beneficiaryCurrentlyEmployed">
+                Situación laboral actual
+              </label>
+
+              <select id="beneficiaryCurrentlyEmployed"
+                      name="beneficiaryCurrentlyEmployed">
+                <option value="">Seleccione</option>
+                <option value="employed">Empleado/a</option>
+                <option value="selfemployed">Trabajador/a independiente</option>
+                <option value="unemployed">Desempleado/a</option>
+                <option value="student">Estudiante</option>
+                <option value="retired">Retirado/a</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+
+            <div id="beneficiaryCurrentEmployerWrap"
+                 class="field full hidden">
+
+              <label>Nombre del empleador</label>
+              <input name="beneficiaryCurrentEmployerName">
+
+              <label>Ocupación</label>
+              <input name="beneficiaryCurrentOccupation">
+
+              <label>Dirección del empleador</label>
+              <input name="beneficiaryCurrentEmployerStreet">
+
+              <label>Ciudad</label>
+              <input name="beneficiaryCurrentEmployerCity">
+
+              <label>Estado / Provincia</label>
+              <input name="beneficiaryCurrentEmployerState">
+
+              <label>País</label>
+              <input name="beneficiaryCurrentEmployerCountry">
+
+              <label>Fecha de inicio</label>
+              <input name="beneficiaryCurrentEmploymentStart"
+                     type="date">
+
+            </div>
+
+          </div>
+
+        </div>
+
         <!-- I130-BENEFICIARY-SUPPLEMENTAL -->
 
         <div class="i130-subblock">
@@ -993,6 +1745,12 @@
 
           <h3>Historial de direcciones</h3>
 
+          <p class="helper">
+            Incluya todas las direcciones necesarias para cubrir los últimos
+            5 años, sin dejar períodos sin explicar. Esta información también
+            se utilizará para el I-130A cuando corresponda.
+          </p>
+
           <div id="benAddressesList"></div>
 
           <button type="button"
@@ -1008,6 +1766,11 @@
 
           <h3>Historial de empleo</h3>
 
+          <p class="helper">
+            Incluya todos los empleos necesarios para cubrir los últimos
+            5 años. Incluya también períodos sin empleo cuando corresponda.
+          </p>
+
           <div id="benEmploymentList"></div>
 
           <button type="button"
@@ -1020,7 +1783,71 @@
 </section>
 
 
-      <section class="card">
+            <!-- I130-SPOUSE-JOINT-ADDRESS -->
+
+      <section class="card hidden"
+               id="spouseJointAddressSection">
+
+        <div class="gold">Información para petición de cónyuge</div>
+
+        <h2>Última dirección donde vivieron juntos</h2>
+
+        <p class="muted">
+          Complete esta sección si la petición es para esposo/a.
+          Si nunca vivieron juntos, indíquelo.
+        </p>
+
+        <div class="grid">
+
+          <div class="field full">
+            <label for="spousesEverLivedTogether">
+              ¿Han vivido juntos físicamente en alguna dirección?
+            </label>
+
+            <select id="spousesEverLivedTogether"
+                    name="spousesEverLivedTogether">
+              <option value="">Seleccione</option>
+              <option value="yes">Sí</option>
+              <option value="no">No, nunca han vivido juntos</option>
+            </select>
+          </div>
+
+          <div id="spouseJointAddressWrap"
+               class="field full hidden">
+
+            <label>Calle y número</label>
+            <input name="spouseJointStreet">
+
+            <label>Apt. / Suite / Floor</label>
+            <input name="spouseJointUnit">
+
+            <label>Ciudad</label>
+            <input name="spouseJointCity">
+
+            <label>Estado / Provincia</label>
+            <input name="spouseJointState">
+
+            <label>Código postal</label>
+            <input name="spouseJointPostal">
+
+            <label>País</label>
+            <input name="spouseJointCountry">
+
+            <label>Desde</label>
+            <input name="spouseJointFrom"
+                   type="date">
+
+            <label>Hasta</label>
+            <input name="spouseJointTo"
+                   type="date">
+
+          </div>
+
+        </div>
+
+      </section>
+
+<section class="card">
         <div class="gold">Sección 4</div>
         <h2>Procesamiento migratorio</h2>
 
@@ -1073,7 +1900,91 @@
           </div>
 
           <div class="field full">
-            <label for="processingPreference">
+                      <!-- I130-IMMIGRATION-DETAILS -->
+
+          <div class="field">
+            <label for="entryClass">
+              Class of Admission de la última entrada
+            </label>
+            <input id="entryClass"
+                   name="entryClass"
+                   placeholder="Ej. B2, C11, F1">
+          </div>
+
+          <div class="field">
+            <label for="statusExpiration">
+              Fecha de vencimiento del estatus / I-94
+            </label>
+            <input id="statusExpiration"
+                   name="statusExpiration"
+                   type="date">
+          </div>
+
+          <div class="field">
+            <label for="passportExpiration">
+              Fecha de expiración del pasaporte
+            </label>
+            <input id="passportExpiration"
+                   name="passportExpiration"
+                   type="date">
+          </div>
+
+          <div class="field full">
+            <label for="everInUS">
+              ¿El beneficiario ha estado alguna vez en Estados Unidos?
+            </label>
+
+            <select id="everInUS"
+                    name="everInUS">
+              <option value="">Seleccione</option>
+              <option value="yes">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="immigrationProceedings">
+              ¿El beneficiario ha estado alguna vez en procedimientos migratorios?
+            </label>
+
+            <select id="immigrationProceedings"
+                    name="immigrationProceedings">
+              <option value="">Seleccione</option>
+              <option value="yes">Sí</option>
+              <option value="no">No</option>
+              <option value="unknown">No estoy seguro/a</option>
+            </select>
+          </div>
+
+          <div id="immigrationProceedingsWrap"
+               class="field full hidden">
+
+            <label>Tipo de procedimiento</label>
+
+            <select name="immigrationProceedingsType">
+              <option value="">Seleccione</option>
+              <option value="removal">Removal</option>
+              <option value="deportation">Deportation</option>
+              <option value="exclusion">Exclusion</option>
+              <option value="rescission">Rescission</option>
+              <option value="other">Otro</option>
+            </select>
+
+            <label>Ciudad</label>
+            <input name="immigrationProceedingsCity">
+
+            <label>Estado</label>
+            <input name="immigrationProceedingsState">
+
+            <label>Fecha aproximada</label>
+            <input name="immigrationProceedingsDate"
+                   type="date">
+
+            <label>Explique brevemente</label>
+            <textarea name="immigrationProceedingsDetails"></textarea>
+
+          </div>
+<label for="processingPreference">
               ¿Dónde continuará el proceso migratorio?
             </label>
 
@@ -1101,7 +2012,51 @@
           </div>
 
         </div>
-      </section>
+      
+        <!-- I130-PROCESSING-DETAILS-FINAL -->
+
+        <div class="i130-subblock">
+
+          <h3>Detalles del procesamiento</h3>
+
+          <div id="adjustmentProcessingWrap"
+               class="grid hidden">
+
+            <div class="field">
+              <label>Ciudad de la oficina USCIS</label>
+              <input name="adjustmentUSCISCity">
+            </div>
+
+            <div class="field">
+              <label>Estado</label>
+              <input name="adjustmentUSCISState">
+            </div>
+
+          </div>
+
+
+          <div id="consularProcessingWrap"
+               class="grid hidden">
+
+            <div class="field">
+              <label>Ciudad del consulado / embajada</label>
+              <input name="consularCity">
+            </div>
+
+            <div class="field">
+              <label>Provincia / Estado</label>
+              <input name="consularProvince">
+            </div>
+
+            <div class="field">
+              <label>País</label>
+              <input name="consularCountry">
+            </div>
+
+          </div>
+
+        </div>
+</section>
 
 
       <section class="card">
@@ -1111,7 +2066,79 @@
         <div class="grid">
 
           <div class="field full">
-            <label for="priorPetition">
+                      <!-- I130-PRIOR-PETITIONS-OFFICIAL -->
+
+          <div class="field full">
+            <label for="petitionerEverFiledI130">
+              ¿El peticionario ha presentado anteriormente una petición I-130
+              para este beneficiario o para cualquier otra persona?
+            </label>
+
+            <select id="petitionerEverFiledI130"
+                    name="petitionerEverFiledI130">
+              <option value="">Seleccione</option>
+              <option value="yes">Sí</option>
+              <option value="no">No</option>
+              <option value="unknown">No estoy seguro/a</option>
+            </select>
+          </div>
+
+          <div id="petitionerPriorI130Wrap"
+               class="field full hidden">
+
+            <label>Nombre completo de la persona beneficiaria</label>
+            <input name="petitionerPriorI130BeneficiaryName">
+
+            <label>Fecha aproximada de presentación</label>
+            <input name="petitionerPriorI130Date"
+                   type="date">
+
+            <label>Ciudad / oficina donde se presentó</label>
+            <input name="petitionerPriorI130Place">
+
+            <label>Resultado de la petición</label>
+            <select name="petitionerPriorI130Result">
+              <option value="">Seleccione</option>
+              <option value="approved">Aprobada</option>
+              <option value="denied">Negada</option>
+              <option value="withdrawn">Retirada</option>
+              <option value="pending">Pendiente</option>
+              <option value="unknown">No sabe</option>
+              <option value="other">Otro</option>
+            </select>
+
+            <label>Explique si necesita agregar detalles</label>
+            <textarea name="petitionerPriorI130Details"></textarea>
+
+          </div>
+
+
+          <div class="field full">
+            <label for="petitionerFilingOtherPetitionsNow">
+              ¿Está presentando ahora peticiones separadas para otros familiares?
+            </label>
+
+            <select id="petitionerFilingOtherPetitionsNow"
+                    name="petitionerFilingOtherPetitionsNow">
+              <option value="">Seleccione</option>
+              <option value="yes">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div id="otherCurrentPetitionsWrap"
+               class="field full hidden">
+
+            <label>
+              Indique los nombres y la relación de los otros familiares
+            </label>
+
+            <textarea name="otherCurrentPetitionsDetails"
+                      placeholder="Ej. Juan Pérez - hijo; María Pérez - hija"></textarea>
+
+          </div>
+
+<label for="priorPetition">
               ¿Alguna vez se ha presentado anteriormente una petición migratoria para este beneficiario?
             </label>
 
@@ -1584,6 +2611,30 @@
 
       rebuildI130Supplemental(intake.answers || {});
 fillAnswers(intake.answers || {});
+
+if(typeof updateI130MaritalFields==='function'){
+  updateI130MaritalFields();
+}
+
+if(typeof syncI130Counts==='function'){
+  syncI130Counts();
+}
+
+if(typeof updatePetitionerOfficialFields==='function'){
+  updatePetitionerOfficialFields();
+}
+
+if(typeof updateBeneficiaryConditions==='function'){
+  updateBeneficiaryConditions();
+}
+
+if(typeof updatePriorPetitionConditions==='function'){
+  updatePriorPetitionConditions();
+}
+
+if(typeof updateI130FinalConditions==='function'){
+  updateI130FinalConditions();
+}
 updateI130MaritalFields();
 syncI130Counts();
 
@@ -2284,6 +3335,408 @@ document.addEventListener('DOMContentLoaded',function(){
       });
 
       syncI130Counts();
+
+    }
+  );
+
+})();
+
+</script>
+
+
+<script>
+/* I130-PETITIONER-OFFICIAL-CONDITIONS */
+
+(function(){
+
+  function updatePetitionerOfficialFields(){
+
+    const status=document.getElementById(
+      'petitionerStatus'
+    );
+
+    const citizen=document.getElementById(
+      'petitionerCitizenDetails'
+    );
+
+    const lpr=document.getElementById(
+      'petitionerLPRDetails'
+    );
+
+
+    if(status){
+
+      if(citizen){
+        citizen.classList.toggle(
+          'hidden',
+          status.value!=='uscitizen'
+        );
+      }
+
+      if(lpr){
+        lpr.classList.toggle(
+          'hidden',
+          status.value!=='lpr'
+        );
+      }
+
+    }
+
+
+    const same=document.getElementById(
+      'petitionerMailingSame'
+    );
+
+    const mailing=document.getElementById(
+      'petitionerMailingWrap'
+    );
+
+    if(same && mailing){
+
+      mailing.classList.toggle(
+        'hidden',
+        same.value!=='no'
+      );
+
+    }
+
+
+    const hasCertificate=document.getElementById(
+      'petitionerHasCertificate'
+    );
+
+    const certificate=document.getElementById(
+      'petitionerCertificateWrap'
+    );
+
+    if(hasCertificate && certificate){
+
+      certificate.classList.toggle(
+        'hidden',
+        hasCertificate.value!=='yes'
+      );
+
+    }
+
+  }
+
+
+  window.updatePetitionerOfficialFields=
+    updatePetitionerOfficialFields;
+
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+      [
+        'petitionerStatus',
+        'petitionerMailingSame',
+        'petitionerHasCertificate'
+      ].forEach(function(id){
+
+        document.getElementById(id)
+          ?.addEventListener(
+            'change',
+            updatePetitionerOfficialFields
+          );
+
+      });
+
+      updatePetitionerOfficialFields();
+
+    }
+  );
+
+})();
+
+</script>
+
+
+<script>
+/* I130-BENEFICIARY-CONDITIONS */
+
+(function(){
+
+  function updateBeneficiaryConditions(){
+
+    const work=document.getElementById(
+      'beneficiaryCurrentlyEmployed'
+    );
+
+    const employer=document.getElementById(
+      'beneficiaryCurrentEmployerWrap'
+    );
+
+    if(work && employer){
+      employer.classList.toggle(
+        'hidden',
+        !['employed','selfemployed'].includes(work.value)
+      );
+    }
+
+
+    const proceedings=document.getElementById(
+      'immigrationProceedings'
+    );
+
+    const proceedingsWrap=document.getElementById(
+      'immigrationProceedingsWrap'
+    );
+
+    if(proceedings && proceedingsWrap){
+      proceedingsWrap.classList.toggle(
+        'hidden',
+        proceedings.value!=='yes'
+      );
+    }
+
+
+    const relationship=document.getElementById(
+      'relationship'
+    );
+
+    const spouseSection=document.getElementById(
+      'spouseJointAddressSection'
+    );
+
+    if(relationship && spouseSection){
+      spouseSection.classList.toggle(
+        'hidden',
+        relationship.value!=='spouse'
+      );
+    }
+
+
+    const lived=document.getElementById(
+      'spousesEverLivedTogether'
+    );
+
+    const livedWrap=document.getElementById(
+      'spouseJointAddressWrap'
+    );
+
+    if(lived && livedWrap){
+      livedWrap.classList.toggle(
+        'hidden',
+        lived.value!=='yes'
+      );
+    }
+
+  }
+
+
+  window.updateBeneficiaryConditions=
+    updateBeneficiaryConditions;
+
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+      [
+        'beneficiaryCurrentlyEmployed',
+        'immigrationProceedings',
+        'relationship',
+        'spousesEverLivedTogether'
+      ].forEach(function(id){
+
+        document.getElementById(id)
+          ?.addEventListener(
+            'change',
+            updateBeneficiaryConditions
+          );
+
+      });
+
+      updateBeneficiaryConditions();
+
+    }
+  );
+
+})();
+
+</script>
+
+
+<script>
+/* I130-PRIOR-PETITIONS-CONDITIONS */
+
+(function(){
+
+  function updatePriorPetitionConditions(){
+
+    const prior=document.getElementById(
+      'petitionerEverFiledI130'
+    );
+
+    const priorWrap=document.getElementById(
+      'petitionerPriorI130Wrap'
+    );
+
+    if(prior && priorWrap){
+      priorWrap.classList.toggle(
+        'hidden',
+        prior.value!=='yes'
+      );
+    }
+
+
+    const other=document.getElementById(
+      'petitionerFilingOtherPetitionsNow'
+    );
+
+    const otherWrap=document.getElementById(
+      'otherCurrentPetitionsWrap'
+    );
+
+    if(other && otherWrap){
+      otherWrap.classList.toggle(
+        'hidden',
+        other.value!=='yes'
+      );
+    }
+
+  }
+
+
+  window.updatePriorPetitionConditions=
+    updatePriorPetitionConditions;
+
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+      [
+        'petitionerEverFiledI130',
+        'petitionerFilingOtherPetitionsNow'
+      ].forEach(function(id){
+
+        document.getElementById(id)
+          ?.addEventListener(
+            'change',
+            updatePriorPetitionConditions
+          );
+
+      });
+
+      updatePriorPetitionConditions();
+
+    }
+  );
+
+})();
+
+</script>
+
+
+<script>
+/* I130-FINAL-CONDITIONS */
+
+(function(){
+
+  function updateI130FinalConditions(){
+
+    const relationship=
+      document.getElementById('relationship');
+
+    const siblingWrap=
+      document.getElementById('siblingAdoptionWrap');
+
+    if(relationship && siblingWrap){
+
+      siblingWrap.classList.toggle(
+        'hidden',
+        relationship.value!=='sibling'
+      );
+
+    }
+
+
+    const nativeAlphabet=
+      document.getElementById(
+        'beneficiaryUsesNonRomanAlphabet'
+      );
+
+    const nativeWrap=
+      document.getElementById(
+        'beneficiaryNativeWrap'
+      );
+
+    if(nativeAlphabet && nativeWrap){
+
+      nativeWrap.classList.toggle(
+        'hidden',
+        nativeAlphabet.value!=='yes'
+      );
+
+    }
+
+
+    const processing=
+      document.getElementById(
+        'processingPreference'
+      );
+
+    const adjustment=
+      document.getElementById(
+        'adjustmentProcessingWrap'
+      );
+
+    const consular=
+      document.getElementById(
+        'consularProcessingWrap'
+      );
+
+    if(processing){
+
+      if(adjustment){
+
+        adjustment.classList.toggle(
+          'hidden',
+          processing.value!=='adjustment'
+        );
+
+      }
+
+      if(consular){
+
+        consular.classList.toggle(
+          'hidden',
+          processing.value!=='consular'
+        );
+
+      }
+
+    }
+
+  }
+
+
+  window.updateI130FinalConditions=
+    updateI130FinalConditions;
+
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function(){
+
+      [
+        'relationship',
+        'beneficiaryUsesNonRomanAlphabet',
+        'processingPreference'
+      ].forEach(function(id){
+
+        document.getElementById(id)
+          ?.addEventListener(
+            'change',
+            updateI130FinalConditions
+          );
+
+      });
+
+      updateI130FinalConditions();
 
     }
   );
