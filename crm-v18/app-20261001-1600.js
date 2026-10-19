@@ -1009,12 +1009,711 @@ function switchView(view){
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   const labels={dashboard:'Dashboard',clients:'Clientes',companies:'Empresas',cases:'Casos & trámites',services:'Servicios',payments:'Pagos',cashbook:'Caja',appointments:'Citas',tasks:'Tareas',backup:'Backup'};
   $('#pageTitle').textContent=labels[view]||'AGR CRM';
+  if(view==='taxes') requestAnimationFrame(()=>renderTaxReturns());
   if(view==='cashbook') requestAnimationFrame(()=>renderCashbook());
   if(view==='backup') requestAnimationFrame(()=>renderBackup());
 }
 $$('.nav-item').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
 $$('[data-jump]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.jump)));
 
+function ensureTaxReturns(){
+  if(!Array.isArray(data.taxReturns)) data.taxReturns=[];
+  return data.taxReturns;
+}
+
+function renderTaxReturns(){
+  const table=document.getElementById('taxReturnsTable');
+  if(!table) return;
+
+  const rows=ensureTaxReturns();
+
+  table.innerHTML=rows.length
+    ? rows.map(r=>`
+      <tr data-tax-return-id="${r.id}" style="cursor:pointer">
+        <td><strong>${esc(clientName(r.clientId))}</strong></td>
+        <td>${esc(r.taxYear||'—')}</td>
+        <td>${esc(r.returnType||'1040 Individual')}</td>
+        <td>${esc(r.status||'Intake no enviado')}</td>
+        <td>${esc(r.intakeStatus||'No enviado')}</td>
+        <td>${esc(r.documentsStatus||'Pendientes')}</td>
+        <td>${r.scheduleC==='yes'?'Sí':r.scheduleC==='no'?'No':'Por determinar'}</td>
+        <td>${r.quoteTotal ? money(r.quoteTotal) : 'Pendiente'}</td>
+        <td>${money(r.balance||0)}</td>
+        <td></td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="10" style="text-align:center;padding:28px">Aún no hay declaraciones registradas.</td></tr>';
+
+  table.querySelectorAll('[data-tax-return-id]').forEach(row=>{
+    row.addEventListener('click',()=>{
+      openTaxReturn(row.dataset.taxReturnId);
+    });
+  });
+}
+
+function openTaxReturn(returnId){
+  const r=ensureTaxReturns().find(x=>String(x.id)===String(returnId));
+  if(!r) return;
+
+  const client=data.clients.find(c=>String(c.id)===String(r.clientId));
+  const clientLabel=client?.name||'Cliente';
+
+  const old=document.getElementById('taxReturnWorkspaceDialog');
+  if(old) old.remove();
+
+  const dialog=document.createElement('dialog');
+  dialog.id='taxReturnWorkspaceDialog';
+  dialog.style.width='min(1100px, calc(100vw - 40px))';
+  dialog.style.maxWidth='1100px';
+  dialog.style.boxSizing='border-box';
+
+  dialog.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:18px">
+      <div>
+        <div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#d39100">PREPARACIÓN DE TAXES</div>
+        <h2 style="margin:6px 0 4px">${esc(clientLabel)}</h2>
+        <div style="color:#667085">${esc(r.taxYear||'')} · ${esc(r.returnType||'')}</div>
+      </div>
+      <button type="button" class="secondary" id="closeTaxReturnWorkspace">✕</button>
+    </div>
+
+    <div class="case-workspace-tabs" id="taxReturnWorkspaceTabs">
+      <button type="button" class="active" data-tax-tab="summary">Resumen</button>
+      <button type="button" data-tax-tab="intake">Intake</button>
+      <button type="button" data-tax-tab="documents">Documentos</button>
+      <button type="button" data-tax-tab="quote">Cotización</button>
+      <button type="button" data-tax-tab="payments">Pagos</button>
+      <button type="button" data-tax-tab="preparation">Preparación</button>
+      <button type="button" data-tax-tab="efile">Firma / E-file</button>
+      <button type="button" data-tax-tab="history">Historial</button>
+      <button type="button" data-tax-tab="notes">Notas</button>
+    </div>
+
+    <div id="taxReturnWorkspaceContent" style="padding-top:18px"></div>
+
+    <div class="modal-actions" style="margin-top:22px">
+      <button type="button" class="danger" id="deleteTaxReturnFromWorkspace">
+        🗑 Eliminar declaración
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+
+  const content=dialog.querySelector('#taxReturnWorkspaceContent');
+
+  const renderTab=(tab)=>{
+    dialog.querySelectorAll('[data-tax-tab]').forEach(btn=>{
+      btn.classList.toggle('active',btn.dataset.taxTab===tab);
+    });
+
+    if(tab==='summary'){
+      content.innerHTML=`
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">RESUMEN</p>
+              <h2>Declaración ${esc(r.taxYear||'')}</h2>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label>Cliente<input value="${esc(clientLabel)}" readonly></label>
+            <label>Año fiscal<input value="${esc(r.taxYear||'')}" readonly></label>
+            <label>Tipo<input value="${esc(r.returnType||'')}" readonly></label>
+            <label>Filing Status<input value="${esc(r.filingStatus||'Por determinar')}" readonly></label>
+            <label>Estado<input value="${esc(r.status||'')}" readonly></label>
+            <label>Intake<input value="${esc(r.intakeStatus||'')}" readonly></label>
+            <label>Documentos<input value="${esc(r.documentsStatus||'')}" readonly></label>
+            <label>Schedule C<input value="${esc(r.scheduleC==='yes'?'Sí':r.scheduleC==='no'?'No':'Por determinar')}" readonly></label>
+            <label>Bookkeeping<input value="${esc(r.bookkeepingStatus||'Por determinar')}" readonly></label>
+            <label>Cotización<input value="${money(r.quoteTotal||0)}" readonly></label>
+            <label>Pagado<input value="${money(r.amountPaid||0)}" readonly></label>
+            <label>Saldo<input value="${money(r.balance||0)}" readonly></label>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    if(tab==='intake'){
+      content.innerHTML='<div id="taxCaseIntakePane"></div>';
+
+      const taxIntakeCase={
+        id:'tax-'+String(r.id),
+        clientId:r.clientId,
+        service:'Declaracion de impuestos '+String(r.taxYear||''),
+        aNumber:''
+      };
+
+      renderCaseIntake(taxIntakeCase,content.querySelector('#taxCaseIntakePane'));
+      return;
+    }
+
+    if(tab==='documents'){
+
+      const documentTypes=[
+        ['identity','Identificación del contribuyente'],
+        ['ssn_itin','Tarjeta SSN / ITIN'],
+        ['w2','W-2'],
+        ['1099_nec','1099-NEC'],
+        ['1099_k','1099-K'],
+        ['1099_misc','1099-MISC'],
+        ['1099_int_div','1099-INT / 1099-DIV'],
+        ['1099_r','1099-R'],
+        ['ssa_1099','SSA-1099'],
+        ['unemployment','Desempleo / 1099-G'],
+        ['dependents','Documentos de dependientes'],
+        ['childcare','Gastos de childcare'],
+        ['healthcare','Seguro médico / 1095-A'],
+        ['estimated','Pagos estimados'],
+        ['home','Compra / venta de vivienda'],
+        ['schedule_c','Estados de cuenta / recibos para Schedule C'],
+        ['other','Otros documentos']
+      ];
+
+      if(!r.taxDocuments || typeof r.taxDocuments!=='object'){
+        r.taxDocuments={};
+      }
+
+      documentTypes.forEach(([key])=>{
+        if(!r.taxDocuments[key]){
+          r.taxDocuments[key]='pending';
+        }
+      });
+
+      const statusLabel={
+        pending:'Pendiente',
+        received:'Recibido',
+        na:'No aplica'
+      };
+
+      const receivedCount=documentTypes.filter(([key])=>r.taxDocuments[key]==='received').length;
+      const pendingCount=documentTypes.filter(([key])=>r.taxDocuments[key]==='pending').length;
+
+      content.innerHTML=`
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">DOCUMENTOS</p>
+              <h2>Documentos de la declaración ${esc(r.taxYear||'')}</h2>
+              <p style="color:#667085;margin:4px 0 0">
+                Control de documentos recibidos y pendientes para preparar la declaración.
+              </p>
+            </div>
+          </div>
+
+          <div style="
+            display:grid;
+            grid-template-columns:repeat(3,minmax(0,1fr));
+            gap:12px;
+            margin:18px 0
+          ">
+            <div class="box">
+              <span>Total</span>
+              <strong>${documentTypes.length}</strong>
+            </div>
+
+            <div class="box">
+              <span>Recibidos</span>
+              <strong>${receivedCount}</strong>
+            </div>
+
+            <div class="box">
+              <span>Pendientes</span>
+              <strong>${pendingCount}</strong>
+            </div>
+          </div>
+
+          <div style="display:grid;gap:10px">
+            ${documentTypes.map(([key,label])=>`
+              <div style="
+                display:grid;
+                grid-template-columns:minmax(0,1fr) 180px;
+                align-items:center;
+                gap:14px;
+                padding:12px 14px;
+                border:1px solid #e2e8f0;
+                border-radius:12px;
+                background:#fff
+              ">
+                <div>
+                  <strong>${esc(label)}</strong>
+                </div>
+
+                <select data-tax-document="${esc(key)}">
+                  <option value="pending" ${r.taxDocuments[key]==='pending'?'selected':''}>Pendiente</option>
+                  <option value="received" ${r.taxDocuments[key]==='received'?'selected':''}>Recibido</option>
+                  <option value="na" ${r.taxDocuments[key]==='na'?'selected':''}>No aplica</option>
+                </select>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      content.querySelectorAll('[data-tax-document]').forEach(select=>{
+        select.addEventListener('change',()=>{
+          const key=select.dataset.taxDocument;
+          r.taxDocuments[key]=select.value;
+
+          const pending=documentTypes.filter(([k])=>r.taxDocuments[k]==='pending').length;
+          const received=documentTypes.filter(([k])=>r.taxDocuments[k]==='received').length;
+
+          r.documentsStatus=pending===0
+            ? 'Completos'
+            : 'Pendientes';
+
+          r.updatedAt=new Date().toISOString();
+
+          save();
+          renderTaxReturns();
+          renderTab('documents');
+        });
+      });
+
+      return;
+    }
+
+    content.innerHTML=`
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">${esc(tab.toUpperCase())}</p>
+            <h2>Sección en construcción</h2>
+          </div>
+        </div>
+        <p style="color:#667085;margin:0">Aquí construiremos la información de esta pestaña.</p>
+      </div>
+    `;
+  };
+
+  dialog.querySelectorAll('[data-tax-tab]').forEach(btn=>{
+    btn.addEventListener('click',()=>renderTab(btn.dataset.taxTab));
+  });
+
+  dialog.querySelector('#closeTaxReturnWorkspace').onclick=()=>dialog.close();
+
+  dialog.querySelector('#deleteTaxReturnFromWorkspace').onclick=()=>{
+    const label=clientLabel+' · '+(r.taxYear||'');
+
+    const ok=confirm(
+      '¿Eliminar esta declaración?\n\n'+
+      label+
+      '\n\nEsta acción eliminará este expediente fiscal del CRM.'
+    );
+
+    if(!ok) return;
+
+    data.taxReturns=data.taxReturns.filter(
+      x=>String(x.id)!==String(r.id)
+    );
+
+    save();
+    renderTaxReturns();
+    dialog.close();
+  };
+
+  dialog.addEventListener('close',()=>dialog.remove());
+
+  renderTab('summary');
+  dialog.showModal();
+}
+function openNewTaxReturnDialog(){
+  ensureTaxReturns();
+
+  const old=document.getElementById('newTaxReturnDialog');
+  if(old) old.remove();
+
+  const dialog=document.createElement('dialog');
+  dialog.id='newTaxReturnDialog';
+  dialog.style.width='min(920px, calc(100vw - 40px))';
+  dialog.style.maxWidth='920px';
+  dialog.style.boxSizing='border-box';
+  dialog.style.overflowX='hidden';
+
+  dialog.innerHTML=`
+    <form method="dialog" style="width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow-x:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:22px">
+        <div>
+          <div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#d39100">
+            PREPARACIÓN DE TAXES
+          </div>
+          <h2 style="margin:6px 0 0">Nueva declaración</h2>
+        </div>
+
+        <button type="button" class="secondary" id="closeTaxReturnDialog">✕</button>
+      </div>
+
+      <div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));width:100%;max-width:100%;box-sizing:border-box">
+
+        <label class="full">
+          Cliente
+          <div class="pending-client-search">
+            <input id="taxReturnClientSearch"
+              type="text"
+              autocomplete="off"
+              placeholder="Buscar por nombre, teléfono o email">
+
+            <input id="taxReturnClient" type="hidden">
+
+            <div id="taxReturnClientResults"
+              class="pending-client-results"
+              hidden></div>
+
+            <small id="taxReturnClientSelected"></small>
+          </div>
+        </label>
+
+
+        <label>
+          Año fiscal
+          <select id="taxReturnYear">
+            <option value="2026">2026</option>
+            <option value="2025" selected>2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+          </select>
+        </label>
+
+
+        <label>
+          Tipo de declaración
+          <select id="taxReturnType">
+            <option value="1040 Individual">1040 Individual</option>
+            <option value="1040-X Amended">1040-X · Enmienda</option>
+          </select>
+        </label>
+
+
+        <label>
+          Filing Status
+          <select id="taxFilingStatus">
+            <option value="Por determinar">Por determinar</option>
+            <option value="Single">Single</option>
+            <option value="Married Filing Jointly">Married Filing Jointly</option>
+            <option value="Married Filing Separately">Married Filing Separately</option>
+            <option value="Head of Household">Head of Household</option>
+            <option value="Qualifying Surviving Spouse">Qualifying Surviving Spouse</option>
+          </select>
+        </label>
+
+
+        <label>
+          Estado del trabajo
+          <select id="taxReturnStatus">
+            <option value="Intake no enviado">Intake no enviado</option>
+            <option value="Intake enviado">Intake enviado</option>
+            <option value="Intake recibido">Intake recibido</option>
+            <option value="Documentos pendientes">Documentos pendientes</option>
+            <option value="Revisión AGR">Revisión AGR</option>
+            <option value="Cotización enviada">Cotización enviada</option>
+            <option value="Aceptado">Aceptado</option>
+            <option value="En preparación">En preparación</option>
+            <option value="Revisión final">Revisión final</option>
+            <option value="Firma pendiente">Firma pendiente</option>
+            <option value="E-file enviado">E-file enviado</option>
+            <option value="Aceptado por IRS">Aceptado por IRS</option>
+            <option value="Completado">Completado</option>
+          </select>
+        </label>
+
+
+        <label>
+          Intake
+          <select id="taxIntakeStatus">
+            <option value="No enviado">No enviado</option>
+            <option value="Enviado">Enviado</option>
+            <option value="En progreso">En progreso</option>
+            <option value="Recibido">Recibido</option>
+            <option value="Revisado">Revisado</option>
+          </select>
+        </label>
+
+
+        <label>
+          Documentos
+          <select id="taxDocumentsStatus">
+            <option value="Pendientes">Pendientes</option>
+            <option value="Parciales">Parciales</option>
+            <option value="Completos">Completos</option>
+            <option value="Revisados">Revisados</option>
+          </select>
+        </label>
+
+
+        <label>
+          Schedule C
+          <select id="taxScheduleC">
+            <option value="unknown" selected>Por determinar</option>
+            <option value="no">No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </label>
+
+
+        <label>
+          Bookkeeping / revisión contable
+          <select id="taxBookkeeping">
+            <option value="Por determinar" selected>Por determinar</option>
+            <option value="No requerido">No requerido</option>
+            <option value="Requerido">Requerido</option>
+            <option value="Requerido">Requerido</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Completado">Completado</option>
+          </select>
+        </label>
+
+
+        <label>
+          Cotización
+          <input id="taxQuoteTotal"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00">
+        </label>
+
+
+        <label>
+          Pago recibido
+          <input id="taxAmountPaid"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00">
+        </label>
+
+
+        <label class="full">
+          Nota interna
+          <textarea id="taxInternalNote"
+            rows="3"
+            placeholder="Opcional"></textarea>
+        </label>
+
+      </div>
+
+
+      <div class="modal-actions" style="margin-top:24px">
+        <button type="button"
+          class="secondary"
+          id="cancelTaxReturn">
+          Cancelar
+        </button>
+
+        <button type="button"
+          class="primary"
+          id="saveTaxReturn">
+          Crear declaración
+        </button>
+      </div>
+    </form>
+  `;
+
+  document.body.appendChild(dialog);
+
+
+  const taxClientSearch=dialog.querySelector('#taxReturnClientSearch');
+  const taxClientId=dialog.querySelector('#taxReturnClient');
+  const taxClientResults=dialog.querySelector('#taxReturnClientResults');
+  const taxClientSelected=dialog.querySelector('#taxReturnClientSelected');
+
+
+  const close=()=>dialog.close();
+
+  dialog.querySelector('#closeTaxReturnDialog').onclick=close;
+  dialog.querySelector('#cancelTaxReturn').onclick=close;
+
+
+  const renderTaxClientMatches=()=>{
+    const q=String(taxClientSearch.value||'').trim().toLowerCase();
+
+    if(q.length<2){
+      taxClientResults.innerHTML='';
+      taxClientResults.hidden=true;
+      return;
+    }
+
+    const matches=data.clients
+      .filter(c=>!c.isCompany)
+      .filter(c=>{
+        const text=[
+          c.name||'',
+          c.phone||'',
+          c.email||''
+        ].join(' ').toLowerCase();
+
+        return text.includes(q);
+      })
+      .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')))
+      .slice(0,10);
+
+
+    if(!matches.length){
+      taxClientResults.innerHTML=
+        '<div class="pending-client-empty">No se encontraron clientes.</div>';
+
+      taxClientResults.hidden=false;
+      taxClientResults.style.position='static';
+      taxClientResults.style.marginTop='6px';
+      return;
+    }
+
+
+    taxClientResults.innerHTML=matches.map(c=>{
+      const extra=[c.phone||'',c.email||'']
+        .filter(Boolean)
+        .join(' · ');
+
+      return `
+        <button type="button"
+          class="pending-client-option"
+          data-tax-client-id="${c.id}">
+          <strong>${esc(c.name||'Cliente')}</strong>
+          <small>${esc(extra)}</small>
+        </button>
+      `;
+    }).join('');
+
+
+    taxClientResults.hidden=false;
+    taxClientResults.style.position='static';
+    taxClientResults.style.marginTop='6px';
+    taxClientResults.style.maxHeight='220px';
+    taxClientResults.style.overflowY='auto';
+
+
+    taxClientResults
+      .querySelectorAll('[data-tax-client-id]')
+      .forEach(btn=>{
+
+        btn.onclick=()=>{
+          const client=data.clients.find(
+            c=>String(c.id)===String(btn.dataset.taxClientId)
+          );
+
+          if(!client) return;
+
+          taxClientId.value=client.id;
+          taxClientSearch.value=client.name||'';
+          taxClientSelected.textContent=
+            'Seleccionado: '+(client.name||'Cliente');
+
+          taxClientResults.innerHTML='';
+          taxClientResults.hidden=true;
+        };
+
+      });
+  };
+
+
+  taxClientSearch.addEventListener('input',()=>{
+    taxClientId.value='';
+    taxClientSelected.textContent='';
+    renderTaxClientMatches();
+  });
+
+
+  taxClientSearch.addEventListener('focus',()=>{
+    if(taxClientSearch.value.trim().length>=2){
+      renderTaxClientMatches();
+    }
+  });
+
+
+  dialog.querySelector('#taxScheduleC').addEventListener('change',e=>{
+    const bookkeeping=dialog.querySelector('#taxBookkeeping');
+
+    if(e.target.value==='yes' &&
+       bookkeeping.value==='No requerido'){
+      bookkeeping.value='Pendiente de determinar';
+    }
+  });
+
+
+  dialog.querySelector('#saveTaxReturn').onclick=()=>{
+
+    const clientId=Number(taxClientId.value||0);
+
+    if(!clientId){
+      alert('Selecciona un cliente.');
+      taxClientSearch.focus();
+      return;
+    }
+
+
+    const quoteTotal=Math.max(
+      0,
+      Number(dialog.querySelector('#taxQuoteTotal').value||0)
+    );
+
+    const amountPaid=Math.max(
+      0,
+      Number(dialog.querySelector('#taxAmountPaid').value||0)
+    );
+
+    const balance=Math.max(0,quoteTotal-amountPaid);
+
+
+    data.taxReturns.unshift({
+
+      id:Date.now(),
+
+      clientId,
+
+      taxYear:
+        dialog.querySelector('#taxReturnYear').value,
+
+      returnType:
+        dialog.querySelector('#taxReturnType').value,
+
+      filingStatus:
+        dialog.querySelector('#taxFilingStatus').value,
+
+      status:
+        dialog.querySelector('#taxReturnStatus').value,
+
+      intakeStatus:
+        dialog.querySelector('#taxIntakeStatus').value,
+
+      documentsStatus:
+        dialog.querySelector('#taxDocumentsStatus').value,
+
+      scheduleC:
+        dialog.querySelector('#taxScheduleC').value,
+
+      bookkeepingStatus:
+        dialog.querySelector('#taxBookkeeping').value,
+
+      quoteTotal,
+
+      amountPaid,
+
+      balance,
+
+      internalNote:
+        dialog.querySelector('#taxInternalNote').value.trim(),
+
+      createdAt:new Date().toISOString(),
+
+      updatedAt:new Date().toISOString()
+
+    });
+
+
+    save();
+    renderTaxReturns();
+    dialog.close();
+  };
+
+
+  dialog.addEventListener('close',()=>dialog.remove());
+
+  dialog.showModal();
+}
+document.getElementById('newTaxReturnBtn')?.addEventListener('click',openNewTaxReturnDialog);
 function render(){
   $('#statClients').textContent=data.clients.length;
   $('#statCases').textContent=data.cases.filter(c=>!['completado','aprobado'].includes(c.status)).length;
@@ -3833,6 +4532,16 @@ function renderClients(filter){
 
           <button
             type="button"
+            class="secondary"
+            data-edit-client-id="${c.id}"
+            title="Editar cliente"
+            aria-label="Editar cliente"
+            style="margin-right:7px">
+            ✏️
+          </button>
+
+          <button
+            type="button"
             class="danger delete-icon-btn"
             data-delete-client-id="${c.id}"
             title="Eliminar"
@@ -3858,6 +4567,24 @@ function renderClients(filter){
   }).join('') ||
   '<tr><td colspan="8">No hay clientes que coincidan con esta búsqueda.</td></tr>';
 
+
+  table.querySelectorAll(
+    '[data-edit-client-id]'
+  ).forEach(btn=>{
+
+    btn.onclick=e=>{
+      e.stopPropagation();
+
+      const client=data.clients.find(
+        c=>Number(c.id)===Number(btn.dataset.editClientId)
+      );
+
+      if(client){
+        openModal('client-edit',client);
+      }
+    };
+
+  });
 
   table.querySelectorAll(
     '[data-delete-client-id]'
@@ -3977,16 +4704,54 @@ function renderCases(){
 }
 
 function renderServices(){
+
   $('#servicesTable').innerHTML=data.services.map(s=>`
     <tr class="clickable-row" data-service-id="${s.id}">
-      <td><strong>${s.name}</strong></td>
+
+      <td>
+        <strong>${s.name}</strong>
+      </td>
+
       <td>${s.category||'—'}</td>
+
       <td>${s.price?money(s.price):'Variable'}</td>
+
       <td>${s.active===false?'No':'Sí'}</td>
-    </tr>`).join('');
+
+      <td>
+        <button
+          type="button"
+          class="secondary"
+          data-edit-service-id="${s.id}"
+          title="Editar servicio"
+          aria-label="Editar servicio">
+          ✏️
+        </button>
+      </td>
+
+    </tr>
+  `).join('');
+
+  $('#servicesTable')
+    ?.querySelectorAll('[data-edit-service-id]')
+    .forEach(btn=>{
+
+      btn.onclick=e=>{
+        e.stopPropagation();
+
+        const service=data.services.find(
+          s=>Number(s.id)===Number(btn.dataset.editServiceId)
+        );
+
+        if(service){
+          openModal('service-edit',service);
+        }
+      };
+
+    });
+
   bindServiceOpeners();
 }
-
 function renderPayments(){
   $('#paymentsTable').innerHTML=data.cases.map(c=>`<tr class="clickable-row" data-case-payment-id="${c.id}">
     <td><strong>${clientName(c.clientId)}</strong></td>
@@ -4015,6 +4780,7 @@ let mode='client';
 let editingCaseId=null;
 let editingPaymentId=null;
 let editingServiceId=null;
+let editingClientId=null; // AGR-CLIENT-EDIT-MODE
 
 const templates={
   client:()=>[['folderNumber','No. de carpeta física','text',''],['name','Nombre completo','text','full'],['phone','Teléfono','tel',''],['email','Email','email',''],['referredByClientId','Referido por','referrerSearch','full'],['isCompany','Tipo de cliente','clientType','']],
@@ -4645,6 +5411,15 @@ if(s.includes('i-765') || s.includes('i765') || s.includes('permiso de trabajo')
 if(s.includes('i-485') || s.includes('i485') || s.includes('ajuste de estatus')){
     return {code:'i485',label:'I-485 · Ajuste de Estatus'};
   }
+  if(
+    s.includes('declaracion de impuestos') ||
+    s.includes('declaración de impuestos') ||
+    s.includes('tax return') ||
+    s.includes('taxes') ||
+    s.includes('1040')
+  ){
+    return {code:'tax',label:'Tax Intake · Declaración de Impuestos'};
+  }
   return {code:'general',label:String(k?.service||'Intake general')};
 }
 
@@ -4671,6 +5446,7 @@ function caseIntakeFor(k){
       clientLink:'',
       progress:0,
       answers:{},
+documents:[],
       createdAt:'',
       sentAt:'',
       clientUpdatedAt:'',
@@ -4685,6 +5461,7 @@ function caseIntakeFor(k){
   const rec=data.intakes[key];
 
   if(rec.type && rec.type!==type.code){
+if(!Array.isArray(rec.documents)) rec.documents=[];
     rec.type=type.code;
     rec.typeLabel=type.label;
     rec.status='No enviado';
@@ -4718,8 +5495,8 @@ function intakeStatusLabel(rec){
   return rec?.status||'No enviado';
 }
 
-function renderCaseIntake(k){
-  const pane=$('#caseIntakePane');
+function renderCaseIntake(k,paneOverride){
+  const pane=paneOverride || $('#caseIntakePane');
   if(!pane) return;
 
   const client=clientById(k.clientId)||{};
@@ -4791,7 +5568,9 @@ function renderCaseIntake(k){
           `
           : `
             <p class="section-subtext">
-              Crea un enlace único para este caso. Todavía no lo envíes al cliente hasta que conectemos la página pública I-130.
+              ${type.code==='tax'
+                ? 'Crea un enlace único y privado para que el cliente complete su Tax Intake.'
+                : 'Crea un enlace único para este caso. Todavía no lo envíes al cliente hasta que conectemos la página pública I-130.'}
             </p>
             <button type="button" class="primary" id="createIntakeLink">Crear enlace de intake</button>
           `
@@ -4824,7 +5603,7 @@ function renderCaseIntake(k){
       letter-spacing:1.4px;
       text-transform:uppercase
     ">
-      Hoja de trabajo I-130
+      
     </div>
 
     <div style="
@@ -4832,9 +5611,12 @@ function renderCaseIntake(k){
       font-size:13px;
       color:#64748b
     ">
-      Cliente: ${esc(k.clientName || k.name || 'Cliente')}
-      &nbsp; · &nbsp;
-      Caso #${esc(String(k.id || ''))}
+      ${type.code==='tax'
+  ? 'Cliente: '+esc(client.name||'Cliente')+
+    ' &nbsp; · &nbsp; Declaración '+esc(String(k.service||'').replace(/^Declaracion de impuestos\s*/i,'')||'')
+  : 'Cliente: '+esc(k.clientName || k.name || client.name || 'Cliente')+
+    ' &nbsp; · &nbsp; Caso #'+esc(String(k.id || ''))
+}
       &nbsp; · &nbsp;
       ${new Date().toLocaleDateString('en-US')}
     </div>
@@ -4931,6 +5713,278 @@ function renderCaseIntake(k){
                 consular:'Proceso consular fuera de Estados Unidos'
               };
 
+              if(type.code==='tax'){
+
+                const taxLabels={
+                  taxpayerFirstName:'Nombre',
+                  taxpayerLastName:'Apellido',
+                  taxpayerDOB:'Fecha de nacimiento',
+                  taxpayerSSN:'SSN o ITIN',
+                  taxpayerTaxId:'SSN o ITIN',
+                  taxpayerOccupation:'Ocupación',
+                  taxpayerPhone:'Teléfono',
+                  taxpayerEmail:'Correo electrónico',
+                  taxpayerIpPin:'IP PIN del IRS',
+                  taxpayerAddress:'Dirección actual',
+                  taxpayerCity:'Ciudad',
+                  taxpayerState:'Estado',
+                  taxpayerZip:'ZIP Code',
+
+                  firstName:'Nombre',
+                  lastName:'Apellido',
+                  dob:'Fecha de nacimiento',
+                  ssn:'SSN o ITIN',
+                  taxId:'SSN o ITIN',
+                  occupation:'Ocupación',
+                  phone:'Teléfono',
+                  email:'Correo electrónico',
+                  ipPin:'IP PIN del IRS',
+                  address:'Dirección actual',
+                  city:'Ciudad',
+                  state:'Estado',
+                  zip:'ZIP Code',
+
+                  maritalStatus:'Estado civil',
+                  filingStatus:'Filing Status',
+
+                  spouseFirstName:'Nombre del cónyuge',
+                  spouseLastName:'Apellido del cónyuge',
+                  spouseDOB:'Fecha de nacimiento',
+                  spouseSSN:'SSN o ITIN',
+                  spouseTaxId:'SSN o ITIN',
+                  spouseOccupation:'Ocupación',
+                  spouseIpPin:'IP PIN del IRS',
+
+                  incomeW2:'W-2',
+                  income1099NEC:'1099-NEC',
+                  income1099K:'1099-K',
+                  income1099MISC:'1099-MISC',
+                  income1099INT:'1099-INT',
+                  income1099DIV:'1099-DIV',
+                  income1099R:'1099-R',
+                  incomeSSA1099:'SSA-1099',
+                  incomeUnemployment:'Desempleo',
+                  incomeInvestments:'Inversiones / Crypto',
+                  incomeRental:'Propiedad de renta',
+                  incomeOther:'Otros ingresos',
+
+                  hasSelfEmployment:'Trabajo por cuenta propia / negocio',
+                  requiresScheduleCReview:'Requiere revisión para Schedule C',
+
+                  madeEstimatedPayments:'Realizó pagos estimados',
+                  estimatedPaymentAmount:'Total de pagos estimados',
+
+                  hsa:'HSA',
+                  boughtHome:'Compró vivienda',
+                  soldHome:'Vendió vivienda'
+                };
+
+                const taxValue=(key,value)=>{
+                  if(value===null || value===undefined || value==='') return '';
+
+                  if(typeof value==='boolean'){
+                    return value ? 'Sí' : 'No';
+                  }
+
+                  let v=String(value).trim();
+
+                  if(v==='true') return 'Sí';
+                  if(v==='false') return 'No';
+                  if(v==='yes') return 'Sí';
+                  if(v==='no') return 'No';
+
+                  if(/^\d{4}-\d{2}-\d{2}$/.test(v)){
+                    const p=v.split('-');
+                    return p[1]+'/'+p[2]+'/'+p[0];
+                  }
+
+                  return valueLabels[v] || v;
+                };
+
+                const taxHumanize=(key)=>taxLabels[key] || String(key||'')
+                  .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
+                  .replace(/[._-]+/g,' ')
+                  .replace(/\s+/g,' ')
+                  .trim()
+                  .replace(/^./,c=>c.toUpperCase());
+
+                const taxSection=(title,rows)=>{
+                  const html=rows.filter(Boolean).join('');
+                  if(!html) return '';
+
+                  return `
+                    <section style="margin-bottom:26px;">
+                      <div style="
+                        color:#c89013;
+                        font-size:12px;
+                        font-weight:800;
+                        letter-spacing:1.5px;
+                        text-transform:uppercase;
+                        margin-bottom:6px
+                      ">${esc(title)}</div>
+
+                      <div style="border-top:2px solid #0b2148;">
+                        ${html}
+                      </div>
+                    </section>
+                  `;
+                };
+
+                const taxRow=(key,value)=>{
+                  const formatted=taxValue(key,value);
+                  if(formatted==='') return '';
+
+                  return `
+                    <div style="padding:12px 0;border-bottom:1px solid #e5e7eb;">
+                      <small style="display:block;color:#64748b;margin-bottom:3px;">
+                        ${esc(taxHumanize(key))}
+                      </small>
+                      <strong style="color:#0f172a;font-size:16px;">
+                        ${esc(formatted)}
+                      </strong>
+                    </div>
+                  `;
+                };
+
+                const taxpayerKeys=[
+                  'taxpayerFirstName','taxpayerLastName','taxpayerDOB',
+                  'taxpayerSSN','taxpayerTaxId','taxpayerOccupation',
+                  'taxpayerPhone','taxpayerEmail','taxpayerIpPin',
+                  'taxpayerAddress','taxpayerCity','taxpayerState','taxpayerZip',
+                  'firstName','lastName','dob','ssn','taxId',
+                  'occupation','phone','email','ipPin',
+                  'address','city','state','zip'
+                ];
+
+                const spouseKeys=[
+                  'maritalStatus','filingStatus',
+                  'spouseFirstName','spouseLastName','spouseDOB',
+                  'spouseSSN','spouseTaxId','spouseOccupation','spouseIpPin'
+                ];
+
+                const incomeKeys=[
+                  'incomeW2','income1099NEC','income1099K','income1099MISC',
+                  'income1099INT','income1099DIV','income1099R','incomeSSA1099',
+                  'incomeUnemployment','incomeInvestments','incomeRental','incomeOther'
+                ];
+
+                const businessKeys=[
+                  'hasSelfEmployment',
+                  'requiresScheduleCReview'
+                ];
+
+                const otherTaxKeys=[
+                  'hsa','boughtHome','soldHome',
+                  'madeEstimatedPayments','estimatedPaymentAmount'
+                ];
+
+                let taxHtml='';
+
+                taxHtml+=taxSection(
+                  'Información del contribuyente',
+                  taxpayerKeys.map(k=>taxRow(k,answers[k]))
+                );
+
+                taxHtml+=taxSection(
+                  'Estado civil y cónyuge',
+                  spouseKeys.map(k=>taxRow(k,answers[k]))
+                );
+
+                const dependents=Array.isArray(answers.dependents)
+                  ? answers.dependents
+                  : [];
+
+                dependents.forEach((dep,index)=>{
+                  if(!dep || typeof dep!=='object') return;
+
+                  const depLabels={
+                    name:'Nombre completo',
+                    dob:'Fecha de nacimiento',
+                    taxId:'SSN o ITIN',
+                    relationship:'Parentesco',
+                    months:'Meses que vivió con el contribuyente',
+                    livedUS:'Vivió en Estados Unidos',
+                    temporaryAbsence:'Ausencia temporal',
+                    residencyStatus:'Estatus de residencia',
+                    fullTimeStudent:'Estudiante de tiempo completo',
+                    disabled:'Discapacidad',
+                    selfSupport:'Proporcionó más del 50% de su propia manutención',
+                    taxpayerSupport:'Contribuyente proporcionó manutención',
+                    married:'Casado/a',
+                    jointReturn:'Presentará declaración conjunta',
+                    otherClaimant:'Otra persona puede reclamarlo',
+                    childcare:'Gastos de cuidado infantil',
+                    notes:'Notas'
+                  };
+
+                  const rows=Object.entries(dep).map(([key,value])=>{
+                    const formatted=taxValue(key,value);
+                    if(formatted==='') return '';
+
+                    return `
+                      <div style="padding:12px 0;border-bottom:1px solid #e5e7eb;">
+                        <small style="display:block;color:#64748b;margin-bottom:3px;">
+                          ${esc(depLabels[key] || taxHumanize(key))}
+                        </small>
+                        <strong style="color:#0f172a;font-size:16px;">
+                          ${esc(formatted)}
+                        </strong>
+                      </div>
+                    `;
+                  });
+
+                  taxHtml+=taxSection(
+                    'Dependiente '+(index+1),
+                    rows
+                  );
+                });
+
+                taxHtml+=taxSection(
+                  'Ingresos',
+                  incomeKeys.map(k=>taxRow(k,answers[k]))
+                );
+
+                taxHtml+=taxSection(
+                  'Negocio / Schedule C',
+                  businessKeys.map(k=>taxRow(k,answers[k]))
+                );
+
+                taxHtml+=taxSection(
+                  'Deducciones, créditos y pagos',
+                  otherTaxKeys.map(k=>taxRow(k,answers[k]))
+                );
+
+                const taxKnown=new Set([
+                  ...taxpayerKeys,
+                  ...spouseKeys,
+                  ...incomeKeys,
+                  ...businessKeys,
+                  ...otherTaxKeys,
+                  'dependents'
+                ]);
+
+                const remaining=[];
+
+                Object.entries(answers).forEach(([key,value])=>{
+                  if(taxKnown.has(key)) return;
+
+                  // Estos ya aparecen agrupados dentro de answers.dependents
+                  if(/^dependent_/i.test(key)) return;
+
+                  if(value===null || value===undefined || value==='') return;
+                  if(typeof value==='object') return;
+
+                  remaining.push(taxRow(key,value));
+                });
+
+                taxHtml+=taxSection(
+                  'Otra información fiscal',
+                  remaining
+                );
+
+                return taxHtml ||
+                  '<p class="empty-state">Todavía no hay respuestas recibidas.</p>';
+              }
               const groups=[
                 {
                   title:'Relación familiar',
@@ -5144,7 +6198,48 @@ function renderCaseIntake(k){
           }
         </div>
       </section>
+${Array.isArray(rec.documents) && rec.documents.length ? `
+  <section style="border:1px solid #dce4ef;border-radius:18px;padding:20px;background:#fff">
+    <div class="workspace-head" style="margin-bottom:16px">
+      <div>
+        <span class="workspace-kicker">DOCUMENTOS RECIBIDOS</span>
+        <h3 style="margin:4px 0">Archivos enviados por el cliente</h3>
+        <small>Documentos cargados directamente desde el Tax Intake.</small>
+      </div>
+      <span class="contract-status">${rec.documents.length} archivo${rec.documents.length===1?'':'s'}</span>
+    </div>
 
+    <div style="display:grid;gap:10px">
+      ${rec.documents.map(doc=>`
+        <div style="border:1px solid #e2e8f0;border-radius:14px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:16px">
+          <div style="min-width:0">
+            <small style="display:block;color:#64748b;margin-bottom:4px">
+              ${esc(doc.document_type || 'Documento')}
+            </small>
+            <strong style="display:block;color:#0f172a;overflow-wrap:anywhere">
+              ${esc(doc.original_name || 'Documento PDF')}
+            </strong>
+            <small style="display:block;color:#64748b;margin-top:4px">
+              ${doc.uploaded_at ? dt(doc.uploaded_at) : ''}
+            </small>
+          </div>
+
+          ${doc.blob_url ? `
+            <a
+              href="${esc(doc.blob_url)}"
+              target="_blank"
+              rel="noopener"
+              class="primary"
+              style="text-decoration:none;white-space:nowrap"
+            >
+              Abrir PDF
+            </a>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+  </section>
+` : ''}
       <section style="border:1px solid #dce4ef;border-radius:18px;padding:20px;background:#fff">
         <div class="workspace-head">
           <div>
@@ -5216,7 +6311,7 @@ function renderCaseIntake(k){
 
       save();
       logCaseEvent(k.id,'Enlace de intake '+type.label+' creado','intake');
-      renderCaseIntake(k);
+      renderCaseIntake(k,paneOverride);
 
     }catch(err){
       console.error('Intake create error:',err);
@@ -5262,14 +6357,14 @@ function renderCaseIntake(k){
       rec.answers=latestAnswers;
       rec.progress=Number(result.intake.progress || 0);
       save();
-      renderCaseIntake(k);
+      renderCaseIntake(k,paneOverride);
     }catch(err){
       console.error('Intake print refresh error:',err);
       alert(err.message || 'No se pudo actualizar el intake antes de imprimir.');
       return;
     }
 
-    const box=$('#intakeAnswersBox');
+    const box=pane.querySelector('#intakeAnswersBox');
 
     if(!box){
       alert('No hay respuestas disponibles para imprimir.');
@@ -5302,7 +6397,7 @@ function renderCaseIntake(k){
 
         <div class="header">
           <div class="brand">AGR SOLUTIONS LLC</div>
-          <div class="gold">Hoja de trabajo I-130</div>
+          <div class="gold"></div>
 
           <div class="meta">
             <strong>Cliente:</strong> ${clientName}<br>
@@ -5331,9 +6426,9 @@ function renderCaseIntake(k){
   });
 
 
-  $('#toggleIntakeAnswers')?.addEventListener('click',async function(){
-    const box=$('#intakeAnswersBox');
-    const btn=$('#toggleIntakeAnswers');
+  pane.querySelector('#toggleIntakeAnswers')?.addEventListener('click',async function(){
+    const box=pane.querySelector('#intakeAnswersBox');
+    const btn=pane.querySelector('#toggleIntakeAnswers');
 
     if(!box) return;
 
@@ -5367,7 +6462,9 @@ function renderCaseIntake(k){
       rec.answers=remote.answers && typeof remote.answers==='object'
         ? remote.answers
         : {};
-
+rec.documents=Array.isArray(remote.documents)
+  ? remote.documents
+  : [];
       rec.progress=Number(remote.progress || 0);
       rec.clientUpdatedAt=remote.client_updated_at || '';
       rec.submittedAt=remote.submitted_at || '';
@@ -5386,10 +6483,10 @@ function renderCaseIntake(k){
       }
 
       save();
-      renderCaseIntake(k);
+      renderCaseIntake(k,paneOverride);
 
-      const refreshedBox=$('#intakeAnswersBox');
-      const refreshedBtn=$('#toggleIntakeAnswers');
+      const refreshedBox=pane.querySelector('#intakeAnswersBox');
+      const refreshedBtn=pane.querySelector('#toggleIntakeAnswers');
 
       if(refreshedBox) refreshedBox.hidden=false;
       if(refreshedBtn){
@@ -5455,7 +6552,7 @@ function renderCaseIntake(k){
         'intake'
       );
 
-      renderCaseIntake(k);
+      renderCaseIntake(k,paneOverride);
 
     }catch(err){
       console.error('Intake review error:',err);
@@ -6751,12 +7848,13 @@ function openModal(kind,values={}){
   editingCaseId=kind==='case-edit'?values.id:null;
   editingPaymentId=null;
   editingServiceId=kind==='service-edit'?values.id:null;
-  const actualKind=kind==='case-edit'?'caseEdit':(kind==='service-edit'?'service':kind);
+  editingClientId=kind==='client-edit'?values.id:null;
+  const actualKind=kind==='case-edit'?'caseEdit':(kind==='service-edit'?'service':(kind==='client-edit'?'client':kind));
   const titles={client:'Nuevo cliente',case:'Nuevo caso / trámite',caseEdit:'Seguimiento del caso',service:'Nuevo servicio',payment:'Agregar pago al caso',appointment:'Nueva cita',task:'Nueva tarea',company:'Nueva empresa'};
-  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':titles[actualKind]);
+  modalTitle.textContent=kind==='case-edit'?'Editar caso / trámite':(kind==='service-edit'?'Editar servicio':(kind==='client-edit'?'Editar cliente':titles[actualKind]));
   fields.innerHTML=templates[actualKind]().map(field=>fieldHTML(field,values)).join('');
   if(kind==='case') bindCaseClientSearch();
-  if(kind==='client') bindReferrerSearch();
+  if(kind==='client' || kind==='client-edit') bindReferrerSearch();
   const workspaceTabs=$('#caseWorkspaceTabs');
   if(workspaceTabs) workspaceTabs.hidden=kind!=='case-edit';
   const modalActions=form.querySelector('.modal-actions');
@@ -6838,6 +7936,15 @@ function openModal(kind,values={}){
     };
     nameInput?.addEventListener('input',refreshFolderNumber);
     refreshFolderNumber();
+  }
+  /* AGR-CLIENT-EDIT-FOLDER */
+  if(kind==='client-edit'){
+    const folderInput=fields.querySelector('[name="folderNumber"]');
+
+    if(folderInput){
+      folderInput.readOnly=true;
+      folderInput.title='La carpeta física existente se conserva';
+    }
   }
   if(kind==='company'){
     const folderInput=fields.querySelector('[name="folderNumber"]');
@@ -8164,6 +9271,22 @@ function bindCaseOpeners(){
   });
 }
 
+
+function bindClientEditors(){
+  $$('[data-edit-client-id]').forEach(btn=>{
+    btn.onclick=e=>{
+      e.stopPropagation();
+
+      const client=data.clients.find(
+        c=>Number(c.id)===Number(btn.dataset.editClientId)
+      );
+
+      if(client){
+        openModal('client-edit',client);
+      }
+    };
+  });
+}
 function bindServiceOpeners(){
   $$('[data-service-id]').forEach(el=>{
     el.onclick=()=>{
@@ -8241,6 +9364,46 @@ form.addEventListener('submit',async e=>{
       referredByExternal:String(f.referredByExternal||'').trim(),
       isCompany
     });
+  }
+
+  if(mode==='client-edit'){
+    const index=data.clients.findIndex(c=>c.id===editingClientId);
+
+    if(index>=0){
+      data.clients[index]={
+        ...data.clients[index],
+        folderNumber:data.clients[index].folderNumber,
+        name:f.name,
+        phone:f.phone,
+        email:f.email,
+        referredByClientId:f.referredByClientId
+          ? Number(f.referredByClientId)
+          : null,
+        referredByExternal:String(f.referredByExternal||'').trim(),
+        isCompany:false
+      };
+    }
+  }
+  /* AGR-SAVE-CLIENT-EDIT */
+  if(mode==='client-edit'){
+    const index=data.clients.findIndex(
+      c=>Number(c.id)===Number(editingClientId)
+    );
+
+    if(index>=0){
+      data.clients[index]={
+        ...data.clients[index],
+        folderNumber:data.clients[index].folderNumber,
+        name:f.name,
+        phone:f.phone,
+        email:f.email,
+        referredByClientId:f.referredByClientId
+          ? Number(f.referredByClientId)
+          : null,
+        referredByExternal:String(f.referredByExternal||'').trim(),
+        isCompany:false
+      };
+    }
   }
   if(mode==='company') data.clients.push({id,folderNumber:nextCompanyFolderNumberForName(f.name),name:f.name,phone:f.phone,email:f.email,isCompany:true});
 
