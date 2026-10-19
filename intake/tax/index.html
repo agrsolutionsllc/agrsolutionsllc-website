@@ -40,15 +40,31 @@
 
 <div class="notice">
 <strong>¿A quién debo agregar?</strong><br>
-Agregue a cada hijo, familiar u otra persona que usted cree que podría calificar como dependiente.
-No se preocupe por decidir si es elegible. AGR Solutions LLC revisará las reglas de edad,
-parentesco, residencia, manutención y demás requisitos antes de preparar su declaración.
+Añada a sus hijos, familiares u otras personas que usted mantiene económicamente y que cree que podrían calificar como dependientes.
+En muchos casos, un hijo dependiente debe haber vivido con usted por más de la mitad del año y no haber proporcionado más del 50% de su propia manutención.
+También existen reglas relacionadas con la edad, estudios, parentesco, residencia y estado civil.
+<br><br>
+<strong>No se preocupe por decidir si la persona califica.</strong>
+Agregue a cada posible dependiente y AGR Solutions LLC revisará los requisitos antes de preparar su declaración.
+</div>
+
+<div class="field" style="margin-top:18px;max-width:360px">
+  <label>¿Cuántos posibles dependientes desea agregar?</label>
+  <select id="dependentCount">
+    <option value="0">0</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+  </select>
 </div>
 
 <div id="dependentsList"></div>
 
 <button type="button" class="secondary" id="addDependentBtn">
-+ Agregar dependiente
++ Agregar otro dependiente
 </button>
 
 </div>
@@ -90,7 +106,142 @@ parentesco, residencia, manutención y demás requisitos antes de preparar su de
 <label class="check"><input type="checkbox" name="foreignAccounts">Cuentas/ingresos fuera de EE.UU.</label><label class="check"><input type="checkbox" name="cryptoTransactions">Transacciones de crypto</label>
 </div><div class="field full" style="margin-top:16px"><label>Notas adicionales</label><textarea name="finalNotes"></textarea></div></div></details>
 
-<details class="tax-section"><summary>10. Confirmación</summary><div class="tax-body"><label class="check"><input type="checkbox" name="certifyInformation" required>Confirmo que la información proporcionada es verdadera y completa según mi conocimiento y que entregaré a AGR Solutions LLC los documentos necesarios.</label></div></details>
+<details class="tax-section" id="taxDocumentsSection">
+<summary>10. Documentos fiscales</summary>
+<div class="tax-body">
+
+<div class="notice">
+<strong>Suba sus documentos únicamente en formato PDF.</strong><br>
+No se aceptan fotografías, capturas de pantalla ni otros formatos.
+</div>
+
+<p class="muted">
+Los documentos solicitados se ajustarán a la información que indicó en este formulario.
+Puede subir más de un PDF cuando corresponda.
+</p>
+
+<div id="taxDocumentUploads">
+
+<div class="repeat-card tax-upload-item" data-doc-row="identity">
+<strong>Identificación</strong>
+<p class="muted">Documento de identidad del contribuyente.</p>
+<input type="file" accept="application/pdf,.pdf" data-tax-file="identity">
+<div class="tax-upload-status" data-tax-status="identity"></div>
+</div>
+
+<div class="repeat-card tax-upload-item" data-doc-row="ssn_itin">
+<strong>SSN / ITIN</strong>
+<p class="muted">Tarjeta o documento correspondiente, si aplica.</p>
+<input type="file" accept="application/pdf,.pdf" data-tax-file="ssn_itin">
+<div class="tax-upload-status" data-tax-status="ssn_itin"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="w2">
+<strong>W-2</strong>
+<p class="muted">Suba sus formularios W-2 en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="w2">
+<div class="tax-upload-status" data-tax-status="w2"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="1099_nec">
+<strong>1099-NEC</strong>
+<p class="muted">Suba sus formularios 1099-NEC en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="1099_nec">
+<div class="tax-upload-status" data-tax-status="1099_nec"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="1099_k">
+<strong>1099-K</strong>
+<p class="muted">Suba sus formularios 1099-K en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="1099_k">
+<div class="tax-upload-status" data-tax-status="1099_k"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="1099_misc">
+<strong>1099-MISC</strong>
+<p class="muted">Suba sus formularios 1099-MISC en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="1099_misc">
+<div class="tax-upload-status" data-tax-status="1099_misc"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="1099_int_div">
+<strong>1099-INT / 1099-DIV</strong>
+<p class="muted">Suba los formularios correspondientes en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="1099_int_div">
+<div class="tax-upload-status" data-tax-status="1099_int_div"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="1099_r">
+<strong>1099-R</strong>
+<p class="muted">Suba sus formularios 1099-R en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="1099_r">
+<div class="tax-upload-status" data-tax-status="1099_r"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="ssa_1099">
+<strong>SSA-1099</strong>
+<p class="muted">Suba su SSA-1099 en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="ssa_1099">
+<div class="tax-upload-status" data-tax-status="ssa_1099"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="unemployment">
+<strong>Ingresos por desempleo</strong>
+<p class="muted">Suba el formulario correspondiente en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="unemployment">
+<div class="tax-upload-status" data-tax-status="unemployment"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="healthcare">
+<strong>Seguro médico / 1095-A</strong>
+<p class="muted">Suba el Form 1095-A u otros documentos relacionados en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="healthcare">
+<div class="tax-upload-status" data-tax-status="healthcare"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="childcare">
+<strong>Gastos de cuidado infantil</strong>
+<p class="muted">Suba comprobantes o declaraciones correspondientes en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="childcare">
+<div class="tax-upload-status" data-tax-status="childcare"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="estimated">
+<strong>Pagos estimados</strong>
+<p class="muted">Suba comprobantes de pagos estimados federales o estatales en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="estimated">
+<div class="tax-upload-status" data-tax-status="estimated"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="home">
+<strong>Documentos relacionados con vivienda</strong>
+<p class="muted">1098, compra, venta u otros documentos relacionados en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="home">
+<div class="tax-upload-status" data-tax-status="home"></div>
+</div>
+
+<div class="repeat-card tax-upload-item hidden" data-doc-row="schedule_c">
+<strong>Negocio / Schedule C</strong>
+<p class="muted">
+Suba estados de cuenta bancarios completos, formularios 1099, recibos/facturas disponibles
+y comprobantes de pagos estimados. Cada archivo debe estar en PDF.
+</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="schedule_c">
+<div class="tax-upload-status" data-tax-status="schedule_c"></div>
+</div>
+
+<div class="repeat-card tax-upload-item" data-doc-row="other">
+<strong>Otros documentos</strong>
+<p class="muted">Puede agregar otros documentos fiscales relevantes en PDF.</p>
+<input type="file" accept="application/pdf,.pdf" multiple data-tax-file="other">
+<div class="tax-upload-status" data-tax-status="other"></div>
+</div>
+
+</div>
+</div>
+</details>
+
+<details class="tax-section"><summary>11. Confirmación</summary><div class="tax-body"><label class="check"><input type="checkbox" name="certifyInformation" required>Confirmo que la información proporcionada es verdadera y completa según mi conocimiento y que entregaré a AGR Solutions LLC los documentos necesarios.</label></div></details>
 
 <div id="statusBox" class="notice hidden"></div>
 <div class="actions card"><button type="button" class="secondary" id="saveBtn">Guardar y continuar después</button><button type="submit" class="submit" id="submitBtn">Enviar a AGR</button></div>
@@ -100,10 +251,13 @@ parentesco, residencia, manutención y demás requisitos antes de preparar su de
 
 <script>
 (function(){
-const API='https://agrsolutionsllc-website-stripe-back.vercel.app';
+const API=(location.hostname==='127.0.0.1'||location.hostname==='localhost')
+  ? ''
+  : 'https://agrsolutionsllc-website-stripe-back.vercel.app';
 const token=new URLSearchParams(location.search).get('token')||'';
 const form=document.getElementById('intakeForm'),loading=document.getElementById('loading'),formArea=document.getElementById('formArea'),errorPage=document.getElementById('errorPage'),errorMessage=document.getElementById('errorMessage'),statusBox=document.getElementById('statusBox'),progressBar=document.getElementById('progressBar'),progressText=document.getElementById('progressText'),spouseSection=document.getElementById('spouseSection'),maritalStatus=document.getElementById('maritalStatus'),selfEmployment=document.getElementById('hasSelfEmployment'),scheduleCBlock=document.getElementById('scheduleCBlock'),estimatedSelect=document.getElementById('madeEstimatedPayments'),estimatedBlock=document.getElementById('estimatedPaymentBlock'),dependentsList=document.getElementById('dependentsList');
 let dependentCounter=0;
+const dependentCount=document.getElementById('dependentCount');
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function addDependent(d={}){
   dependentCounter++;
@@ -312,8 +466,105 @@ document.querySelectorAll('[data-save-dependent]').forEach(b=>{
 });
 
 }
-document.getElementById('addDependentBtn').onclick=()=>addDependent();
-function syncConditional(){spouseSection.classList.toggle('hidden',maritalStatus.value!=='married');scheduleCBlock.classList.toggle('hidden',selfEmployment.value!=='yes');estimatedBlock.classList.toggle('hidden',estimatedSelect.value!=='yes')}
+function setDependentCount(target){
+  target=Math.max(0,Number(target)||0);
+
+  while(dependentCounter<target){
+    addDependent();
+  }
+
+  while(dependentCounter>target){
+    const last=dependentsList.querySelector('[data-dependent="'+dependentCounter+'"]');
+    if(last) last.remove();
+    dependentCounter--;
+  }
+
+  if(dependentCount){
+    dependentCount.value=String(dependentCounter);
+  }
+
+  updateProgress();
+}
+
+dependentCount?.addEventListener('change',()=>{
+  const target=Number(dependentCount.value||0);
+
+  if(target<dependentCounter){
+    const ok=confirm(
+      'Va a reducir la cantidad de dependientes. Los datos de los últimos dependientes serán eliminados. ¿Desea continuar?'
+    );
+
+    if(!ok){
+      dependentCount.value=String(dependentCounter);
+      return;
+    }
+  }
+
+  setDependentCount(target);
+});
+
+document.getElementById('addDependentBtn').onclick=()=>{
+  addDependent();
+  if(dependentCount){
+    dependentCount.value=String(dependentCounter);
+  }
+  updateProgress();
+};
+function syncConditional(){
+  spouseSection.classList.toggle('hidden',maritalStatus.value!=='married');
+  scheduleCBlock.classList.toggle('hidden',selfEmployment.value!=='yes');
+  estimatedBlock.classList.toggle('hidden',estimatedSelect.value!=='yes');
+  syncTaxDocumentRequests();
+}
+
+function setTaxDocumentVisible(type,visible){
+  const row=document.querySelector('[data-doc-row="'+type+'"]');
+  if(row)row.classList.toggle('hidden',!visible);
+}
+
+function syncTaxDocumentRequests(){
+  setTaxDocumentVisible('w2',!!form.elements.incomeW2?.checked);
+  setTaxDocumentVisible('1099_nec',!!form.elements.income1099NEC?.checked);
+  setTaxDocumentVisible('1099_k',!!form.elements.income1099K?.checked);
+  setTaxDocumentVisible('1099_misc',!!form.elements.income1099MISC?.checked);
+
+  setTaxDocumentVisible(
+    '1099_int_div',
+    !!form.elements.income1099INT?.checked ||
+    !!form.elements.income1099DIV?.checked
+  );
+
+  setTaxDocumentVisible('1099_r',!!form.elements.income1099R?.checked);
+  setTaxDocumentVisible('ssa_1099',!!form.elements.incomeSSA1099?.checked);
+  setTaxDocumentVisible('unemployment',!!form.elements.incomeUnemployment?.checked);
+
+  setTaxDocumentVisible(
+    'healthcare',
+    form.elements.marketplaceInsurance?.value==='yes'
+  );
+
+  setTaxDocumentVisible(
+    'childcare',
+    !!form.elements.childcareExpenses?.checked
+  );
+
+  setTaxDocumentVisible(
+    'estimated',
+    form.elements.madeEstimatedPayments?.value==='yes'
+  );
+
+  setTaxDocumentVisible(
+    'home',
+    !!form.elements.mortgageInterest?.checked ||
+    !!form.elements.soldHome?.checked ||
+    !!form.elements.boughtHome?.checked
+  );
+
+  setTaxDocumentVisible(
+    'schedule_c',
+    form.elements.hasSelfEmployment?.value==='yes'
+  );
+}
 [maritalStatus,selfEmployment,estimatedSelect].forEach(x=>x.addEventListener('change',syncConditional));
 function collectAnswers(){
   const a={};
@@ -358,7 +609,7 @@ function collectAnswers(){
 
   return a;
 }
-function fillAnswers(a){Object.entries(a||{}).forEach(([k,v])=>{if(k==='dependents')return;const el=form.elements[k];if(!el)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v??''});dependentsList.innerHTML='';dependentCounter=0;(a?.dependents||[]).forEach(addDependent);syncConditional()}
+function fillAnswers(a){Object.entries(a||{}).forEach(([k,v])=>{if(k==='dependents')return;const el=form.elements[k];if(!el)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v??''});dependentsList.innerHTML='';dependentCounter=0;(a?.dependents||[]).forEach(addDependent);if(dependentCount)dependentCount.value=String(dependentCounter);syncConditional()}
 function updateProgress(){const req=[...form.querySelectorAll('[required]')].filter(el=>!el.closest('.hidden'));const done=req.filter(el=>el.type==='checkbox'?el.checked:String(el.value||'').trim()!=='').length;const pct=req.length?Math.round(done/req.length*100):0;progressBar.style.width=pct+'%';progressText.textContent='Progreso '+pct+'%';return pct}
 form.addEventListener('input',updateProgress);form.addEventListener('change',updateProgress);
 function showStatus(m,t=''){statusBox.className='notice '+t;statusBox.textContent=m;statusBox.classList.remove('hidden')}
@@ -366,7 +617,204 @@ async function save(show=true){const r=await fetch(API+'/api/intake-save',{metho
 document.getElementById('saveBtn').onclick=async()=>{try{await save(true)}catch(e){showStatus(e.message,'error')}};
 form.addEventListener('submit',async e=>{e.preventDefault();if(!form.reportValidity())return;const b=document.getElementById('submitBtn');b.disabled=true;b.textContent='Enviando...';try{await save(false);const r=await fetch(API+'/api/intake-submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});if(!r.ok)throw new Error('No se pudo enviar el formulario.');showStatus(selfEmployment.value==='yes'?'Formulario enviado. AGR revisará la contabilidad antes de preparar Schedule C.':'Formulario enviado correctamente a AGR Solutions LLC.','success')}catch(e){showStatus(e.message,'error')}finally{b.disabled=false;b.textContent='Enviar a AGR'}});
 async function load(){if(!token){loading.classList.add('hidden');errorPage.classList.remove('hidden');errorMessage.textContent='Este enlace no contiene un token válido.';return}try{const r=await fetch(API+'/api/intake-get?token='+encodeURIComponent(token));if(!r.ok)throw new Error('No pudimos abrir este formulario.');const intake=await r.json();fillAnswers(intake.answers||{});loading.classList.add('hidden');formArea.classList.remove('hidden');updateProgress()}catch(e){loading.classList.add('hidden');errorPage.classList.remove('hidden');errorMessage.textContent=e.message}}
-syncConditional();load();
+async function getCurrentTaxIntakeId(){
+  const r=await fetch(API+'/api/intake-get?token='+encodeURIComponent(token));
+
+  if(!r.ok){
+    throw new Error('No se pudo verificar el expediente.');
+  }
+
+  const data=await r.json();
+  const intake=data.intake||data;
+
+  if(!intake?.id){
+    throw new Error('No se pudo identificar el expediente.');
+  }
+
+  return intake.id;
+}
+
+function cleanUploadFileName(name){
+  return String(name||'document.pdf')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9._-]/g,'_')
+    .replace(/_+/g,'_')
+    .replace(/^\.+/,'')
+    .slice(0,120);
+}
+
+async function uploadTaxPdf(file,documentType,statusEl){
+  if(!file){
+    return;
+  }
+
+  if(
+    file.type!=='application/pdf' ||
+    !file.name.toLowerCase().endsWith('.pdf')
+  ){
+    throw new Error('Solo se permiten archivos PDF.');
+  }
+
+  if(file.size>25*1024*1024){
+    throw new Error('El archivo excede el máximo permitido de 25 MB.');
+  }
+
+  const intakeId=await getCurrentTaxIntakeId();
+  const fileName=cleanUploadFileName(file.name);
+
+  const pathname=
+    'tax-intakes/'+
+    intakeId+'/'+
+    documentType+'/'+
+    fileName;
+
+  statusEl.textContent='Subiendo '+file.name+'...';
+  statusEl.style.marginTop='10px';
+  statusEl.style.fontWeight='700';
+
+  const authorize=await fetch(
+    API+'/api/intake-submit',
+    {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        type:'blob.generate-presigned-url',
+        payload:{
+          pathname,
+          multipart:false,
+          clientPayload:JSON.stringify({
+            token,
+            documentType,
+            originalName:file.name
+          })
+        }
+      })
+    }
+  );
+
+  const authorization=await authorize.json().catch(()=>({}));
+
+  if(!authorize.ok){
+    throw new Error(
+      authorization.error ||
+      'No se pudo autorizar la carga del documento.'
+    );
+  }
+
+  const p=authorization.presignedUrlPayload;
+
+  if(!p?.delegationToken || !p?.signature){
+    throw new Error('No se recibió autorización para subir el documento.');
+  }
+
+  const delegationPayload=p.delegationToken
+    .split('.')[0]
+    .replace(/-/g,'+')
+    .replace(/_/g,'/');
+
+  const paddedDelegationPayload=
+    delegationPayload+
+    '='.repeat((4-delegationPayload.length%4)%4);
+
+  const storeId=JSON.parse(
+    atob(paddedDelegationPayload)
+  ).storeId;
+
+  if(!storeId){
+    throw new Error('No se pudo identificar el almacenamiento.');
+  }
+
+  const params=new URLSearchParams({
+    pathname
+  });
+
+  Object.entries(p.params||{}).forEach(([key,value])=>{
+    params.set(key,String(value));
+  });
+
+  params.set(
+    'vercel-blob-delegation',
+    p.delegationToken
+  );
+
+  params.set(
+    'vercel-blob-signature',
+    p.signature
+  );
+
+  const cleanStoreId=String(storeId).replace(/^store_/,'');
+
+  const uploadUrl=
+    'https://blob.vercel-storage.com/?'+
+    params.toString();
+
+  const uploaded=await fetch(uploadUrl,{
+    method:'PUT',
+    headers:{
+      'Content-Type':'application/pdf'
+    },
+    body:file
+  });
+
+  if(!uploaded.ok){
+    let message='No se pudo subir el documento.';
+
+    try{
+      const errorData=await uploaded.json();
+      message=errorData.error?.message ||
+              errorData.message ||
+              message;
+    }catch{}
+
+    throw new Error(message);
+  }
+
+  return await uploaded.json();
+}
+
+document.querySelectorAll('[data-tax-file]').forEach(input=>{
+  input.addEventListener('change',async()=>{
+    const type=input.dataset.taxFile;
+    const statusEl=document.querySelector(
+      '[data-tax-status="'+type+'"]'
+    );
+
+    const files=[...(input.files||[])];
+
+    if(!files.length){
+      return;
+    }
+
+    try{
+      input.disabled=true;
+
+      for(const file of files){
+        await uploadTaxPdf(file,type,statusEl);
+      }
+
+      statusEl.textContent=
+        files.length===1
+          ? '✓ Documento recibido por AGR'
+          : '✓ '+files.length+' documentos recibidos por AGR';
+
+      statusEl.style.color='#19733c';
+
+      input.value='';
+
+    }catch(e){
+      statusEl.textContent='⚠ '+e.message;
+      statusEl.style.color='#a12626';
+    }finally{
+      input.disabled=false;
+    }
+  });
+});
+
+syncConditional();
+load();
 })();
 </script>
 </body>
