@@ -713,7 +713,7 @@ async function uploadTaxPdf(file,documentType,statusEl){
   const storeId=JSON.parse(
     atob(
       p.delegationToken
-        .split('.')[1]
+        .split('.')[0]
         .replace(/-/g,'+')
         .replace(/_/g,'/')
     )
@@ -815,4 +815,5 @@ load();
 </script>
 </body>
 </html>
+
 
