@@ -83,6 +83,13 @@
 
 </section>
 <details class="tax-section" id="taxpayerPersonalSection" open><summary>1. Información del contribuyente</summary><div class="tax-body"><span class="module-label">TAXPAYER</span><div class="grid">
+<div class="field full">
+  <div class="notice" style="margin-bottom:4px">
+    <strong>Importante:</strong>
+    antes de completar sus datos, escriba todos sus nombres y apellidos exactamente como aparecen en su tarjeta del Seguro Social, carta de ITIN o documentos oficiales del IRS. No omita, abrevie ni cambie el orden de sus nombres o apellidos.
+  </div>
+</div>
+
 <div class="field">
   <label>Primer nombre</label>
   <input name="taxpayerFirstName" required>
@@ -111,11 +118,6 @@
 <div class="field">
   <label>SSN o ITIN</label>
   <input name="taxpayerTaxId">
-
-  <div class="notice" style="margin-top:10px">
-    <strong>Importante:</strong>
-    escriba sus nombres y apellidos exactamente como aparecen en su tarjeta del Seguro Social, carta de ITIN o documentos oficiales del IRS. No omita, abrevie ni cambie el orden de sus nombres o apellidos.
-  </div>
 </div>
 <div class="field"><label>Ocupación</label><input name="taxpayerOccupation"></div><div class="field"><label>Teléfono</label><input name="taxpayerPhone"></div>
 <div class="field"><label>Email</label><input type="email" name="taxpayerEmail"></div><div class="field"><label>IP PIN del IRS</label><input name="taxpayerIpPin"></div>
@@ -1596,6 +1598,61 @@ syncConditional();
 syncPersonalChange();
 load();
 setupTaxSignature();
+})();
+</script>
+<script id="agrFieldCaseNormalizer">
+(function(){
+
+  function normalizeField(el){
+    if(!el || !('value' in el)) return;
+
+    const tag=(el.tagName||'').toLowerCase();
+    const type=(el.type||'').toLowerCase();
+
+    if(tag!=='input' && tag!=='textarea') return;
+
+    // EMAIL siempre en minúsculas
+    if(type==='email' || String(el.name||'').toLowerCase().includes('email')){
+      const lower=String(el.value||'').toLowerCase();
+      if(el.value!==lower) el.value=lower;
+      return;
+    }
+
+    // No modificar estos tipos
+    if([
+      'date','number','checkbox','radio','hidden',
+      'file','range','color','time','datetime-local',
+      'month','week'
+    ].includes(type)){
+      return;
+    }
+
+    // Todo otro texto en MAYÚSCULAS
+    const upper=String(el.value||'').toUpperCase();
+    if(el.value!==upper) el.value=upper;
+  }
+
+  function normalizeAll(){
+    document.querySelectorAll('input, textarea').forEach(normalizeField);
+  }
+
+  // Mientras el cliente escribe
+  document.addEventListener('input',function(e){
+    normalizeField(e.target);
+  },true);
+
+  document.addEventListener('change',function(e){
+    normalizeField(e.target);
+  },true);
+
+  // Normalizar datos ya cargados del draft
+  document.addEventListener('DOMContentLoaded',function(){
+    normalizeAll();
+    setTimeout(normalizeAll,300);
+    setTimeout(normalizeAll,1000);
+    setTimeout(normalizeAll,2000);
+  });
+
 })();
 </script>
 </body>
