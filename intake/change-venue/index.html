@@ -626,7 +626,9 @@ Necesitamos saber dónde vivía anteriormente y dónde reside ahora.
 
 <script>
 (()=>{
-const API="";
+const API=(location.hostname==='127.0.0.1'||location.hostname==='localhost')
+  ? ''
+  : 'https://agrsolutionsllc-website-stripe-backend-gabytarc3-8851.vercel.app';
 
 const params=
   new URLSearchParams(
