@@ -1,1 +1,992 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
+<title>AGR Solutions | Motion to Change Venue</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#f3f6fa;
+  color:#13233f;
+}
+
+.page{
+  max-width:900px;
+  margin:0 auto;
+  padding:28px 18px 60px;
+}
+
+.header{
+  background:#0b234b;
+  color:white;
+  border-radius:22px 22px 0 0;
+  padding:28px 32px;
+}
+
+.brand{
+  color:#d7a62a;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:1.5px;
+}
+
+.header h1{
+  margin:8px 0 5px;
+  font-size:30px;
+}
+
+.header p{
+  margin:0;
+  color:#dbe4f2;
+  line-height:1.5;
+}
+
+.progress-wrap{
+  background:white;
+  padding:16px 30px;
+  border-left:1px solid #dce4ef;
+  border-right:1px solid #dce4ef;
+}
+
+.progress-label{
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+.progress{
+  background:#e9eef5;
+  height:9px;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.progress > div{
+  height:100%;
+  width:0;
+  background:#d7a62a;
+  transition:.2s;
+}
+
+form{
+  background:white;
+  border:1px solid #dce4ef;
+  border-top:0;
+  padding:30px;
+  border-radius:0 0 22px 22px;
+}
+
+.section{
+  margin-bottom:32px;
+}
+
+.section h2{
+  font-size:20px;
+  margin:0 0 6px;
+}
+
+.section-subtitle{
+  color:#66758b;
+  font-size:14px;
+  margin-bottom:18px;
+  line-height:1.5;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:17px;
+}
+
+.full{
+  grid-column:1/-1;
+}
+
+label{
+  display:grid;
+  gap:7px;
+  font-size:14px;
+  font-weight:700;
+  color:#4c5b72;
+}
+
+input,
+select,
+textarea{
+  width:100%;
+  border:1px solid #d3dce9;
+  border-radius:11px;
+  padding:13px 14px;
+  font:inherit;
+  color:#162640;
+  background:#fff;
+}
+
+textarea{
+  min-height:100px;
+  resize:vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+  outline:none;
+  border-color:#d7a62a;
+  box-shadow:0 0 0 3px rgba(215,166,42,.13);
+}
+
+.notice{
+  background:#fff8e7;
+  border:1px solid #ead08a;
+  border-radius:13px;
+  padding:14px 16px;
+  margin-bottom:22px;
+  font-size:14px;
+  line-height:1.55;
+}
+
+.optional{
+  font-weight:400;
+  color:#8995a6;
+}
+
+.check{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  font-weight:500;
+  line-height:1.5;
+}
+
+.check input{
+  width:auto;
+  margin-top:3px;
+}
+
+.actions{
+  display:flex;
+  gap:12px;
+  justify-content:flex-end;
+  margin-top:25px;
+  flex-wrap:wrap;
+}
+
+button{
+  border:0;
+  border-radius:11px;
+  padding:13px 22px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.secondary{
+  background:#edf1f6;
+  color:#14284d;
+}
+
+.primary{
+  background:#0b234b;
+  color:white;
+}
+
+.status{
+  margin-top:14px;
+  font-size:13px;
+  color:#68778d;
+  text-align:right;
+}
+
+.hidden{
+  display:none!important;
+}
+
+.success{
+  background:white;
+  border-radius:20px;
+  padding:50px 30px;
+  text-align:center;
+  box-shadow:0 10px 35px rgba(17,38,70,.08);
+}
+
+.success h2{
+  color:#0b234b;
+}
+
+.error{
+  background:#fff0f0;
+  border:1px solid #e5b7b7;
+  padding:15px;
+  border-radius:12px;
+  color:#8b2525;
+  margin-bottom:20px;
+}
+
+@media(max-width:650px){
+  .grid{grid-template-columns:1fr}
+  .full{grid-column:auto}
+  .header{padding:24px 20px}
+  form{padding:24px 18px}
+  .progress-wrap{padding:15px 20px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+<div id="loading">
+  Cargando formulario...
+</div>
+
+<div id="errorPage" class="hidden">
+  <div class="error" id="errorMessage">
+    No se pudo cargar el intake.
+  </div>
+</div>
+
+<div id="formArea" class="hidden">
+
+  <div class="header">
+    <div class="brand">AGR SOLUTIONS LLC</div>
+    <h1>Motion to Change Venue</h1>
+    <p>
+      Intake básico para recopilar la información necesaria
+      para solicitar un cambio de Corte de Inmigración.
+    </p>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Progreso</span>
+      <span id="progressText">0%</span>
+    </div>
+
+    <div class="progress">
+      <div id="progressBar"></div>
+    </div>
+  </div>
+
+<form id="intakeForm">
+
+<div class="notice">
+  <strong>Importante:</strong>
+  completar este formulario no cambia automáticamente su Corte
+  ni cancela una audiencia programada. Debe continuar cumpliendo
+  con todas las fechas de la Corte mientras su solicitud esté pendiente.
+</div>
+
+
+<div class="section">
+<h2>1. Información personal</h2>
+<div class="section-subtitle">
+Confirme sus datos actuales.
+</div>
+
+<div class="grid">
+
+<label class="full">
+  Nombre completo
+  <input
+    name="clientName"
+    required
+    autocomplete="name"
+  >
+</label>
+
+<label>
+  A-Number
+  <input
+    name="aNumber"
+    placeholder="A123456789"
+    required
+  >
+</label>
+
+<label>
+  Teléfono
+  <input
+    name="phone"
+    type="tel"
+    required
+  >
+</label>
+
+<label class="full">
+  Correo electrónico
+  <input
+    name="email"
+    type="email"
+    required
+  >
+</label>
+
+</div>
+</div>
+
+
+<div class="section">
+<h2>2. Dirección</h2>
+<div class="section-subtitle">
+Necesitamos saber dónde vivía anteriormente y dónde reside ahora.
+</div>
+
+<div class="grid">
+
+<label class="full">
+  Dirección anterior completa
+  <input
+    name="previousAddress"
+    placeholder="Calle, apartamento, ciudad, estado y ZIP Code"
+    required
+  >
+</label>
+
+<label class="full">
+  Dirección actual completa
+  <input
+    name="currentAddress"
+    placeholder="Calle, apartamento, ciudad, estado y ZIP Code"
+    required
+  >
+</label>
+
+<label>
+  Fecha aproximada en que se mudó
+  <input
+    name="moveDate"
+    type="date"
+  >
+</label>
+
+<label>
+  ¿Actualmente recibe correo en su dirección nueva?
+  <select
+    name="receivesMailAtCurrentAddress"
+    required
+  >
+    <option value="">Seleccione...</option>
+    <option value="yes">Sí</option>
+    <option value="no">No</option>
+  </select>
+</label>
+
+</div>
+</div>
+
+
+<div class="section">
+<h2>3. Su caso en Corte</h2>
+
+<div class="grid">
+
+<label class="full">
+  Corte de Inmigración actual
+  <input
+    name="currentCourt"
+    placeholder="Ej. Hartford Immigration Court"
+    required
+  >
+</label>
+
+<label>
+  Fecha de la próxima audiencia
+  <input
+    name="nextHearingDate"
+    type="date"
+  >
+</label>
+
+<label>
+  Hora de la audiencia
+  <input
+    name="nextHearingTime"
+    type="time"
+  >
+</label>
+
+<label>
+  ¿Tiene abogado actualmente?
+  <select
+    name="hasAttorney"
+    id="hasAttorney"
+    required
+  >
+    <option value="">Seleccione...</option>
+    <option value="yes">Sí</option>
+    <option value="no">No</option>
+    <option value="unknown">No estoy seguro/a</option>
+  </select>
+</label>
+
+<label>
+  Nombre del abogado
+  <input
+    name="attorneyName"
+    placeholder="Si aplica"
+  >
+</label>
+
+</div>
+</div>
+
+
+<div class="section">
+<h2>4. Solicitudes de inmigración</h2>
+
+<div class="grid">
+
+<label>
+  ¿Ha presentado una solicitud de asilo I-589?
+  <select
+    name="filedAsylum"
+    id="filedAsylum"
+    required
+  >
+    <option value="">Seleccione...</option>
+    <option value="yes">Sí</option>
+    <option value="no">No</option>
+    <option value="unknown">No estoy seguro/a</option>
+  </select>
+</label>
+
+<label>
+  Si presentó asilo, ¿continúa pendiente?
+  <select name="asylumPending">
+    <option value="">Seleccione...</option>
+    <option value="yes">Sí</option>
+    <option value="no">No</option>
+    <option value="unknown">No estoy seguro/a</option>
+    <option value="na">No aplica</option>
+  </select>
+</label>
+
+<label class="full">
+  ¿Ya presentó el EOIR-33 / cambio de dirección ante la Corte?
+  <select
+    name="eoir33Status"
+    required
+  >
+    <option value="">Seleccione...</option>
+    <option value="yes">Sí</option>
+    <option value="no">No</option>
+    <option value="unknown">No estoy seguro/a</option>
+  </select>
+</label>
+
+</div>
+</div>
+
+
+<div class="section">
+<h2>5. Cambio de Corte solicitado</h2>
+
+<div class="grid">
+
+<label class="full">
+  ¿A qué ciudad y estado desea transferir su caso?
+  <input
+    name="requestedLocation"
+    placeholder="Ej. New Haven, Connecticut"
+    required
+  >
+</label>
+
+<label class="full">
+  Explique por qué solicita cambiar la Corte
+  <textarea
+    name="venueChangeReason"
+    placeholder="Ej. se mudó permanentemente, vive con familiares en otro estado, trabajo, distancia, etc."
+    required
+  ></textarea>
+</label>
+
+<label>
+  ¿Tiene algún comprobante de su nueva dirección?
+  <select
+    name="hasNewAddressProof"
+    required
+  >
+    <option value="">Seleccione...</option>
+    <option value="yes">Sí</option>
+    <option value="no">No</option>
+  </select>
+</label>
+
+<label>
+  Tipo de comprobante
+  <input
+    name="addressProofDescription"
+    placeholder="Lease, utility bill, ID, banco, etc."
+  >
+</label>
+
+<label class="full">
+  Información adicional
+  <textarea
+    name="additionalInfo"
+    placeholder="Incluya cualquier otra información que AGR Solutions deba conocer."
+  ></textarea>
+</label>
+
+</div>
+</div>
+
+
+<div class="section">
+<h2>6. Confirmación</h2>
+
+<label class="check full">
+  <input
+    type="checkbox"
+    name="informationAccurate"
+    required
+  >
+  <span>
+    Declaro que la información proporcionada en este formulario
+    es correcta según mi conocimiento.
+  </span>
+</label>
+
+<div class="grid" style="margin-top:18px">
+
+<label>
+  Firma / nombre completo
+  <input
+    name="typedSignature"
+    required
+  >
+</label>
+
+<label>
+  Fecha
+  <input
+    name="signatureDate"
+    type="date"
+    required
+  >
+</label>
+
+</div>
+</div>
+
+
+<div class="actions">
+  <button
+    type="button"
+    class="secondary"
+    id="saveButton"
+  >
+    Guardar y continuar después
+  </button>
+
+  <button
+    type="submit"
+    class="primary"
+  >
+    Enviar a AGR Solutions
+  </button>
+</div>
+
+<div
+  id="saveStatus"
+  class="status"
+></div>
+
+</form>
+</div>
+
+
+<div
+  id="successPage"
+  class="success hidden"
+>
+  <h2>Formulario enviado</h2>
+
+  <p>
+    Gracias. AGR Solutions LLC recibió la información
+    de su Motion to Change Venue.
+  </p>
+
+  <p>
+    Nos comunicaremos con usted si necesitamos información adicional.
+  </p>
+</div>
+
+</div>
+
+
+<script>
+(()=>{
+const API="";
+
+const params=
+  new URLSearchParams(
+    window.location.search
+  );
+
+const token=
+  params.get('token')||'';
+
+const form=
+  document.getElementById('intakeForm');
+
+const loading=
+  document.getElementById('loading');
+
+const formArea=
+  document.getElementById('formArea');
+
+const errorPage=
+  document.getElementById('errorPage');
+
+const errorMessage=
+  document.getElementById('errorMessage');
+
+const successPage=
+  document.getElementById('successPage');
+
+const progressBar=
+  document.getElementById('progressBar');
+
+const progressText=
+  document.getElementById('progressText');
+
+const saveStatus=
+  document.getElementById('saveStatus');
+
+
+function collectAnswers(){
+
+  const answers={};
+
+  const fd=
+    new FormData(form);
+
+  for(
+    const [key,value]
+    of fd.entries()
+  ){
+    answers[key]=value;
+  }
+
+  form
+    .querySelectorAll(
+      'input[type="checkbox"]'
+    )
+    .forEach(el=>{
+      answers[el.name]=el.checked;
+    });
+
+  answers.intakeType=
+    'change-venue';
+
+  answers.intakeVersion=
+    '1';
+
+  return answers;
+}
+
+
+function fillAnswers(answers){
+
+  Object
+    .entries(answers||{})
+    .forEach(([key,value])=>{
+
+      const el=
+        form.elements[key];
+
+      if(!el) return;
+
+      if(el.type==='checkbox'){
+        el.checked=!!value;
+      }else{
+        el.value=value??'';
+      }
+
+    });
+
+  updateProgress();
+}
+
+
+function updateProgress(){
+
+  const required=[
+    ...form.querySelectorAll('[required]')
+  ];
+
+  const completed=
+    required.filter(el=>{
+
+      if(el.type==='checkbox'){
+        return el.checked;
+      }
+
+      return String(
+        el.value||''
+      ).trim()!=='';
+
+    }).length;
+
+  const percent=
+    required.length
+      ? Math.round(
+          completed /
+          required.length *
+          100
+        )
+      : 0;
+
+  progressBar.style.width=
+    percent+'%';
+
+  progressText.textContent=
+    percent+'%';
+
+  return percent;
+}
+
+
+async function saveDraft(showMessage=true){
+
+  if(!token) return;
+
+  const answers=
+    collectAnswers();
+
+  const progress=
+    updateProgress();
+
+  const response=
+    await fetch(
+      API+'/api/intake-save',
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+          token,
+          answers,
+          progress
+        })
+      }
+    );
+
+  if(!response.ok){
+    throw new Error(
+      'No se pudo guardar el formulario.'
+    );
+  }
+
+  if(showMessage){
+    saveStatus.textContent=
+      'Información guardada correctamente.';
+  }
+}
+
+
+document
+  .getElementById('saveButton')
+  .addEventListener(
+    'click',
+    async ()=>{
+      try{
+        saveStatus.textContent=
+          'Guardando...';
+
+        await saveDraft(true);
+
+      }catch(error){
+        saveStatus.textContent=
+          error.message;
+      }
+    }
+  );
+
+
+form.addEventListener(
+  'input',
+  updateProgress
+);
+
+form.addEventListener(
+  'change',
+  updateProgress
+);
+
+
+form.addEventListener(
+  'submit',
+  async event=>{
+
+    event.preventDefault();
+
+    if(!form.reportValidity()){
+      return;
+    }
+
+    try{
+
+      const answers=
+        collectAnswers();
+
+      const progress=
+        updateProgress();
+
+      await fetch(
+        API+'/api/intake-save',
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify({
+            token,
+            answers,
+            progress
+          })
+        }
+      );
+
+      const response=
+        await fetch(
+          API+'/api/intake-submit',
+          {
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json'
+            },
+            body:JSON.stringify({
+              token,
+              answers,
+              progress:100
+            })
+          }
+        );
+
+      if(!response.ok){
+        throw new Error(
+          'No se pudo enviar el formulario.'
+        );
+      }
+
+      formArea.classList.add(
+        'hidden'
+      );
+
+      successPage.classList.remove(
+        'hidden'
+      );
+
+    }catch(error){
+
+      alert(
+        error.message ||
+        'Ocurrió un error al enviar.'
+      );
+
+    }
+  }
+);
+
+
+async function load(){
+
+  if(!token){
+
+    loading.classList.add(
+      'hidden'
+    );
+
+    errorPage.classList.remove(
+      'hidden'
+    );
+
+    errorMessage.textContent=
+      'Este enlace no contiene un token válido.';
+
+    return;
+  }
+
+  try{
+
+    const response=
+      await fetch(
+        API+
+        '/api/intake-get?token='+
+        encodeURIComponent(token)
+      );
+
+    if(!response.ok){
+      throw new Error(
+        'Este enlace no está disponible o ha expirado.'
+      );
+    }
+
+    const data=
+      await response.json();
+
+    const intake=
+      data.intake||data;
+
+    const loadedAnswers={
+      ...(intake.prefill||{}),
+      ...(intake.answers||{})
+    };
+
+    fillAnswers(
+      loadedAnswers
+    );
+
+    if(
+      !form.elements.signatureDate.value
+    ){
+      form.elements.signatureDate.value=
+        new Date()
+          .toISOString()
+          .slice(0,10);
+    }
+
+    loading.classList.add(
+      'hidden'
+    );
+
+    formArea.classList.remove(
+      'hidden'
+    );
+
+    updateProgress();
+
+  }catch(error){
+
+    loading.classList.add(
+      'hidden'
+    );
+
+    errorPage.classList.remove(
+      'hidden'
+    );
+
+    errorMessage.textContent=
+      error.message;
+  }
+}
+
+load();
+
+})();
+</script>
+
+</body>
+</html>
