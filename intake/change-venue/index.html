@@ -736,7 +736,7 @@ Necesitamos la dirección anterior y la dirección actual por separado.
 
 
 <div class="section">
-<h2>6. Confirmación</h2>
+<h2>6. Confirmación y firma</h2>
 
 <label class="check full">
   <input
@@ -750,10 +750,63 @@ Necesitamos la dirección anterior y la dirección actual por separado.
   </span>
 </label>
 
+<div style="margin-top:18px">
+  <label style="display:block;font-weight:700;margin-bottom:7px">
+    Firma del cliente
+  </label>
+
+  <div style="
+    border:1px solid #d3dce9;
+    border-radius:12px;
+    background:#fff;
+    overflow:hidden;
+  ">
+    <canvas
+      id="changeVenueSignatureCanvas"
+      width="900"
+      height="220"
+      style="
+        display:block;
+        width:100%;
+        height:180px;
+        touch-action:none;
+        cursor:crosshair;
+      "
+    ></canvas>
+  </div>
+
+  <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:8px;
+  ">
+    <button
+      type="button"
+      class="secondary"
+      id="clearChangeVenueSignature"
+    >
+      Borrar firma
+    </button>
+
+    <small style="color:#68778d">
+      Firme con el mouse, trackpad o dedo.
+    </small>
+  </div>
+
+  <input
+    type="hidden"
+    id="changeVenueSignatureData"
+    name="signatureData"
+  >
+</div>
+
 <div class="grid" style="margin-top:18px">
 
 <label>
-  Firma / nombre completo
+  Nombre completo del firmante
   <input
     name="typedSignature"
     required
@@ -761,7 +814,7 @@ Necesitamos la dirección anterior y la dirección actual por separado.
 </label>
 
 <label>
-  Fecha
+  Fecha de firma
   <input
     name="signatureDate"
     type="date"
@@ -859,8 +912,115 @@ const progressText=
 const saveStatus=
   document.getElementById('saveStatus');
 
+const signatureCanvas=
+  document.getElementById('changeVenueSignatureCanvas');
+
+const signatureData=
+  document.getElementById('changeVenueSignatureData');
+
+const clearSignatureButton=
+  document.getElementById('clearChangeVenueSignature');
+
+let signatureDrawing=false;
+let signatureHasInk=false;
+
+function signaturePoint(event){
+  const rect=signatureCanvas.getBoundingClientRect();
+
+  return {
+    x:(event.clientX-rect.left)*(signatureCanvas.width/rect.width),
+    y:(event.clientY-rect.top)*(signatureCanvas.height/rect.height)
+  };
+}
+
+function clearSignature(){
+  const ctx=signatureCanvas.getContext('2d');
+  ctx.clearRect(0,0,signatureCanvas.width,signatureCanvas.height);
+  signatureHasInk=false;
+  signatureData.value='';
+}
+
+function syncSignatureData(){
+  if(signatureHasInk){
+    signatureData.value=
+      signatureCanvas.toDataURL('image/png');
+  }
+}
+
+function loadSavedSignature(data){
+  if(!data) return;
+
+  const img=new Image();
+
+  img.onload=()=>{
+    const ctx=signatureCanvas.getContext('2d');
+    ctx.clearRect(0,0,signatureCanvas.width,signatureCanvas.height);
+    ctx.drawImage(img,0,0,signatureCanvas.width,signatureCanvas.height);
+    signatureHasInk=true;
+    signatureData.value=data;
+  };
+
+  img.src=data;
+}
+
+if(signatureCanvas){
+  const ctx=signatureCanvas.getContext('2d');
+
+  ctx.lineWidth=3;
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  ctx.strokeStyle='#13233f';
+
+  signatureCanvas.addEventListener('pointerdown',event=>{
+    event.preventDefault();
+    signatureDrawing=true;
+    signatureHasInk=true;
+    signatureCanvas.setPointerCapture?.(event.pointerId);
+
+    const p=signaturePoint(event);
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y);
+  });
+
+  signatureCanvas.addEventListener('pointermove',event=>{
+    if(!signatureDrawing) return;
+
+    event.preventDefault();
+
+    const p=signaturePoint(event);
+    ctx.lineTo(p.x,p.y);
+    ctx.stroke();
+  });
+
+  const finishSignature=event=>{
+    if(!signatureDrawing) return;
+
+    signatureDrawing=false;
+    syncSignatureData();
+
+    if(event?.pointerId!==undefined){
+      signatureCanvas.releasePointerCapture?.(event.pointerId);
+    }
+
+    updateProgress();
+  };
+
+  signatureCanvas.addEventListener('pointerup',finishSignature);
+  signatureCanvas.addEventListener('pointercancel',finishSignature);
+  signatureCanvas.addEventListener('pointerleave',event=>{
+    if(signatureDrawing) finishSignature(event);
+  });
+}
+
+clearSignatureButton?.addEventListener('click',()=>{
+  clearSignature();
+  updateProgress();
+});
+
 
 function collectAnswers(){
+
+  syncSignatureData();
 
   const answers={};
 
@@ -910,6 +1070,10 @@ function fillAnswers(answers){
       }
 
     });
+
+  loadSavedSignature(
+    answers?.signatureData || ''
+  );
 
   updateProgress();
 }
@@ -1029,6 +1193,20 @@ form.addEventListener(
     event.preventDefault();
 
     if(!form.reportValidity()){
+      return;
+    }
+
+    syncSignatureData();
+
+    if(
+      !signatureHasInk ||
+      !signatureData.value
+    ){
+      alert('Por favor firme el formulario antes de enviarlo.');
+      signatureCanvas?.scrollIntoView({
+        behavior:'smooth',
+        block:'center'
+      });
       return;
     }
 
